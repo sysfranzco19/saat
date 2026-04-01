@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificación - Suspensión de Estudiante</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+         .button {
+            display: inline-block;
+            background-color: #560000;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .button-download {
+            display: inline-block;
+            background-color: #d32f2f;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 10px 5px;
+            text-align: center;
+        }
+        .header {
+            background-color: #671443;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            border-left: 1px solid #dddddd;
+            border-right: 1px solid #dddddd;
+        }
+        .footer {
+            background-color: #f5f5f5;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #666666;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #dddddd;
+        }
+         .button-container {
+            text-align: center;
+            margin: 25px 0;
+        }
+        .critical {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            padding: 15px;
+            background-color: #ffebee;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .info-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #560000;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table td {
+            padding: 8px;
+            border-bottom: 1px solid #eeeeee;
+        }
+        table td:first-child {
+            font-weight: bold;
+            width: 40%;
+        }
+        .important {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .logo {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://tiquipaya.edu.bo/logotiqui.png" alt="Logo Colegio Tiquipaya" class="logo">
+            <h1>Plataforma SAAT</h1>
+            <h2>Notificación de Suspensión</h2>
+        </div>
+        
+        <div class="content">
+            <p>Estimados padres de familia:,</p>
+
+          
+            <p>
+
+Les informamos que, debido a la acumulación de faltas leves y el incumplimiento de las medidas formativas anteriores, se ha procedido a aplicar una medida de suspensión a su hijo/a:</p>
+            
+            <div class="info-box">
+                <table>
+                    <tr>
+                        <td>Estudiante:</td>
+                        <td>{{student}}</td>
+                    </tr>
+                    <tr>
+                        <td>Curso:</td>
+                        <td>{{curso}}</td>
+                    </tr>
+                    <tr>
+                        <td>Motivo:</td>
+                        <td>Acumulación de 6 faltas leves</td>
+                    </tr>
+                    <tr>
+                        <td>Fecha de Suspensión:</td>
+                        <td><strong style="color: #d32f2f;">La suspensión tendrá lugar el día después de la emisión de esta carta.
+</strong></td>
+                    </tr>
+                   <tr>
+                        <td>Fecha de Emisión:</td>
+                        <td>{{fecha}}</td>
+                    </tr>
+                </table>
+            </div>
+
+            
+            <p class="important"> A continuación adjuntamos el comunicado de detención con el detalle de las faltas:</p>
+  <div class="button-container">
+                <a href="{{ruta_carta}}" class="button-download">📄 DESCARGAR CARTA DE SUSPENSIÓN</a>
+            </div>
+            
+            <p>Para obtener más detalles y realizar el seguimiento completo del historial disciplinario de su hijo, puede acceder a nuestra plataforma SAAT:</p>
+            
+            <div class="button-container">
+                <a href="https://tiquipaya.edu.bo/plataforma/public/" class="button">ACCEDER A LA PLATAFORMA</a>
+            </div>
+            
+            <p>Atentamente,</p>
+            <p><strong>Sistema SAAT - Colegio Tiquipaya</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>Esta notificación ha sido generada automáticamente. Por favor no responder a este correo</p>
+            <p>&copy; 2025 Colegio Tiquipaya - Departamento Informático | Todos los derechos reservados</p>
+        </div>
+    </div>
+</body>
+</html>

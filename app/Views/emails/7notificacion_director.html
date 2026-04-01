@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificación Interna - Intervención Directiva</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #560000;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .button-download {
+            display: inline-block;
+            background-color: #d32f2f;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 10px 5px;
+            text-align: center;
+        }
+        .button-urgent {
+            display: inline-block;
+            background-color: #c62828;
+            color: white;
+            padding: 15px 25px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 10px 5px;
+            text-align: center;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        .header {
+            background-color: #b71c1c;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            border-left: 1px solid #dddddd;
+            border-right: 1px solid #dddddd;
+        }
+        .footer {
+            background-color: #f5f5f5;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #666666;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #dddddd;
+        }
+        .critical {
+            color: #b71c1c;
+            font-weight: bold;
+            font-size: 20px;
+            text-align: center;
+            padding: 20px;
+            background-color: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 4px;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { border-color: #f44336; }
+            50% { border-color: #d32f2f; }
+            100% { border-color: #f44336; }
+        }
+        .info-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #b71c1c;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .urgent-box {
+            background-color: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table td {
+            padding: 8px;
+            border-bottom: 1px solid #eeeeee;
+        }
+        table td:first-child {
+            font-weight: bold;
+            width: 40%;
+        }
+        .important {
+            color: #b71c1c;
+            font-weight: bold;
+        }
+        .logo {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .priority-high {
+            background-color: #c62828;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin: 15px 0;
+        }
+        .actions-needed {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .escalation-level {
+            background-color: #b71c1c;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://tiquipaya.edu.bo/logotiqui.png" alt="Logo Colegio Tiquipaya" class="logo">
+            <h1>Plataforma SAAT</h1>
+            <h2>🚨 ALERTA DIRECTIVA - CASO CRÍTICO</h2>
+        </div>
+        
+        <div class="content">
+            <div class="escalation-level">
+                🔴 NIVEL DE ESCALAMIENTO: INTERVENCIÓN DIRECTIVA REQUERIDA
+            </div>
+
+            <p>Estimado/a Director/a,</p>
+
+            <p>Mediante la presente, le informamos que un estudiante ha alcanzado un nivel crítico de acumulación de faltas leves que requiere <strong class="important">intervención directiva inmediata</strong>. El protocolo institucional establece que a partir de siete (7) faltas leves, el caso debe ser escalado a la Dirección para la implementación de medidas disciplinarias y formativas más estrictas.</p>
+            
+            <div class="critical">
+                🚨 ATENCIÓN INMEDIATA REQUERIDA 🚨<br>
+                ESTUDIANTE CON 7+ FALTAS LEVES
+            </div>
+
+            <div class="info-box">
+                <table>
+                    <tr>
+                        <td>Estudiante:</td>
+                        <td><strong style="color: #b71c1c;">{{student}}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Curso:</td>
+                        <td>{{curso}}</td>
+                    </tr>
+                    <tr>
+                        <td>Total de Faltas Leves:</td>
+                        <td><strong style="color: #b71c1c; font-size: 18px;">7 FALTAS</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Estado del Caso:</td>
+                        <td><strong style="color: #d32f2f;">CRÍTICO - REQUIERE INTERVENCIÓN DIRECTIVA</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Consejero de Curso:</td>
+                        <td>{{cosejero}}</td>
+                    </tr>
+                    <tr>
+                        <td>Fecha de Escalamiento:</td>
+                        <td>{{fecha}}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="priority-high">
+                ⚠️ PRIORIDAD ALTA - ACCIÓN INMEDIATA REQUERIDA
+            </div>
+
+           
+
+        
+          
+            <p><strong>Sistema SAAT - Departamento de Seguimiento Académico</strong><br>
+            Colegio Tiquipaya</p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>CONFIDENCIAL:</strong> Esta notificación contiene información sensible del estudiante</p>
+            <p>Esta notificación ha sido generada automáticamente por el Sistema SAAT</p>
+            <p>&copy; 2025 Colegio Tiquipaya - Departamento Informático | Todos los derechos reservados</p>
+        </div>
+    </div>
+</body>
+</html>

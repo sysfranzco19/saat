@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificación de Detención - Colegio Tiquipaya</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        .header {
+            background-color: #671443;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            border-left: 1px solid #dddddd;
+            border-right: 1px solid #dddddd;
+        }
+        .footer {
+            background-color: #f5f5f5;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #666666;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #dddddd;
+        }
+        .button {
+            display: inline-block;
+            background-color: #560000;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .button-download {
+            display: inline-block;
+            background-color: #d32f2f;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 10px 5px;
+            text-align: center;
+        }
+        .info-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #560000;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .alert-box {
+            background-color: #fff3e0;
+            border-left: 4px solid #d32f2f;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .important {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .critical {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            padding: 15px;
+            background-color: #ffebee;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table td {
+            padding: 8px;
+            border-bottom: 1px solid #eeeeee;
+        }
+        table td:first-child {
+            font-weight: bold;
+            width: 40%;
+        }
+        .logo {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 25px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://tiquipaya.edu.bo/logotiqui.png" alt="Logo Colegio Tiquipaya" class="logo">
+            <h1>Plataforma SAAT</h1>
+            <h2>Notificación de Detención</h2>
+        </div>
+        
+        <div class="content">
+            <p>Estimados Padres de Familia:</p>
+            
+            <div class="critical">
+                ⚠️ NOTIFICACIÓN IMPORTANTE - DETENCIÓN APLICADA ⚠️
+            </div>
+            
+            <p>Le informamos que el sistema SAAT del Colegio Tiquipaya ha registrado la <strong>acumulación de 4 faltas leves</strong> por parte de su hijo, lo que activa automáticamente el protocolo establecido.</p>
+            
+            <div class="info-box">
+                <table>
+                    <tr>
+                        <td>Estudiante:</td>
+                        <td>{{student}}</td>
+                    </tr>
+                    <tr>
+                        <td>Curso:</td>
+                        <td>{{curso}}</td>
+                    </tr>
+                    <tr>
+                        <td>Tipo de Notificación:</td>
+                        <td>Acumulación de 4 faltas leves</td>
+                    </tr>
+                    <tr>
+                        <td>Medida Aplicada:</td>
+                        <td><strong style="color: #d32f2f;">DETENCIÓN EN EL COLEGIO</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Fecha de Emisión:</td>
+                        <td>{{fecha}}</td>
+                    </tr>
+                    <tr>
+                        <td>Fecha de Detención:</td>
+                        <td><strong style="color: #d32f2f;">Próximo viernes a partir de la emisión</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Horario:</td>
+                        <td><strong style="color: #d32f2f;">14:30 a 15:30 hrs</strong></td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="alert-box">
+                <p><strong>MEDIDA DISCIPLINARIA APLICADA:</strong></p>
+                <p>De acuerdo con el protocolo establecido, su hijo deberá cumplir un <strong>período de Detención en el colegio</strong> como consecuencia de haber acumulado cuatro (4) faltas leves de indisciplina.</p>
+                <p class="important">⏰ El estudiante deberá presentarse puntualmente el <strong>próximo viernes a partir de la emisión de este correo, de 14:30 a 15:30 horas</strong>, para cumplir con su período de Detención.</p>
+            </div>
+            
+            <p>Esta medida formativa tiene como objetivo reforzar la importancia del respeto a las normas institucionales y promover la reflexión sobre el comportamiento adecuado en el ambiente escolar.</p>
+            
+            <p>Se ha generado una <strong>Carta de Detención</strong> con el detalle completo de las faltas cometidas y las condiciones de la medida aplicada. Le recomendamos descargar y revisar este documento:</p>
+            
+            <div class="button-container">
+                <a href="{{ruta_carta}}" class="button-download">📄 DESCARGAR CARTA DE DETENCIÓN</a>
+            </div>
+            
+            <p>Para obtener más detalles y realizar el seguimiento completo del historial disciplinario de su hijo, puede acceder a nuestra plataforma SAAT:</p>
+            
+            <div class="button-container">
+                <a href="https://tiquipaya.edu.bo/plataforma/public/" class="button">ACCEDER A LA PLATAFORMA</a>
+            </div>
+            
+            <p>Solicitamos su colaboración y compromiso para trabajar juntos en la formación integral de su hijo, promoviendo valores de responsabilidad y respeto hacia la comunidad educativa.</p>
+            
+            <p>Atentamente,</p>
+            <p><strong>Sistema SAAT - Colegio Tiquipaya</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>Esta notificación ha sido generada automáticamente. Por favor, no responda a este mensaje.</p>
+            <p>Para consultas específicas sobre la medida aplicada, contáctenos a través de los canales oficiales del colegio.</p>
+            <p>&copy; 2025 Colegio Tiquipaya - Departamento Informático | Todos los derechos reservados</p>
+        </div>
+    </div>
+</body>
+</html>
+</html>
