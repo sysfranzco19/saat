@@ -86,6 +86,19 @@
     fillFecha(1);
     updateParentText();
 
+    document.getElementById('motivo_id').addEventListener('change', function () {
+        var divComprobante = document.getElementById('div_comprobante_medico');
+        var inputComprobante = document.getElementById('comprobante_medico');
+        if (this.value == '5') {
+            divComprobante.style.display = '';
+            inputComprobante.required = true;
+        } else {
+            divComprobante.style.display = 'none';
+            inputComprobante.required = false;
+            inputComprobante.value = '';
+        }
+    });
+
 </script>
 <!--begin::Modal-->
 <div class="modal-header">
@@ -129,10 +142,10 @@
             <input type="date" class="form-control" value="" id="fecha_fin" name="fecha_fin" required disabled>
         </div>
         <!-- Campo para subir comprobante médico -->
-        <div class="form-group">
+        <div class="form-group" id="div_comprobante_medico" style="display:none;">
             <label>Adjunte una fotografía o imagen del documento que respalde la solicitud de licencia. <span class="text-danger">*</span></label>
             <input type="file" class="form-control" id="comprobante_medico" name="comprobante_medico"
-                accept=".jpg, .jpeg, .png, .pdf" required>
+                accept=".jpg, .jpeg, .png, .pdf">
         </div>
     </div>
     <div class="modal-footer">
