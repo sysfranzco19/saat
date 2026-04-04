@@ -10,7 +10,7 @@
         localStorage.setItem("selectedStudent", student_id);
         $.ajax({
 			data: parametros,
-			url: "<?php echo base_url('server/student_fill'); ?>",
+			url: "<?php echo base_url('index.php/server/student_fill'); ?>",
 			type: "post",
 			success: function(response){
                 var content = JSON.parse(response);
@@ -33,7 +33,7 @@
     }
     function fillDelays(student_id){
         $.ajax({
-			url: "<?php echo base_url(); ?>server/fill_delays_student/" + student_id,
+			url: "<?php echo base_url(); ?>index.php/server/fill_delays_student/" + student_id,
 			success: function(response)
 			{
                 var content = JSON.parse(response);
@@ -55,14 +55,14 @@
                     var button = $("<button>").attr({
                         type: "button",
                         class: "btn btn-danger btn-sm",
-                        onclick: "showAjaxModal('<?php echo base_url();?>modal/popup/delay_modal_del/"+delay.delay_id+"/"+student_id+"/0/0/0');"
+                        onclick: "showAjaxModal('<?php echo base_url();?>index.php/modal/popup/delay_modal_del/"+delay.delay_id+"/"+student_id+"/0/0/0');"
                     }).html("<i class='flaticon-delete-1'></i>");
                     newRow.append(button);
                     // Crear el botón y adjuntarlo a la fila
                     var button2 = $("<button>").attr({
                         type: "button",
                         class: "btn btn-warning btn-sm",
-                        onclick: "showAjaxModal('<?php echo base_url();?>modal/popup/delay_modal_edit/"+delay.delay_id+"/"+student_id+"/0/0/0');"
+                        onclick: "showAjaxModal('<?php echo base_url();?>index.php/modal/popup/delay_modal_edit/"+delay.delay_id+"/"+student_id+"/0/0/0');"
                     }).html("<i class='flaticon-edit'></i>");
                     // Agregar el botón a la fila
                     newRow.append(button2);

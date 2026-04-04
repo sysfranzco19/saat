@@ -6,7 +6,7 @@
         };
         $.ajax({
             data: parametros,
-            url: "<?php echo base_url(); ?>server/parents_fill",
+            url: "<?php echo base_url(); ?>index.php/server/parents_fill",
             type: "post",
             success: function (response) {
                 document.getElementById('parents').innerHTML = response;
@@ -60,7 +60,7 @@
     function fillMotivos() {
         // SHOW AJAX RESPONSE ON REQUEST SUCCESS
         $.ajax({
-            url: "<?php echo base_url(); ?>server/fill_motivos",
+            url: "<?php echo base_url(); ?>index.php/server/fill_motivos",
             type: "get",
             success: function (response) {
                 // Asumiendo que la respuesta es un JSON con los motivos
@@ -107,8 +107,8 @@
         <i aria-hidden="true" class="ki ki-close"></i>
     </button>
 </div>
-<?php //echo form_open(base_url() . 'teacher/assistance_edit/'.$param4, array('class' => 'form','name' => 'form_assistance')); ?>
-<form action="<?php echo base_url() . 'parents/license_save_dia'; ?>" id="formLicenciaDia" method="post"
+<?php //echo form_open(base_url() . 'index.php/teacher/assistance_edit/'.$param4, array('class' => 'form','name' => 'form_assistance')); ?>
+<form action="<?php echo base_url() . 'index.php/parents/license_save_dia'; ?>" id="formLicenciaDia" method="post"
     class="form-horizontal" enctype="multipart/form-data">
     <input type="hidden" id="student_id" name="student_id" value="<?php echo $param1; ?>">
     <input type="hidden" id="family_id" name="family_id" value="<?php echo $param3; ?>">

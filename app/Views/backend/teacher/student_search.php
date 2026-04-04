@@ -1,7 +1,7 @@
 <script type="text/javascript">
     function cargar(){
         var sel = document.getElementById('buscar').value;
-        window.location.assign('<?php echo base_url(); ?>teacher/student_search/<?php echo $user; ?>/' + sel )
+        window.location.assign('<?php echo base_url(); ?>index.php/teacher/student_search/<?php echo $user; ?>/' + sel )
         //alert('hola');
     }
 </script>
@@ -86,10 +86,10 @@ if (empty($busqueda)){
                                         <a class="dropdown-item" onclick="showAjaxModal('<?php echo base_url();?>index.php/modal/popup/modal_leave_hours/<?php echo $id;?>/<?php echo $nombre;?>/<?php echo $cursos['section_'.$id];?>/0');">Registrar licencia por hora</a>
                                     </div>
                                 </div>-->
-                                <a href="<?php echo base_url(); ?>teacher/notes_half_student/<?php echo $id;?>" class="btn btn-warning btn-sm" >Medio Trimestre</a>
-                                <a href="<?php echo base_url(); ?>teacher/student_notes/<?php echo $id;?>" class="btn btn-danger btn-sm" >Ver notas</a>
-                                <a href="<?php echo base_url(); ?>teacher/student_attendance/<?php echo $id;?>/all/0" class="btn btn-success btn-sm"  >Ver Asistencias</a>
-                                <a href="<?php echo base_url(); ?>teacher/student_licenses/<?php echo $id;?>/all/0" class="btn btn-primary btn-sm"  >Ver Licencias</a>
+                                <a href="<?php echo base_url(); ?>index.php/teacher/notes_half_student/<?php echo $id;?>" class="btn btn-warning btn-sm" >Medio Trimestre</a>
+                                <a href="<?php echo base_url(); ?>index.php/teacher/student_notes/<?php echo $id;?>" class="btn btn-danger btn-sm" >Ver notas</a>
+                                <a href="<?php echo base_url(); ?>index.php/teacher/student_attendance/<?php echo $id;?>/all/0" class="btn btn-success btn-sm"  >Ver Asistencias</a>
+                                <a href="<?php echo base_url(); ?>index.php/teacher/student_licenses/<?php echo $id;?>/all/0" class="btn btn-primary btn-sm"  >Ver Licencias</a>
                             </td>
                         </tr>
                     <?php

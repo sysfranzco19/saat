@@ -1,7 +1,7 @@
 <script type="text/javascript">
 	function getCsamarksStudent() {
     $.ajax({
-        url: "<?php echo base_url(); ?>admin/student_notes_get/<?php echo $param1; ?>",
+        url: "<?php echo base_url(); ?>index.php/admin/student_notes_get/<?php echo $param1; ?>",
         method: "GET",
         dataType: "json",  // Aseguramos que la respuesta sea JSON
         success: function(response) {

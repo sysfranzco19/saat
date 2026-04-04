@@ -10,7 +10,7 @@ $niveles = $NivelMod->listar_niveles();
         <i aria-hidden="true" class="ki ki-close"></i>
     </button>
 </div>
-<form action="<?php echo base_url(); ?>admin/periodo_update" method="post" enctype="multipart/form-data">
+<form action="<?php echo base_url(); ?>index.php/admin/periodo_update" method="post" enctype="multipart/form-data">
     <div class="modal-body">
         <input type="hidden" name="periodo_id" id="periodo_id_input">
         <div class="form-group row">
@@ -54,7 +54,7 @@ $niveles = $NivelMod->listar_niveles();
     $(document).ready(function() {
         var id = "<?php echo $param1; ?>";
         $.ajax({
-            url: "<?php echo base_url(); ?>admin/periodo_get/" + id,
+            url: "<?php echo base_url(); ?>index.php/admin/periodo_get/" + id,
             type: "GET",
             dataType: "JSON",
             success: function(data) {

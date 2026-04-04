@@ -18,7 +18,7 @@ $section = $query2->getRowArray();
         <button type="button" class="close" data-dismiss="modal">&times;</button>
     </div>
 
-    <form id="evaluation_form" action="<?php echo base_url(); ?>teacher/evaluation_save" method="POST"
+    <form id="evaluation_form" action="<?php echo base_url(); ?>index.php/teacher/evaluation_save" method="POST"
         enctype="multipart/form-data">
         <input type="hidden" name="section_id" value="<?php echo $section_id; ?>">
         <input type="hidden" name="subject_id" value="<?php echo $subject_id; ?>">
@@ -75,7 +75,7 @@ $section = $query2->getRowArray();
 
         if (date) {
             $.ajax({
-                url: '<?php echo base_url(); ?>teacher/evaluation_check_date',
+                url: '<?php echo base_url(); ?>index.php/teacher/evaluation_check_date',
                 type: 'POST',
                 data: { date: date, section_id: section_id },
                 success: function (response) {

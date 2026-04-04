@@ -90,7 +90,7 @@ $name = strtoupper($session->get('name'));
                     <!--end::Symbol-->
                     <!--begin::Text-->
                     <div class="d-flex flex-column font-weight-bold">
-                        <a href="<?php echo base_url(); ?>parents/virtual_library_prim"
+                        <a href="<?php echo base_url(); ?>index.php/parents/virtual_library_prim"
                             class="text-dark text-hover-primary mb-1 font-size-lg">Biblioteca de libros digitales
                             PRIMARIA</a>
                         <span class="text-muted">Libros y textos</span>
@@ -130,7 +130,7 @@ $name = strtoupper($session->get('name'));
                     <!--end::Symbol-->
                     <!--begin::Text-->
                     <div class="d-flex flex-column font-weight-bold">
-                        <a href="<?php echo base_url(); ?>parents/virtual_library_sec"
+                        <a href="<?php echo base_url(); ?>index.php/parents/virtual_library_sec"
                             class="text-dark text-hover-primary mb-1 font-size-lg">Biblioteca de libros digitales
                             SECUNDARIA</a>
                         <span class="text-muted">Libros y textos</span>
@@ -164,7 +164,7 @@ $name = strtoupper($session->get('name'));
                     <!--end::Symbol-->
                     <!--begin::Text-->
                     <div class="d-flex flex-column font-weight-bold">
-                        <a href="<?php echo base_url(); ?>parents/gamified_behavior"
+                        <a href="<?php echo base_url(); ?>index.php/parents/gamified_behavior"
                             class="text-dark-75 text-hover-primary mb-1 font-size-lg">Comportamiento</a>
                         <span class="text-muted">Historial de incidencias y puntos del Ser</span>
                     </div>

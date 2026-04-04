@@ -4,7 +4,7 @@
 
         $.ajax({
 
-            url: "<?php echo base_url(); ?>teacher/recover_self/" + section_id + "/" + subject_id,
+            url: "<?php echo base_url(); ?>index.php/teacher/recover_self/" + section_id + "/" + subject_id,
 
             type: "get",
 

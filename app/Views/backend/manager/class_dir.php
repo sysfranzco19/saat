@@ -17,7 +17,7 @@
                 <tr>
                     <td><?php echo htmlspecialchars($row['grade']); ?></td>
                     <td>
-                        <a href="<?php echo base_url(); ?>teacher/ranking_class/<?php echo $row['class_id']; ?>"
+                        <a href="<?php echo base_url(); ?>index.php/teacher/ranking_class/<?php echo $row['class_id']; ?>"
                            target="_blank" class="btn btn-primary btn-sm">Ranking Notas</a>
                     </td>
                 </tr>

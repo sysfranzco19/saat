@@ -7,7 +7,7 @@
         var emailPadres ="";
         $.ajax({
 			data: parametros,
-			url: "<?php echo base_url('server/student_fill'); ?>",
+			url: "<?php echo base_url('index.php/server/student_fill'); ?>",
 			type: "post",
 			success: function(response){
                 //alert('hola');
@@ -27,7 +27,7 @@
     {
         // SHOW AJAX RESPONSE ON REQUEST SUCCESS
         $.ajax({
-			url: "<?php echo base_url(); ?>server/fill_infraction_emails/<?php echo $param2; ?>",
+			url: "<?php echo base_url(); ?>index.php/server/fill_infraction_emails/<?php echo $param2; ?>",
 			success: function(response)
 			{
                 var content = JSON.parse(response);

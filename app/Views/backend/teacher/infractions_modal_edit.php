@@ -9,7 +9,7 @@
 		};
         $.ajax({
             data: parametros,
-			url: "<?php echo base_url(); ?>server/fill_infraction",
+			url: "<?php echo base_url(); ?>index.php/server/fill_infraction",
             type: "post",
 			success: function(response)
 			{
@@ -29,7 +29,7 @@
     getInfraction();
     function getSubjects() {
         $.ajax({
-			url: "<?php echo base_url(); ?>server/fill_subjects/<?php echo $param1; ?>",
+			url: "<?php echo base_url(); ?>index.php/server/fill_subjects/<?php echo $param1; ?>",
 			success: function(response)
 			{
                 var newstr = response.replace("value='"+subject_id+"'", "value='"+subject_id+"' selected");
@@ -41,7 +41,7 @@
     function getTypeFoul()
     {
         $.ajax({
-			url: "<?php echo base_url(); ?>server/fill_type_foul",
+			url: "<?php echo base_url(); ?>index.php/server/fill_type_foul",
 			success: function(response)
 			{
                 var newstr = response.replace("value='"+type_foul+"'", "value='"+type_foul+"' selected");
@@ -52,7 +52,7 @@
     }
     function getCriteria(type_foul_id) {
             $.ajax({
-                url: "<?php echo base_url(); ?>server/fill_criteria/"+ type_foul_id,
+                url: "<?php echo base_url(); ?>index.php/server/fill_criteria/"+ type_foul_id,
                 success: function(response)
                 {
                     var newstr = response.replace("value='"+criterio_id+"'", "value='"+criterio_id+"' selected");

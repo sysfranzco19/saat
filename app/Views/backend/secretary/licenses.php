@@ -2,7 +2,7 @@
     function enviarLicencia(licencia_id, student_id, btn){
         var originalHtml = btn ? btn.innerHTML : '';
         $.ajax({
-            url: "<?php echo base_url(); ?>secretary/license_send/"+licencia_id+"/"+student_id,
+            url: "<?php echo base_url(); ?>index.php/secretary/license_send/"+licencia_id+"/"+student_id,
             type: "get",
             beforeSend: function(){
                 if (btn) {
@@ -75,8 +75,8 @@
                                         Acción
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="<?php echo base_url('secretary/license_report/'.$key->licencias_id);?>" target="_blank">Imprimir</a>
-                                        <a class="dropdown-item" href="<?php echo base_url('secretary/licenses_edit/'.$key->licencias_id);?>">Modificar</a>
+                                        <a class="dropdown-item" href="<?php echo base_url('index.php/secretary/license_report/'.$key->licencias_id);?>" target="_blank">Imprimir</a>
+                                        <a class="dropdown-item" href="<?php echo base_url('index.php/secretary/licenses_edit/'.$key->licencias_id);?>">Modificar</a>
                                     </div>
                                 </div>
                                 <button type="button" class="btn btn-danger btn-sm" onclick="showAjaxModal('<?php echo base_url();?>/modal/popup/licenses_modal_del/<?php echo $key->licencias_id ?>/0/0/0/0');">Eliminar</button>

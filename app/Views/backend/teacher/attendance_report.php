@@ -82,7 +82,7 @@
                             </ul>
                         </div>
                     </div>
-                    <a href="<?php echo base_url(); ?>/teacher/attendance/<?php echo $subject_id; ?>"
+                    <a href="<?php echo base_url(); ?>index.php/teacher/attendance/<?php echo $subject_id; ?>"
                         class="btn btn-primary font-weight-bolder">
                         <span class="svg-icon svg-icon-md">
                             <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -116,12 +116,12 @@
                                             <div class="d-flex flex-column">
                                                 <button class="btn btn-icon btn-xs btn-light-warning mb-1" title="Editar"
                                                     style="height: 20px; width: 20px;"
-                                                    onclick="showAjaxModal('<?php echo base_url(); ?>modal/popup/attendance_date_modal_edit/<?php echo $subject_id; ?>/<?php echo $date_id; ?>/<?php echo $date; ?>/<?php echo $section_id; ?>/0');">
+                                                    onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/attendance_date_modal_edit/<?php echo $subject_id; ?>/<?php echo $date_id; ?>/<?php echo $date; ?>/<?php echo $section_id; ?>/0');">
                                                     <i class="flaticon2-pen" style="font-size: 0.7rem;"></i>
                                                 </button>
                                                 <button class="btn btn-icon btn-xs btn-light-danger" title="Eliminar"
                                                     style="height: 20px; width: 20px;"
-                                                    onclick="showAjaxModal('<?php echo base_url(); ?>modal/popup/attendance_date_modal_del/<?php echo $subject_id; ?>/<?php echo $date_id; ?>/<?php echo $date; ?>/<?php echo $section_id; ?>/0');">
+                                                    onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/attendance_date_modal_del/<?php echo $subject_id; ?>/<?php echo $date_id; ?>/<?php echo $date; ?>/<?php echo $section_id; ?>/0');">
                                                     <i class="flaticon2-trash" style="font-size: 0.7rem;"></i>
                                                 </button>
                                             </div>
@@ -177,7 +177,7 @@
                                                     <div class="btn btn-icon btn-square <?php echo $statusClass; ?> btn-sm w-100"
                                                         style="cursor: pointer; height: 35px; font-weight: bold; font-size: 1.1em; <?php echo $customStyle; ?>"
                                                         title="<?php echo $statusTitle; ?>"
-                                                        onclick="showAjaxModal('<?php echo base_url(); ?>modal/popup/attendance_modal_edit/<?php echo $subject_id; ?>/<?php echo $asi['assistance_subject_id']; ?>/<?php echo $asi['status']; ?>/<?php echo $section_id; ?>/<?php echo $row['student']; ?>');">
+                                                        onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/attendance_modal_edit/<?php echo $subject_id; ?>/<?php echo $asi['assistance_subject_id']; ?>/<?php echo $asi['status']; ?>/<?php echo $section_id; ?>/<?php echo $row['student']; ?>');">
                                                         <?php echo $statusText; ?>
                                                     </div>
                                                     <?php

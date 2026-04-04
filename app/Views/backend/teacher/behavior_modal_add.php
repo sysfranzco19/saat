@@ -16,7 +16,7 @@
 		};
         $.ajax({
             data: parametros,
-			url: "<?php echo base_url(); ?>server/fill_section_subject",
+			url: "<?php echo base_url(); ?>index.php/server/fill_section_subject",
             type: "post",
 			success: function(response)
 			{
@@ -34,7 +34,7 @@
 
     function getStudents(section_id) {
         $.ajax({
-			url: "<?php echo base_url(); ?>server/fill_students/" + section_id,
+			url: "<?php echo base_url(); ?>index.php/server/fill_students/" + section_id,
             type: "get",
 			success: function(response)
 			{
@@ -92,7 +92,7 @@
 		<i aria-hidden="true" class="ki ki-close"></i>
 	</button>
 </div>
-<?php //echo form_open(base_url() . 'teacher/assistance_edit/'.$param4, array('class' => 'form','name' => 'form_assistance')); ?>
+<?php //echo form_open(base_url() . 'index.php/teacher/assistance_edit/'.$param4, array('class' => 'form','name' => 'form_assistance')); ?>
 <form id="myForm" name="myForm" action="<?php echo base_url().'teacher/behavior_save'; ?>" method="post" class="form-horizontal" >
 <div class="modal-body">
     <div class="form-group row">

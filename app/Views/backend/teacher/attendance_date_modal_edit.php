@@ -10,7 +10,7 @@
 	</button>
 </div>
 <?php //echo form_open(base_url() . 'index.php/teacher/date_edit/'.$param4, array('class' => 'form','name' => 'form_date')); ?>
-<form action="<?php echo base_url() . 'teacher/attendance_date_edit/'.$param1; ?>" method="post" name="form_assistance" class="form" >
+<form action="<?php echo base_url() . 'index.php/teacher/attendance_date_edit/'.$param1; ?>" method="post" name="form_assistance" class="form" >
 <div class="modal-body">
 	
 

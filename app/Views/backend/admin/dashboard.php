@@ -66,7 +66,7 @@
                                         <!--end::Symbol-->
                                         <!--begin::Text-->
                                         <div class="d-flex flex-column flex-grow-1">
-                                            <a href="<?php echo base_url(); ?>teacher/student_search/director/0" class="btn btn-secondary font-weight-bolder font-size-sm py-3 px-14" target="_blank" >Estudiantes</a>
+                                            <a href="<?php echo base_url(); ?>index.php/teacher/student_search/director/0" class="btn btn-secondary font-weight-bolder font-size-sm py-3 px-14" target="_blank" >Estudiantes</a>
                                         </div>
                                         <!--end::Text-->
                                     </div>
@@ -111,7 +111,7 @@
                                         <!--end::Symbol-->
                                         <!--begin::Text-->
                                         <div class="d-flex flex-column flex-grow-1">
-                                        <a href="<?php echo base_url(); ?>teacher/assistance" class="btn btn-secondary font-weight-bolder font-size-sm py-3 px-14" target="_blank">Asistencias</a>
+                                        <a href="<?php echo base_url(); ?>index.php/teacher/assistance" class="btn btn-secondary font-weight-bolder font-size-sm py-3 px-14" target="_blank">Asistencias</a>
                                         </div>
                                         <!--end::Text-->
                                     </div>
@@ -207,7 +207,7 @@
                                                             </div>
                                                         </td>
                                                         <td class="pl-0">
-                                                            <a href="<?php echo base_url(); ?>admin/section_students" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Rudes Estudiantes</a>
+                                                            <a href="<?php echo base_url(); ?>index.php/admin/section_students" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Rudes Estudiantes</a>
                                                             <span class="text-muted font-weight-bold d-block">Informes</span>
                                                         </td>
                                                     </tr>
@@ -227,7 +227,7 @@
                                                             </div>
                                                         </td>
                                                         <td class="pl-0">
-                                                            <a href="<?php echo base_url(); ?>/teacher/curricular_adaptations" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Adaptaciones Curriculares</a>
+                                                            <a href="<?php echo base_url(); ?>index.php/teacher/curricular_adaptations" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Adaptaciones Curriculares</a>
                                                             <span class="text-muted font-weight-bold d-block">Registro</span>
                                                         </td>
                                                         
@@ -247,7 +247,7 @@
                                                             </div>
                                                         </td>
                                                         <td class="pl-0">
-                                                            <a href="<?php echo base_url(); ?>teacher/content_letter" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Carta de contenidos</a>
+                                                            <a href="<?php echo base_url(); ?>index.php/teacher/content_letter" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Carta de contenidos</a>
                                                             <span class="text-muted font-weight-bold d-block">Docentes</span>
                                                         </td>
                                                     </tr>
@@ -266,7 +266,7 @@
                                                             </div>
                                                         </td>
                                                         <td class="pl-0">
-                                                            <a href="<?php echo base_url(); ?>admin/periodo" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Gestionar Periodos</a>
+                                                            <a href="<?php echo base_url(); ?>index.php/admin/periodo" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Gestionar Periodos</a>
                                                             <span class="text-muted font-weight-bold d-block">Configuración de Horas</span>
                                                         </td>
                                                     </tr>
@@ -329,7 +329,7 @@
                                                             </div>
                                                         </td>
                                                         <td class="pl-0">
-                                                            <a href="<?php echo base_url(); ?>admin/update_tables" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Actualizar</a>
+                                                            <a href="<?php echo base_url(); ?>index.php/admin/update_tables" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Actualizar</a>
                                                             <span class="text-muted font-weight-bold d-block">Actualizar tablas</span>
                                                         </td>
                                                     </tr>
@@ -348,7 +348,7 @@
                                                             </div>
                                                         </td>
                                                         <td class="pl-0">
-                                                            <a href="<?php echo base_url(); ?>admin/test_email" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Test Emails</a>
+                                                            <a href="<?php echo base_url(); ?>index.php/admin/test_email" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Test Emails</a>
                                                             <span class="text-muted font-weight-bold d-block">Test</span>
                                                         </td>
                                                     </tr>
@@ -367,7 +367,7 @@
                                                             </div>
                                                         </td>
                                                         <td class="pl-0">
-                                                            <a href="<?php echo base_url(); ?>teacher/behaviors" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Comunicación</a>
+                                                            <a href="<?php echo base_url(); ?>index.php/teacher/behaviors" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Comunicación</a>
                                                             <span class="text-muted font-weight-bold d-block">con Padres de Familia</span>
                                                         </td>
                                                     </tr>
@@ -386,7 +386,7 @@
                                                             </div>
                                                         </td>
                                                         <td class="pl-0">
-                                                            <a href="<?php echo base_url(); ?>admin/nivel" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Gestionar Niveles</a>
+                                                            <a href="<?php echo base_url(); ?>index.php/admin/nivel" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Gestionar Niveles</a>
                                                             <span class="text-muted font-weight-bold d-block">Configuración de Niveles</span>
                                                         </td>
                                                     </tr>

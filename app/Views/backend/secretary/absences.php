@@ -1,7 +1,7 @@
 <script type="text/javascript">
     function enviarAusencia(ausencia_id, student_id){
         $.ajax({
-            url: "<?php echo base_url(); ?>secretary/absence_send/"+ausencia_id+"/"+student_id,
+            url: "<?php echo base_url(); ?>index.php/secretary/absence_send/"+ausencia_id+"/"+student_id,
             type: "get",
             beforeSend: function(){
                 document.getElementById('mostrar_loading').style.display="block"
@@ -90,7 +90,7 @@
                                     <ul class="navi flex-column navi-hover py-2">
 
                                         <li class="navi-item">
-                                            <a href="<?php echo base_url('secretary/absence_edit/'.$key->ausencia_id);?>" class="navi-link">
+                                            <a href="<?php echo base_url('index.php/secretary/absence_edit/'.$key->ausencia_id);?>" class="navi-link">
                                                 <span class="navi-icon">
                                                     <i class="far fa-edit text-warning mr-5"></i>
                                                 </span>
@@ -98,7 +98,7 @@
                                             </a>
                                         </li>
                                         <li class="navi-item">
-                                            <a href="<?php echo base_url('secretary/absence_report/'.$key->ausencia_id);?>" class="navi-link">
+                                            <a href="<?php echo base_url('index.php/secretary/absence_report/'.$key->ausencia_id);?>" class="navi-link">
                                                 <span class="navi-icon">
                                                     <i class="la la-file-pdf-o text-primary mr-5"></i>
                                                 </span>
@@ -139,8 +139,8 @@
 
 
                                 <!-- 
-                                <a href="<?php echo base_url('secretary/absence_edit/'.$key->ausencia_id);?>" class="btn btn-warning btn-sm" >Modificar</a>
-                                <a href="<?php echo base_url('secretary/absence_report/'.$key->ausencia_id);?>" target="_blank" class="btn btn-secondary btn-sm" >Imprimir</a>
+                                <a href="<?php echo base_url('index.php/secretary/absence_edit/'.$key->ausencia_id);?>" class="btn btn-warning btn-sm" >Modificar</a>
+                                <a href="<?php echo base_url('index.php/secretary/absence_report/'.$key->ausencia_id);?>" target="_blank" class="btn btn-secondary btn-sm" >Imprimir</a>
                                 <button type="button" class="btn btn-danger btn-sm" onclick="showAjaxModal('<?php echo base_url();?>/modal/popup/absence_modal_del/<?php echo $key->ausencia_id ?>/0/0/0/0');" >
                                 Eliminar
                                 </button>

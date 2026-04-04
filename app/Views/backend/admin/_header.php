@@ -187,7 +187,7 @@
 										</div>
 									</li>
 									<li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
-										<a href="<?php echo base_url(); ?>admin/sections_dir" class="menu-link">
+										<a href="<?php echo base_url(); ?>index.php/admin/sections_dir" class="menu-link">
 											<span class="svg-icon menu-icon">
 
 												<!--begin::Svg Icon | path:assets/media/svg/icons/General/Thunder-move.svg-->
@@ -207,7 +207,7 @@
 															
 									</li>	
 									<li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
-										<a href="<?php echo base_url(); ?>admin/section_bth" class="menu-link">
+										<a href="<?php echo base_url(); ?>index.php/admin/section_bth" class="menu-link">
 											<span class="svg-icon menu-icon">
 												<!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Box2.svg-->
 												<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
@@ -248,7 +248,7 @@
 							<div class="menu-submenu menu-submenu-classic menu-submenu-left">
 								<ul class="menu-subnav">
 									<li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
-										<a href="<?php echo base_url(); ?>admin/dg_continuity_results" class="menu-link">
+										<a href="<?php echo base_url(); ?>index.php/admin/dg_continuity_results" class="menu-link">
 											<span class="svg-icon menu-icon">
 												<!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Box2.svg-->
 												<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">

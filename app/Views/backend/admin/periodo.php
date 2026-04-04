@@ -12,7 +12,7 @@
                 </div>
                 <div class="card-toolbar">
                     <button type="button" class="btn btn-light-success font-weight-bold mr-2"
-                        onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/periodo_modal_add/0/0/0/0/0');">
+                        onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/periodo_modal_add/0/0/0/0/0');">
                         Nuevo Periodo
                     </button>
                 </div>
@@ -39,11 +39,11 @@
                             <td><?php echo $row['nombre_nivel']; ?></td>
                             <td>
                                 <button type="button" class="btn btn-warning btn-sm" 
-                                    onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/periodo_modal_edit/<?php echo $row['periodo_id']; ?>/0/0/0/0');">
+                                    onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/periodo_modal_edit/<?php echo $row['periodo_id']; ?>/0/0/0/0');">
                                     Editar
                                 </button>
                                 <button type="button" class="btn btn-danger btn-sm" 
-                                    onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/periodo_modal_del/<?php echo $row['periodo_id']; ?>/0/0/0/0');">
+                                    onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/periodo_modal_del/<?php echo $row['periodo_id']; ?>/0/0/0/0');">
                                     Eliminar
                                 </button>
                             </td>

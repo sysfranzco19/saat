@@ -144,7 +144,7 @@ $session = session();
                         }
 
                         ?>
-                        <a href="<?php echo base_url(); ?>student/virtual_library_<?php echo $nivel; ?>"
+                        <a href="<?php echo base_url(); ?>index.php/student/virtual_library_<?php echo $nivel; ?>"
                             class="text-dark text-hover-primary mb-1 font-size-lg">Biblioteca de libros digitales
                             <?php echo $nivel_text; ?></a>
                         <span class="text-muted">Libros y textos</span>
@@ -181,7 +181,7 @@ $session = session();
                     <!--end::Symbol-->
                     <!--begin::Text-->
                     <div class="d-flex flex-column font-weight-bold">
-                        <a href="<?php echo base_url(); ?>student/gamified_behavior"
+                        <a href="<?php echo base_url(); ?>index.php/student/gamified_behavior"
                             class="text-dark-75 text-hover-primary mb-1 font-size-lg">Comportamiento</a>
                         <span class="text-muted">Historial de incidencias y puntos del Ser</span>
                     </div>

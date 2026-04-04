@@ -90,7 +90,7 @@
                                     </li>
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?>teacher/students_list" class="menu-link">
+                                        <a href="<?php echo base_url(); ?>index.php/teacher/students_list" class="menu-link">
                                             <span class="svg-icon menu-icon">
 
                                                 <!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Group.svg-->
@@ -218,7 +218,7 @@
                                         </li>
                                         <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                             aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?>teacher/self_director" class="menu-link">
+                                            <a href="<?php echo base_url(); ?>index.php/teacher/self_director" class="menu-link">
                                                 <span class="svg-icon menu-icon">
 
                                                     <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Box2.svg-->
@@ -245,7 +245,7 @@
                                         </li>
                                         <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                             aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?>teacher/teacher_notes" class="menu-link">
+                                            <a href="<?php echo base_url(); ?>index.php/teacher/teacher_notes" class="menu-link">
                                                 <span class="svg-icon menu-icon">
 
                                                     <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Box2.svg-->

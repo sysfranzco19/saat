@@ -111,7 +111,7 @@
                 <p><?php echo $phase_name;?></p>
             </div>
             <!--begin::Form <form name="form_assists"> -->
-                <form action="<?php echo base_url() . 'student/self_appraisal_save'; ?>" method="post" class="form" name="form_self" >
+                <form action="<?php echo base_url() . 'index.php/student/self_appraisal_save'; ?>" method="post" class="form" name="form_self" >
                 <div class="card-body">
                     <div class="form-group mb-8">
                         <div class="alert alert-custom alert-default" role="alert">
@@ -291,7 +291,7 @@
                         		?>
 
                             <input type="button" class="btn btn-success mr-2" onclick="guardar()" Value="Registrar">
-                            <a href="<?php echo base_url(); ?>student/dashboard" class="btn btn-secondary">Cancelar</a>
+                            <a href="<?php echo base_url(); ?>index.php/student/dashboard" class="btn btn-secondary">Cancelar</a>
                         	<?php 
                         	}
                         	?>

@@ -56,7 +56,7 @@
                             }
                             echo $prom;
                             ?></td>
-                            <td><a href="<?php echo base_url(); ?>teacher/student_notes/<?php echo $row['student_id'];?>" target="_blank" class="btn btn-light-primary btn-sm font-weight-bold mr-2">Ver notas</a></td>
+                            <td><a href="<?php echo base_url(); ?>index.php/teacher/student_notes/<?php echo $row['student_id'];?>" target="_blank" class="btn btn-light-primary btn-sm font-weight-bold mr-2">Ver notas</a></td>
                         </tr>
                         <?php
                         endforeach;

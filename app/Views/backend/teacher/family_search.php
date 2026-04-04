@@ -4,7 +4,7 @@
         // Validar si el valor tiene 3 o más caracteres
         if (sel.length >= 3) {
             // Realizar la acción deseada, por ejemplo, realizar la búsqueda
-            window.location.assign('<?php echo base_url(); ?>teacher/family_search/<?php echo $user; ?>/' + sel )
+            window.location.assign('<?php echo base_url(); ?>index.php/teacher/family_search/<?php echo $user; ?>/' + sel )
             // Puedes agregar aquí la lógica para realizar la búsqueda
         } else {
             // Mostrar un mensaje de error o tomar otra acción si el valor no cumple con la longitud requerida
@@ -95,7 +95,7 @@ if (empty($busqueda)){
                             ?>
                             </td>
                             <td>
-                                <button type="button" class="btn btn-success btn-sm" onclick="window.location.href = '<?php echo base_url(); ?>teacher/family_info/<?php echo $id;?>';" >Ver información</button>
+                                <button type="button" class="btn btn-success btn-sm" onclick="window.location.href = '<?php echo base_url(); ?>index.php/teacher/family_info/<?php echo $id;?>';" >Ver información</button>
                             </td>
                         </tr>
                     <?php

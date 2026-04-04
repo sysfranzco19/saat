@@ -16,7 +16,7 @@ $relations = $db->table('relation_parent')->get()->getResultArray();
     </button>
 </div>
 
-<form action="<?php echo base_url(); ?>secretary/family_update" method="POST">
+<form action="<?php echo base_url(); ?>index.php/secretary/family_update" method="POST">
     <input type="hidden" name="family_id" value="<?php echo $param1; ?>">
     <div class="modal-body">
         <div class="row">

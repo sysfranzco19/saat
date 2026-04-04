@@ -51,7 +51,7 @@
         <i aria-hidden="true" class="ki ki-close"></i>
     </button>
 </div>
-<form action="<?php echo base_url(); ?>teacher/autoeval/<?php echo $param1; ?>/<?php echo $param3; ?>" class='form-horizontal form-groups-bordered validate' target='_top' name='form_auto' onsubmit='return valida();' method="post">
+<form action="<?php echo base_url(); ?>index.php/teacher/autoeval/<?php echo $param1; ?>/<?php echo $param3; ?>" class='form-horizontal form-groups-bordered validate' target='_top' name='form_auto' onsubmit='return valida();' method="post">
 <div class="modal-body">
             <table class="table">
                 <thead class="thead-inverse">

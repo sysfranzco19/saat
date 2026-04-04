@@ -1,7 +1,7 @@
 <script type="text/javascript">
     function enviarLicencia(licencia_id, student_id){
         $.ajax({
-            url: "<?php echo base_url(); ?>secretary/license_send/"+licencia_id+"/"+student_id,
+            url: "<?php echo base_url(); ?>index.php/secretary/license_send/"+licencia_id+"/"+student_id,
             type: "get",
             beforeSend: function(){
                 document.getElementById('mostrar_loading').style.display="block"

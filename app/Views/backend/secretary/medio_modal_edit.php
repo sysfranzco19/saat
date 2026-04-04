@@ -3,7 +3,7 @@
 	{
 		// SHOW AJAX RESPONSE ON REQUEST SUCCESS
 		$.ajax({
-			url: "<?php echo base_url(); ?>/secretary/medio_get/<?php echo $param1; ?>",
+			url: "<?php echo base_url(); ?>index.php/secretary/medio_get/<?php echo $param1; ?>",
 			success: function(response)
 			{
 				document.getElementById('medioComunicacion').value = response;

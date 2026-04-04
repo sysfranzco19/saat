@@ -63,7 +63,7 @@
                         <!--begin::Signin-->
 						<div class="login-form">
                             <!--begin::Form-->
-							<form class="form px-10" method="post" action="<?php echo base_url('/login_inscripcion'); ?>" id="kt_login_signup_form">
+							<form class="form px-10" method="post" action="<?php echo base_url('index.php/login_inscripcion'); ?>" id="kt_login_signup_form">
                                     <!--begin::Title-->
 									<div class="pb-10 pb-lg-12">
 										<h3 class="font-weight-bolder text-dark font-size-h2 font-size-h1-lg">Verificación de Datos</h3>

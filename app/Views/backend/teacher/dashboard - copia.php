@@ -47,7 +47,7 @@
 
                             <!-- Button 2: Licencias -->
                             <div class="mb-6">
-                                <a href="<?= base_url('teacher/student_search/teacher/0') ?>"
+                                <a href="<?= base_url('index.php/teacher/student_search/teacher/0') ?>"
                                     class="btn btn-light-info font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -87,7 +87,7 @@
 
                             <!-- Button 4: Asistencias (Unified) -->
                             <div class="mb-6">
-                                <a href="<?= base_url('teacher/assistance') ?>"
+                                <a href="<?= base_url('index.php/teacher/assistance') ?>"
                                     class="btn btn-light-danger font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <svg xmlns="http://www.w3.org/2000/svg"
@@ -177,7 +177,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('teacher/content_letter') ?>"
+                                                    <a href="<?= base_url('index.php/teacher/content_letter') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Cartas
                                                         de Contenidos</a>
                                                     <span class="text-muted font-weight-bold d-block">Avance y objetivos
@@ -208,7 +208,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('teacher/evaluation_planner') ?>"
+                                                    <a href="<?= base_url('index.php/teacher/evaluation_planner') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Planificador
                                                         de Evaluaciones</a>
                                                     <span class="text-muted font-weight-bold d-block">Carga
@@ -282,7 +282,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('teacher/history') ?>"
+                                                    <a href="<?= base_url('index.php/teacher/history') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Historial
                                                         de Comportamiento</a>
                                                     <span class="text-muted font-weight-bold d-block">Registro de
@@ -309,7 +309,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('teacher/behaviors') ?>"
+                                                    <a href="<?= base_url('index.php/teacher/behaviors') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Comunicación
                                                         con Padres</a>
                                                     <span class="text-muted font-weight-bold d-block">Mensajería</span>
@@ -335,7 +335,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('teacher/interviews') ?>"
+                                                    <a href="<?= base_url('index.php/teacher/interviews') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Registro
                                                         de Entrevistas</a>
                                                     <span class="text-muted font-weight-bold d-block">Bitácora de

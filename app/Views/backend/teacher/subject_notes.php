@@ -2,7 +2,7 @@
     function create_sheet(){
 		$.ajax({
 			//data: parametros,
-			url: "<?php echo base_url(); ?>teacher/create_sheet/<?php echo $subject_id; ?>",
+			url: "<?php echo base_url(); ?>index.php/teacher/create_sheet/<?php echo $subject_id; ?>",
 			type: "get",
 			beforeSend: function(){
 				document.getElementById('mostrar_loading').style.display="block"
@@ -18,7 +18,7 @@
 
 		$.ajax({
 			//data: parametros,
-			url: "<?php echo base_url(); ?>teacher/integrate_sheet/<?php echo $subject_id; ?>",
+			url: "<?php echo base_url(); ?>index.php/teacher/integrate_sheet/<?php echo $subject_id; ?>",
 			type: "get",
 			beforeSend: function(){
 				document.getElementById('mostrar_loading').style.display="block"
@@ -32,7 +32,7 @@
     }
     function link_sheet(){
 		$.ajax({
-			url: "<?php echo base_url(); ?>teacher/link_sheet/<?php echo $subject_id; ?>",
+			url: "<?php echo base_url(); ?>index.php/teacher/link_sheet/<?php echo $subject_id; ?>",
 			type: "get",
 			beforeSend: function(){
 				document.getElementById('mostrar_loading').style.display="block"
@@ -84,7 +84,7 @@
 	}
     function recover_self(){
         $.ajax({
-            url: "<?php echo base_url(); ?>teacher/recover_self/<?php echo $section_id; ?>/<?php echo $subject_id; ?>",
+            url: "<?php echo base_url(); ?>index.php/teacher/recover_self/<?php echo $section_id; ?>/<?php echo $subject_id; ?>",
             type: "get",
             beforeSend: function(){
                 document.getElementById('mostrar_loading').style.display="block"

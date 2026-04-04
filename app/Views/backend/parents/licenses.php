@@ -41,11 +41,11 @@
                         <?php if ($row['section_id'] >= 231) { ?>
                             <!--begin::Button-->
                             <button type="button" id="licenseButton" class="btn btn-primary btn-sm"
-                                onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/student_license_modal_dia/<?php echo $row['student_id']; ?>/<?php echo $row['student']; ?>/<?php echo $row['family_id']; ?>/0');">
+                                onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/student_license_modal_dia/<?php echo $row['student_id']; ?>/<?php echo $row['student']; ?>/<?php echo $row['family_id']; ?>/0');">
                                 + Licencia por Día
                             </button>&nbsp;
                             <button type="button" id="licenseButton" class="btn btn-secondary btn-sm"
-                                onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/student_license_modal_hora/<?php echo $row['student_id']; ?>/<?php echo $row['student']; ?>/<?php echo $row['family_id']; ?>/<?php echo $row['section_id']; ?>');">
+                                onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/student_license_modal_hora/<?php echo $row['student_id']; ?>/<?php echo $row['student']; ?>/<?php echo $row['family_id']; ?>/<?php echo $row['section_id']; ?>');">
                                 + Licencia por Horas
                             </button>
                             <!--end::Button-->

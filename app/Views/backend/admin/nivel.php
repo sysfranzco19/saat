@@ -12,7 +12,7 @@
                 </div>
                 <div class="card-toolbar">
                     <button type="button" class="btn btn-light-success font-weight-bold mr-2"
-                        onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/nivel_modal_add/0/0/0/0/0');">
+                        onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/nivel_modal_add/0/0/0/0/0');">
                         Nuevo Nivel
                     </button>
                 </div>
@@ -39,11 +39,11 @@
                             <td><?php echo $row['fin']; ?></td>
                             <td>
                                 <button type="button" class="btn btn-warning btn-sm" 
-                                    onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/nivel_modal_edit/<?php echo $row['id']; ?>/0/0/0/0');">
+                                    onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/nivel_modal_edit/<?php echo $row['id']; ?>/0/0/0/0');">
                                     Editar
                                 </button>
                                 <button type="button" class="btn btn-danger btn-sm" 
-                                    onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/nivel_modal_del/<?php echo $row['id']; ?>/0/0/0/0');">
+                                    onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/nivel_modal_del/<?php echo $row['id']; ?>/0/0/0/0');">
                                     Eliminar
                                 </button>
                             </td>

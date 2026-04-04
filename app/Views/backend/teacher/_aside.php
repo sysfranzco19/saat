@@ -41,7 +41,7 @@
 
 			<!--begin::Item-->
 			<li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Mis cursos">
-			<a href="<?php echo base_url(); ?>teacher/assistance" class="nav-link btn btn-icon btn-lg btn-borderless active">
+			<a href="<?php echo base_url(); ?>index.php/teacher/assistance" class="nav-link btn btn-icon btn-lg btn-borderless active">
 					<span class="svg-icon svg-icon-xxl">
 
 						<!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Group.svg-->
@@ -62,7 +62,7 @@
 
 			<!--begin::Item-->
 			<li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Reporte Conductual">
-			<a href="<?php echo base_url(); ?>teacher/behaviors" class="nav-link btn btn-icon btn-lg btn-borderless active">
+			<a href="<?php echo base_url(); ?>index.php/teacher/behaviors" class="nav-link btn btn-icon btn-lg btn-borderless active">
 					<span class="svg-icon svg-icon-xxl">
 
 						<!--begin::Svg Icon | path:assets/media/svg/icons/Media/Equalizer.svg-->
@@ -85,7 +85,7 @@
 
 			<!--begin::Item-->
 			<li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Control de Asistencia">
-			<a href="<?php echo base_url(); ?>teacher/assistance" class="nav-link btn btn-icon btn-lg btn-borderless active">
+			<a href="<?php echo base_url(); ?>index.php/teacher/assistance" class="nav-link btn btn-icon btn-lg btn-borderless active">
 			<span class="svg-icon svg-icon-xxl">
 				<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
     		<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">

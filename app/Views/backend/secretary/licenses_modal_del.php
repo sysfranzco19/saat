@@ -3,7 +3,7 @@
 	{
 		// SHOW AJAX RESPONSE ON REQUEST SUCCESS
 		$.ajax({
-			url: "<?php echo base_url(); ?>secretary/licencia_get/<?php echo $param1; ?>",
+			url: "<?php echo base_url(); ?>index.php/secretary/licencia_get/<?php echo $param1; ?>",
 			success: function(response)
 			{
 				document.getElementById('licencia').value = response.student + ' (' + response.nick_name + ') - ' + response.detalle;

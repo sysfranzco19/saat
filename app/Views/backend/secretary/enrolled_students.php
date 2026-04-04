@@ -42,16 +42,16 @@ $session = session();
                                         </button>
                                         <div class="dropdown-menu">
                                             <a class="dropdown-item"
-                                                href="<?php echo base_url(); ?>secretary/student_attendance/<?php echo $row['student_id']; ?>/all/0"
+                                                href="<?php echo base_url(); ?>index.php/secretary/student_attendance/<?php echo $row['student_id']; ?>/all/0"
                                                 target="_blank">Asistencias</a>
                                             <a class="dropdown-item"
-                                                href="<?php echo base_url(); ?>secretary/student_licenses/<?php echo $row['student_id']; ?>/all/0"
+                                                href="<?php echo base_url(); ?>index.php/secretary/student_licenses/<?php echo $row['student_id']; ?>/all/0"
                                                 target="_blank">Licencias</a>
                                             <a class="dropdown-item"
-                                                href="<?php echo base_url(); ?>secretary/student_absences/<?php echo $row['student_id']; ?>"
+                                                href="<?php echo base_url(); ?>index.php/secretary/student_absences/<?php echo $row['student_id']; ?>"
                                                 target="_blank">Ausencias</a>
                                             <a class="dropdown-item"
-                                                href="<?php echo base_url(); ?>secretary/student_delays/<?php echo $row['student_id']; ?>"
+                                                href="<?php echo base_url(); ?>index.php/secretary/student_delays/<?php echo $row['student_id']; ?>"
                                                 target="_blank">Retrasos</a>
                                         </div>
                                     </div>
@@ -62,10 +62,10 @@ $session = session();
                                         </button>
                                         <div class="dropdown-menu">
                                             <a class="dropdown-item"
-                                                href="<?php echo base_url(); ?>secretary/kardex_student/<?php echo $row['student_id']; ?>"
+                                                href="<?php echo base_url(); ?>index.php/secretary/kardex_student/<?php echo $row['student_id']; ?>"
                                                 target="_blank">Ver Kardex</a>
                                             <a class="dropdown-item"
-                                                href="<?php echo base_url(); ?>secretary/infractions_student/<?php echo $row['student_id']; ?>"
+                                                href="<?php echo base_url(); ?>index.php/secretary/infractions_student/<?php echo $row['student_id']; ?>"
                                                 target="_blank">Infracciones</a>
                                         </div>
                                     </div>

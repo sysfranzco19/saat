@@ -389,7 +389,7 @@ class Parents extends BaseController
         }
 
         if (!$current_student) {
-            return redirect()->to(base_url() . 'parents/dashboard');
+            return redirect()->to(base_url() . 'index.php/parents/dashboard');
         }
 
         $page_data['student_name'] = $current_student['student'];
@@ -721,7 +721,7 @@ class Parents extends BaseController
 
         if ($section_id < 231) {
             $session->set('flash_message_error', 'La solicitud de licencias por plataforma no está habilitada para su nivel.');
-            return redirect()->to(base_url() . 'parents/licenses/');
+            return redirect()->to(base_url() . 'index.php/parents/licenses/');
         }
 
         $inicio = date("Y-m-d", strtotime($_POST['fecha_inicio']));
@@ -755,7 +755,7 @@ class Parents extends BaseController
 
         $session->set('flash_message', 'Se guardó la licencia correctamente.');
 
-        return redirect()->to(base_url() . 'parents/licenses/');
+        return redirect()->to(base_url() . 'index.php/parents/licenses/');
     }
     public function license_save_periodo()
     {
@@ -776,7 +776,7 @@ class Parents extends BaseController
 
         if ($section_id < 231) {
             $session->set('flash_message_error', 'La solicitud de licencias por plataforma no está habilitada para su nivel.');
-            return redirect()->to(base_url() . 'parents/licenses/');
+            return redirect()->to(base_url() . 'index.php/parents/licenses/');
         }
 
         $fecha = date("Y-m-d", strtotime($_POST['fecha']));
@@ -812,7 +812,7 @@ class Parents extends BaseController
 
         $session->set('flash_message', 'Se guardó la licencia por periodo correctamente.');
 
-        return redirect()->to(base_url() . 'parents/licenses/');
+        return redirect()->to(base_url() . 'index.php/parents/licenses/');
     }
     public function license_save()
     {
@@ -838,7 +838,7 @@ class Parents extends BaseController
         // ❌ Restricción por nivel (Nivel Inicial/Primario < 231)
         if ($section_id < 231) {
             $session->set('flash_message_error', 'La solicitud de licencias por plataforma no está habilitada para su nivel.');
-            return redirect()->to(base_url() . 'parents/licenses/');
+            return redirect()->to(base_url() . 'index.php/parents/licenses/');
         }
 
         $tipo = $_POST['tipo'];
@@ -898,7 +898,7 @@ class Parents extends BaseController
 
         if ($exists) {
             $session->set('flash_message_error', 'Ya existe una licencia con los mismos datos recientemente registrada.');
-            return redirect()->to(base_url() . 'parents/licenses/');
+            return redirect()->to(base_url() . 'index.php/parents/licenses/');
         }
 
         // Inserción en t_licencias
@@ -936,7 +936,7 @@ class Parents extends BaseController
             $session->set('flash_message_error', 'Error al registrar la licencia.');
         }
 
-        return redirect()->to(base_url() . 'parents/licenses/');
+        return redirect()->to(base_url() . 'index.php/parents/licenses/');
     }
     public function license_savexxx()
     {
@@ -1007,11 +1007,11 @@ class Parents extends BaseController
 
         if ($respuesta > 0) {
             $session->set('flash_message', 'Se guardó la licencia Correctamente ');
-            return redirect()->to(base_url() . 'parents/licenses/');
+            return redirect()->to(base_url() . 'index.php/parents/licenses/');
 
         } else {
             $session->set('flash_message_error', 'Error al registrar licencia');
-            return redirect()->to(base_url() . 'parents/licenses/');
+            return redirect()->to(base_url() . 'index.php/parents/licenses/');
         }
     }
     //********************************************************CONTINUIDAD 2024 */
@@ -1096,7 +1096,7 @@ class Parents extends BaseController
         }
 
         //$session->set('flash_message', 'Respuesta guardada Correctamente:'.$_POST['continuidad']);
-        return redirect()->to(base_url() . 'parents/continuity_student');
+        return redirect()->to(base_url() . 'index.php/parents/continuity_student');
 
     }
     function gallery()

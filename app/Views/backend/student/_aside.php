@@ -2,7 +2,7 @@
 <div class="aside aside-left d-flex flex-column" id="kt_aside">
 
     <!--begin::Brand-->
-    <a href="<?php echo base_url(); ?>student/profile">
+    <a href="<?php echo base_url(); ?>index.php/student/profile">
     <div class=" d-flex flex-column align-items-center flex-column-auto py-9">
 
         <!--begin::Logo-->
@@ -25,7 +25,7 @@
 
             <!--begin::Item-->
             <li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Dashboard">
-                <a href="<?php echo base_url(); ?>student/dashboard" class="nav-link btn btn-icon btn-lg btn-borderless active">
+                <a href="<?php echo base_url(); ?>index.php/student/dashboard" class="nav-link btn btn-icon btn-lg btn-borderless active">
                     <span class="svg-icon svg-icon-xxl">
 
                         <!--begin::Svg Icon | path:assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
@@ -45,7 +45,7 @@
             <!--end::Item-->
             <!--begin::Item-->
             <li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Asistencias" >
-            <a href="<?php echo base_url(); ?>student/attendance_report" class="nav-link btn btn-icon btn-lg btn-borderless active">
+            <a href="<?php echo base_url(); ?>index.php/student/attendance_report" class="nav-link btn btn-icon btn-lg btn-borderless active">
                     <span class="svg-icon svg-icon-xxl">
 
                         <!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Group.svg-->
@@ -66,7 +66,7 @@
             <!--begin::Item-->
             <!--
             <li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Mis Clases">
-            <a href="<?php echo base_url(); ?>student/classrooms" class="nav-link btn btn-icon btn-lg btn-borderless active">
+            <a href="<?php echo base_url(); ?>index.php/student/classrooms" class="nav-link btn btn-icon btn-lg btn-borderless active">
                 <span class="svg-icon svg-icon-xxl"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
                 <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                     <rect x="0" y="0" width="24" height="24"/>
@@ -87,7 +87,7 @@
             <!--end::Item-->
             <!--begin::Item-->
             <li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Reporte Conductual">
-            <a href="<?php echo base_url(); ?>student/behaviors" class="nav-link btn btn-icon btn-lg btn-borderless active">
+            <a href="<?php echo base_url(); ?>index.php/student/behaviors" class="nav-link btn btn-icon btn-lg btn-borderless active">
                     <span class="svg-icon svg-icon-xxl">
 
                         <!--begin::Svg Icon | path:assets/media/svg/icons/Media/Equalizer.svg-->

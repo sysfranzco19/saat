@@ -1,6 +1,6 @@
 <script type="text/javascript">
     function cargar(sel){
-        window.location.assign('<?php echo base_url(); ?>/secretary/kardex/' + sel )
+        window.location.assign('<?php echo base_url(); ?>index.php/secretary/kardex/' + sel )
     }
 </script>
 <?php

@@ -214,7 +214,7 @@
     <!-- Table Card -->
     <div class="card card-custom gutter-b shadow-sm">
         <div class="card-body py-2">
-            <form action="<?= base_url() . '/teacher/attendance_save' ?>" method="POST" id="form_attendance_save">
+            <form action="<?= base_url() . '/index.php/teacher/attendance_save' ?>" method="POST" id="form_attendance_save">
                 <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
                 <input type="hidden" name="section_id" value="<?= $section_id ?>">
                 <input type="hidden" name="date_id" value="<?= $date_id ?>">
@@ -333,7 +333,7 @@
                                             <div>
                                                 <!-- Link to Profile -->
                                                 <!-- Link to Profile -->
-                                                <a href="<?= base_url('teacher/student_profile/' . $student['student_id'] . '/' . $subject_id) . '?date=' . $date . '&periodo=' . $periodo ?>"
+                                                <a href="<?= base_url('index.php/teacher/student_profile/' . $student['student_id'] . '/' . $subject_id) . '?date=' . $date . '&periodo=' . $periodo ?>"
                                                     target="_blank" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg"><?= $student['student'] ?></a>
                                                 <span class="text-muted font-weight-bold d-block font-size-sm mt-1">
                                                     <span class="text-danger">

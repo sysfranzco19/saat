@@ -44,7 +44,7 @@
                                                                         <td>
                                                                             <a href="<?php echo base_url('inscripcion_rude/'.$student['student_id']); ?>" target="_blank" class="btn btn-primary btn-sm">Rude</a>
                                                                             <a href="<?php echo base_url('informe_family/'.$student['family_id']); ?>" target="_blank" class="btn btn-secondary btn-sm">Informe Familia</a>
-                                                                            <a href="<?php echo base_url('admin/student_notes/'.$student['student_id'].'/'.$phase_id); ?>" target="_blank" class="btn btn-warning btn-sm">Notas</a>
+                                                                            <a href="<?php echo base_url('index.php/admin/student_notes/'.$student['student_id'].'/'.$phase_id); ?>" target="_blank" class="btn btn-warning btn-sm">Notas</a>
                                                                         </td>
                                                                     </tr>
                                                                 <?php endif; ?>

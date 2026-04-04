@@ -15,7 +15,7 @@
                 <div class="card-toolbar">
                     <?php if (isset($section_id) && $section_id != 'all' && $section_id > 0): ?>
                         <a href="javascript:;"
-                            onclick="showAjaxModal('<?php echo base_url('modal/popup/modal_interview_add/' . $section_id); ?>');"
+                            onclick="showAjaxModal('<?php echo base_url('index.php/modal/popup/modal_interview_add/' . $section_id); ?>');"
                             class="btn btn-primary font-weight-bolder">
                             <span class="svg-icon svg-icon-md">
                                 <!--begin::Svg Icon | path:assets/media/svg/icons/Design/Flatten.svg-->
@@ -46,7 +46,7 @@
                                     <div class="d-flex align-items-center">
                                         <label class="mr-3 mb-0 d-none d-md-block">Curso:</label>
                                         <select class="form-control" id="section_selector"
-                                            onchange="window.location.href='<?php echo base_url('teacher/interviews/'); ?>' + this.value">
+                                            onchange="window.location.href='<?php echo base_url('index.php/teacher/interviews/'); ?>' + this.value">
                                             <option value="all" <?php if ($section_id == 'all')
                                                 echo 'selected'; ?>>Todos
                                             </option>
@@ -125,7 +125,7 @@
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <a href="<?php echo base_url('teacher/interview_delete/' . $row['interview_id']); ?>"
+                                        <a href="<?php echo base_url('index.php/teacher/interview_delete/' . $row['interview_id']); ?>"
                                             class="btn btn-icon btn-sm btn-light-danger"
                                             onclick="return confirm('¿Está seguro de eliminar este registro?');">
                                             <i class="flaticon2-trash"></i>

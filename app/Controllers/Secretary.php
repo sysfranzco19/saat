@@ -205,7 +205,7 @@ class Secretary extends BaseController
         $StudentMod->updateStudent($student_id, $data);
 
         $session->set('flash_message', 'Datos del estudiante actualizados correctamente');
-        return redirect()->to(base_url() . 'secretary/kardex_student/' . $student_id);
+        return redirect()->to(base_url() . 'index.php/secretary/kardex_student/' . $student_id);
     }
     public function family_update()
     {
@@ -234,7 +234,7 @@ class Secretary extends BaseController
         $FamilyMod->update_family($data, $family_id);
 
         $session->set('flash_message', 'Datos de la familia actualizados correctamente');
-        return redirect()->to(base_url() . 'secretary/kardex_family/' . $family_id);
+        return redirect()->to(base_url() . 'index.php/secretary/kardex_family/' . $family_id);
     }
 
     public function kardex_family($family_id)
@@ -677,7 +677,7 @@ class Secretary extends BaseController
             $respuesta = $sectionMod->update_section($data, $section_id);
             $session->set('flash_message', 'Se cambio de consejería Correctamente');
         }
-        return redirect()->to(base_url() . 'secretary/counselors');
+        return redirect()->to(base_url() . 'index.php/secretary/counselors');
     }
     /****************************************ASSISTENCE ***************************************/
     function assistance()
@@ -766,10 +766,10 @@ class Secretary extends BaseController
         $respuesta = $Medio->insertMedio($datos);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Se guardó el medio de comunicación Correctamente');
-            return redirect()->to(base_url() . '/secretary/medio');
+            return redirect()->to(base_url() . 'index.php/secretary/medio');
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/medio');
+            return redirect()->to(base_url() . 'index.php/secretary/medio');
         }
     }
     public function medio_get($medio_id)
@@ -798,10 +798,10 @@ class Secretary extends BaseController
         $respuesta = $Medio->updateMedio($datos, $medio_id);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Medio de Comunicacion actualizado Correctamente');
-            return redirect()->to(base_url() . 'secretary/medio');
+            return redirect()->to(base_url() . 'index.php/secretary/medio');
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/medio');
+            return redirect()->to(base_url() . 'index.php/secretary/medio');
         }
     }
     public function medio_delete()
@@ -816,10 +816,10 @@ class Secretary extends BaseController
         $respuesta = $Medio->deleteMedio($data);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Se elimino el medio de comunicación Correctamente');
-            return redirect()->to(base_url() . 'secretary/medio');
+            return redirect()->to(base_url() . 'index.php/secretary/medio');
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/medio');
+            return redirect()->to(base_url() . 'index.php/secretary/medio');
         }
     }
     /****************************************LICENCIAS...********************* */
@@ -1025,7 +1025,7 @@ class Secretary extends BaseController
         }
 
         $session->set('flash_message', 'Licencia autorizada Correctamente');
-        return redirect()->to(base_url() . 'secretary/licenses_received');
+        return redirect()->to(base_url() . 'index.php/secretary/licenses_received');
     }
     public function licenses_noauth()
     {
@@ -1106,7 +1106,7 @@ class Secretary extends BaseController
         }
 
         $session->set('flash_message', 'Licencia no autorizada. Asistencias actualizadas a Ausente');
-        return redirect()->to(base_url() . 'secretary/licenses_received');
+        return redirect()->to(base_url() . 'index.php/secretary/licenses_received');
     }
     function licenses_add()
     {
@@ -1180,7 +1180,7 @@ class Secretary extends BaseController
         $periodos = $_POST['periodos'] ?? [];
         if (empty($periodos)) {
             $session->set('flash_message_error', 'Debe seleccionar al menos un período.');
-            return redirect()->to(base_url() . 'secretary/licenses_periodo_add');
+            return redirect()->to(base_url() . 'index.php/secretary/licenses_periodo_add');
         }
 
         $fecha_solicitud = date("Y-m-d H:i:s", strtotime(str_replace('T', ' ', $_POST['fechaSolicita']) . ':00'));
@@ -1217,7 +1217,7 @@ class Secretary extends BaseController
             $session->set('flash_message_error', 'Error al registrar la licencia.');
         }
 
-        return redirect()->to(base_url() . 'secretary/licenses');
+        return redirect()->to(base_url() . 'index.php/secretary/licenses');
     }
 
     public function licencias_create()
@@ -1287,12 +1287,12 @@ class Secretary extends BaseController
             } else {
 
                 $session->set('flash_message', 'Se guardó la licencia Correctamente ');
-                return redirect()->to(base_url() . 'secretary/licenses');
+                return redirect()->to(base_url() . 'index.php/secretary/licenses');
             }
 
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/licenses');
+            return redirect()->to(base_url() . 'index.php/secretary/licenses');
         }
 
     }
@@ -1319,9 +1319,9 @@ class Secretary extends BaseController
             $respuesta = $AssistancesubjectMod->update_assistance_subject($datos, $value);
         }
         if ($respuesta > 0) {
-            return redirect()->to(base_url() . 'secretary/licenses');
+            return redirect()->to(base_url() . 'index.php/secretary/licenses');
         } else {
-            return redirect()->to(base_url() . 'secretary/licenses');
+            return redirect()->to(base_url() . 'index.php/secretary/licenses');
         }
     }
     public function licencia_delete()
@@ -1339,7 +1339,7 @@ class Secretary extends BaseController
         } else {
             $session->set('flash_message_error', 'No se pudo eliminar la licencia.');
         }
-        return redirect()->to(base_url() . 'secretary/licenses');
+        return redirect()->to(base_url() . 'index.php/secretary/licenses');
     }
     public function licenses_edit($licencia_id = "")
     {
@@ -1452,7 +1452,7 @@ class Secretary extends BaseController
         }
 
         $session->set('flash_message', 'Licencia actualizada Correctamente');
-        return redirect()->to(base_url() . 'secretary/licenses');
+        return redirect()->to(base_url() . 'index.php/secretary/licenses');
     }
     public function license_report($licencia_id = "")
     {
@@ -1685,7 +1685,7 @@ class Secretary extends BaseController
         return $this->response->download($fileName, null);
 
         $session->set('flash_message', 'Reporte descargado Correctamente ' . count($licencias) . ' - ' . $fecha);
-        return redirect()->to(base_url() . 'secretary/licenses_reports');
+        return redirect()->to(base_url() . 'index.php/secretary/licenses_reports');
     }
     function licenses_report_dates_xlsx()
     {
@@ -1743,7 +1743,7 @@ class Secretary extends BaseController
         return $this->response->download($fileName, null);
 
         $session->set('flash_message', 'Reporte descargado Correctamente ' . count($licencias) . ' - ' . $fecha);
-        return redirect()->to(base_url() . 'secretary/licenses_reports');
+        return redirect()->to(base_url() . 'index.php/secretary/licenses_reports');
     }
     /**********************************************AUSENCIAS... ESTUDIANTES SIN LICENCIA ****************/
     function absences()
@@ -1824,10 +1824,10 @@ class Secretary extends BaseController
         $respuesta = $AbsenceMod->insert_absence($datos);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Se guardó la Ausencia Correctamente');
-            return redirect()->to(base_url() . 'secretary/absences');
+            return redirect()->to(base_url() . 'index.php/secretary/absences');
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/absences');
+            return redirect()->to(base_url() . 'index.php/secretary/absences');
         }
     }
     public function absence_edit($ausencia_id = "")
@@ -1882,10 +1882,10 @@ class Secretary extends BaseController
         $respuesta = $AbsenceMod->update_absence($datos, $ausencia_id);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Ausencia actualizada Correctamente');
-            return redirect()->to(base_url() . 'secretary/absences');
+            return redirect()->to(base_url() . 'index.php/secretary/absences');
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/absences');
+            return redirect()->to(base_url() . 'index.php/secretary/absences');
         }
     }
     public function absence_delete()
@@ -1900,10 +1900,10 @@ class Secretary extends BaseController
         $respuesta = $AbsenceMod->delete_absence($data);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Ausencia eliminada Correctamente');
-            return redirect()->to(base_url() . 'secretary/absences');
+            return redirect()->to(base_url() . 'index.php/secretary/absences');
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/absences');
+            return redirect()->to(base_url() . 'index.php/secretary/absences');
         }
     }
     public function absence_send($ausencia_id, $student_id)
@@ -2053,7 +2053,7 @@ class Secretary extends BaseController
         return $this->response->download($fileName, null);
 
         $session->set('flash_message', 'Reporte descargado Correctamente ' . count($licencias) . ' - ' . $fecha);
-        return redirect()->to(base_url() . 'secretary/licenses_reports');
+        return redirect()->to(base_url() . 'index.php/secretary/licenses_reports');
     }
     function atte_report_student_xlsx()
     {
@@ -2094,7 +2094,7 @@ class Secretary extends BaseController
         $writer->save($fileName);
         return $this->response->download($fileName, null);
         $session->set('flash_message', 'Reporte descargado Correctamente');
-        return redirect()->to(base_url() . 'secretary/attendance_reports');
+        return redirect()->to(base_url() . 'index.php/secretary/attendance_reports');
     }
 
     /**********************************INFRACCIONES***********************/
@@ -2361,10 +2361,10 @@ class Secretary extends BaseController
         $respuesta = $DelayMod->insert_delay($datos);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Se guardó el medio de comunicación Correctamente');
-            return redirect()->to(base_url() . 'secretary/delays/' . $_POST['student_id']);
+            return redirect()->to(base_url() . 'index.php/secretary/delays/' . $_POST['student_id']);
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/delays/' . $_POST['student_id']);
+            return redirect()->to(base_url() . 'index.php/secretary/delays/' . $_POST['student_id']);
         }
     }
     public function delay_get($delay_id)
@@ -2386,10 +2386,10 @@ class Secretary extends BaseController
         $respuesta = $DelayMod->delete_delay($data);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Retraso eliminado.');
-            return redirect()->to(base_url() . 'secretary/delays/' . $_POST['student_id']);
+            return redirect()->to(base_url() . 'index.php/secretary/delays/' . $_POST['student_id']);
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/delays/' . $_POST['student_id']);
+            return redirect()->to(base_url() . 'index.php/secretary/delays/' . $_POST['student_id']);
         }
     }
     public function delay_update()
@@ -2427,10 +2427,10 @@ class Secretary extends BaseController
         $respuesta = $DelayMod->update_delay($datos, $_POST['delay_id']);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Se guardó el retraso Correctamente');
-            return redirect()->to(base_url() . 'secretary/delays/' . $_POST['student_id']);
+            return redirect()->to(base_url() . 'index.php/secretary/delays/' . $_POST['student_id']);
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'secretary/delays/' . $_POST['student_id']);
+            return redirect()->to(base_url() . 'index.php/secretary/delays/' . $_POST['student_id']);
         }
     }
     public function delay_xlsx($student_id = '', $phase_id = '')
@@ -2701,7 +2701,7 @@ class Secretary extends BaseController
             $session->set('flash_message_error', 'Error al actualizar el perfil');
         }
 
-        return redirect()->to(base_url() . 'secretary/profile');
+        return redirect()->to(base_url() . 'index.php/secretary/profile');
     }
 
     public function password_update()
@@ -2733,7 +2733,7 @@ class Secretary extends BaseController
             $session->set('flash_message_error', 'La contraseña actual es incorrecta');
         }
 
-        return redirect()->to(base_url() . 'secretary/profile');
+        return redirect()->to(base_url() . 'index.php/secretary/profile');
     }
     /***************************CONTACTOS DE ADM*****************/
     function contacts()

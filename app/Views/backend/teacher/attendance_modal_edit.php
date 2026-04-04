@@ -8,8 +8,8 @@
 		<i aria-hidden="true" class="ki ki-close"></i>
 	</button>
 </div>
-<?php //echo form_open(base_url() . 'teacher/assistance_edit/'.$param4, array('class' => 'form','name' => 'form_assistance')); ?>
-<form action="<?php echo base_url() . 'teacher/assistance_edit/'.$param1; ?>" method="post" name="form_assistance" class="form" >
+<?php //echo form_open(base_url() . 'index.php/teacher/assistance_edit/'.$param4, array('class' => 'form','name' => 'form_assistance')); ?>
+<form action="<?php echo base_url() . 'index.php/teacher/assistance_edit/'.$param1; ?>" method="post" name="form_assistance" class="form" >
 <div class="modal-body">
 	
 

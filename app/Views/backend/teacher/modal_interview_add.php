@@ -6,7 +6,7 @@
         <i aria-hidden="true" class="ki ki-close"></i>
     </button>
 </div>
-<form action="<?php echo base_url('teacher/interview_save'); ?>" method="post" enctype="multipart/form-data">
+<form action="<?php echo base_url('index.php/teacher/interview_save'); ?>" method="post" enctype="multipart/form-data">
     <div class="modal-body">
         <input type="hidden" name="section_id" value="<?php echo $param1; ?>">
 

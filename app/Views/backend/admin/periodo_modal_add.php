@@ -10,7 +10,7 @@ $niveles = $NivelMod->listar_niveles();
         <i aria-hidden="true" class="ki ki-close"></i>
     </button>
 </div>
-<form action="<?php echo base_url(); ?>admin/periodo_create" method="post" enctype="multipart/form-data">
+<form action="<?php echo base_url(); ?>index.php/admin/periodo_create" method="post" enctype="multipart/form-data">
     <div class="modal-body">
         <div class="form-group row">
             <label class="col-3 col-form-label">Periodo:</label>

@@ -51,10 +51,10 @@
                             ?>
                             <tr>
                                 <th scope="row" ><?php echo $subject['materia'];?></th>
-                                <td><a href="<?php echo base_url(); ?>teacher/attendance/<?php echo $subject['subject_id'];?>" class="btn btn-text-primary btn-hover-light-primary font-weight-bold mr-2">Tomar Asistencia</a>
+                                <td><a href="<?php echo base_url(); ?>index.php/teacher/attendance/<?php echo $subject['subject_id'];?>" class="btn btn-text-primary btn-hover-light-primary font-weight-bold mr-2">Tomar Asistencia</a>
                                 </td>
                                 <td>
-                                    <a href="<?php echo base_url(); ?>teacher/attendance_report/<?php echo $subject['subject_id'];?>" class="btn btn-text-success btn-hover-light-success font-weight-bold mr-2"
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/attendance_report/<?php echo $subject['subject_id'];?>" class="btn btn-text-success btn-hover-light-success font-weight-bold mr-2"
                                         target="_blank" >Ver Asistencias</a>
                                 </td>
                                 <td>
@@ -63,9 +63,9 @@
                                             Descargar Asistencias
                                         </button>
                                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/assists_excel/<?php echo $subject['subject_id'];?>/<?php echo $paralelo['section_id'];?>/1">1er TRIM</a>
-                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/assists_excel/<?php echo $subject['subject_id'];?>/<?php echo $paralelo['section_id'];?>/2">2do TRIM</a>
-                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/assists_excel/<?php echo $subject['subject_id'];?>/<?php echo $paralelo['section_id'];?>/3">3er TRIM</a>
+                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/assists_excel/<?php echo $subject['subject_id'];?>/<?php echo $paralelo['section_id'];?>/1">1er TRIM</a>
+                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/assists_excel/<?php echo $subject['subject_id'];?>/<?php echo $paralelo['section_id'];?>/2">2do TRIM</a>
+                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/assists_excel/<?php echo $subject['subject_id'];?>/<?php echo $paralelo['section_id'];?>/3">3er TRIM</a>
                                         </div>
                                     </div>
                                 </td>

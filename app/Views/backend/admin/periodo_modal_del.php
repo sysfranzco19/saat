@@ -5,7 +5,7 @@
         <i aria-hidden="true" class="ki ki-close"></i>
     </button>
 </div>
-<form action="<?php echo base_url(); ?>admin/periodo_delete" method="post" class="form-horizontal">
+<form action="<?php echo base_url(); ?>index.php/admin/periodo_delete" method="post" class="form-horizontal">
     <div class="modal-body">
         <input type="hidden" name="periodo_id" id="periodo_id_del">
         <div class="text-center">
@@ -25,7 +25,7 @@
     $(document).ready(function() {
         var id = "<?php echo $param1; ?>";
         $.ajax({
-            url: "<?php echo base_url(); ?>admin/periodo_get/" + id,
+            url: "<?php echo base_url(); ?>index.php/admin/periodo_get/" + id,
             type: "GET",
             dataType: "JSON",
             success: function(data) {

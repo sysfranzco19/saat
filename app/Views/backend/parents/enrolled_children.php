@@ -32,16 +32,16 @@
                             <td><?php echo $row['student'];?></td>
                             <td><?php echo $row['completo'];?></td>
                             <td>
-                                <a href="<?php echo base_url(); ?>parents/report_half/<?php echo $row['student_id'];?>" class="btn btn-warning btn-sm">Ver evaluaciones</a>
+                                <a href="<?php echo base_url(); ?>index.php/parents/report_half/<?php echo $row['student_id'];?>" class="btn btn-warning btn-sm">Ver evaluaciones</a>
                                 <div class="btn-group">
                                     <button class="btn btn-secondary font-weight-bold btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         Asistencias
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>parents/student_attendance/<?php echo $row['student_id'];?>" target="_blank">Asistencias</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>parents/student_licenses/<?php echo $row['student_id'];?>" target="_blank">Licencias</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>parents/student_absences/<?php echo $row['student_id'];?>" target="_blank">Ausencias</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>parents/student_delays/<?php echo $row['student_id'];?>" target="_blank">Retrasos al Ingreso</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/parents/student_attendance/<?php echo $row['student_id'];?>" target="_blank">Asistencias</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/parents/student_licenses/<?php echo $row['student_id'];?>" target="_blank">Licencias</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/parents/student_absences/<?php echo $row['student_id'];?>" target="_blank">Ausencias</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/parents/student_delays/<?php echo $row['student_id'];?>" target="_blank">Retrasos al Ingreso</a>
                                     </div>
                                 </div>
                                 <button type="button" id="licenseButton" class="btn btn-primary btn-sm" onclick="showAjaxModal('<?php echo base_url();?>/modal/popup/student_license_modal/<?php echo $row['student_id']; ?>/<?php echo $row['student']; ?>/<?php echo $row['completo'];?>/<?php echo $row['family_id'];?>/0');" >

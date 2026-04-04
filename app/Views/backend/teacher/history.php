@@ -103,7 +103,7 @@
                                                             <span class="font-weight-bold text-primary"><?= $subj['materia'] ?></span>
                                                         </td>
                                                         <td class="text-right align-middle">
-                                                            <a href="<?= base_url('teacher/history_students/' . $section['section_id'] . '/' . $subj['subject_id']) ?>"
+                                                            <a href="<?= base_url('index.php/teacher/history_students/' . $section['section_id'] . '/' . $subj['subject_id']) ?>"
                                                                 class="btn btn-light-primary font-weight-bold btn-sm">Ver Estudiantes</a>
                                                         </td>
                                                     </tr>
@@ -119,7 +119,7 @@
                                                     </td>
                                                     <td class="text-muted align-middle">General</td>
                                                     <td class="text-right align-middle">
-                                                        <a href="<?= base_url('teacher/history_students/' . $section['section_id'] . '/0') ?>"
+                                                        <a href="<?= base_url('index.php/teacher/history_students/' . $section['section_id'] . '/0') ?>"
                                                             class="btn btn-light-primary font-weight-bold btn-sm">Ver Estudiantes</a>
                                                     </td>
                                                 </tr>
@@ -155,7 +155,7 @@
 
             searchTimer = setTimeout(function () {
                 $.ajax({
-                    url: '<?= base_url('teacher/student_search/adviser') ?>/' + encodeURIComponent(query),
+                    url: '<?= base_url('index.php/teacher/student_search/adviser') ?>/' + encodeURIComponent(query),
                     type: 'GET',
                     success: function (response) {
                         // This app uses full page reloads for search usually, but we want an autocomplete feel.
@@ -168,7 +168,7 @@
         $('#btn_search').on('click', function () {
             var query = $('#global_student_search').val();
             if (query.length >= 2) {
-                window.location.href = '<?= base_url('teacher/student_search/manager') ?>/' + encodeURIComponent(query);
+                window.location.href = '<?= base_url('index.php/teacher/student_search/manager') ?>/' + encodeURIComponent(query);
             }
         });
 

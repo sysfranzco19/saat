@@ -40,7 +40,7 @@
                                     if ($section_id<231){
                             ?>
                             
-                            <a  onclick="showAjaxModal('<?php echo base_url();?>modal/popup/self_modal_edit/<?php echo $row['student_id'];?>/<?php echo $row['student'];?>/<?php echo $section_id;?>');">
+                            <a  onclick="showAjaxModal('<?php echo base_url();?>index.php/modal/popup/self_modal_edit/<?php echo $row['student_id'];?>/<?php echo $row['student'];?>/<?php echo $section_id;?>');">
                             <?php 
                                     }
                                 

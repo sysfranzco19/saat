@@ -1228,10 +1228,10 @@ class Teacher extends BaseController
         $respuesta = $AssistanceMod->update_assistance_subject($datos, $assistance_subject_id);
         if ($respuesta == 1) {
             $session->set('flash_message', 'Asistencia modificada correctamente');
-            return redirect()->to(base_url() . 'teacher/attendance_report/' . $subject_id);
+            return redirect()->to(base_url() . 'index.php/teacher/attendance_report/' . $subject_id);
         } else {
             $session->set('flash_message_error', 'Error al modificar');
-            return redirect()->to(base_url() . 'teacher/attendance_report/' . $subject_id);
+            return redirect()->to(base_url() . 'index.php/teacher/attendance_report/' . $subject_id);
         }
 
     }
@@ -1258,10 +1258,10 @@ class Teacher extends BaseController
         }
         if (count($asistencias) < 30) {
             $session->set('flash_message', 'Asistencia modificada correctamente' . count($asistencias));
-            return redirect()->to(base_url() . 'teacher/attendance_report/' . $subject_id);
+            return redirect()->to(base_url() . 'index.php/teacher/attendance_report/' . $subject_id);
         } else {
             $session->set('flash_message_error', 'Error al modificar');
-            return redirect()->to(base_url() . 'teacher/attendance_report/' . $subject_id);
+            return redirect()->to(base_url() . 'index.php/teacher/attendance_report/' . $subject_id);
         }
     }
 
@@ -1307,10 +1307,10 @@ class Teacher extends BaseController
         $respuesta = 1;
         if ($respuesta > 0) {
             $session->set('flash_message', 'Asistencia modificada correctamente');
-            return redirect()->to(base_url() . 'teacher/attendance_report/' . $subject_id);
+            return redirect()->to(base_url() . 'index.php/teacher/attendance_report/' . $subject_id);
         } else {
             $session->set('flash_message_error', 'Error al modificar');
-            return redirect()->to(base_url() . 'teacher/attendance_report/' . $subject_id);
+            return redirect()->to(base_url() . 'index.php/teacher/attendance_report/' . $subject_id);
         }
     }
     public function assists_excel($subject_id, $section_id, $phase_id)
@@ -1524,7 +1524,7 @@ class Teacher extends BaseController
         $sections = $SectionMod->get_section(['section_id' => $section_id]);
 
         if (empty($sections)) {
-            return redirect()->to(base_url('teacher/history'));
+            return redirect()->to(base_url('index.php/teacher/history'));
         }
 
         $page_data['subject_id'] = $subject_id;
@@ -1708,7 +1708,7 @@ class Teacher extends BaseController
             */
         endforeach;
         $session->set('flash_message', 'Reportes guardados correctamente ');
-        return redirect()->to(base_url() . 'teacher/behavior_add/' . $subject_id);
+        return redirect()->to(base_url() . 'index.php/teacher/behavior_add/' . $subject_id);
     }
 
 
@@ -2023,7 +2023,7 @@ class Teacher extends BaseController
         }
 
         $session->set('flash_message', 'Planilla creada exitosamente.');
-        return redirect()->to(base_url() . 'teacher/subjects');
+        return redirect()->to(base_url() . 'index.php/teacher/subjects');
     }
     function integrate_sheet($subject_id = '')
     {
@@ -2178,7 +2178,7 @@ class Teacher extends BaseController
         ];
         $respuesta = $SubjectMod->update_subject($datos, $subject_id);
         $session->set('flash_message', 'Notas Guardadas correctamente');
-        return redirect()->to(base_url() . 'teacher/subjects');
+        return redirect()->to(base_url() . 'index.php/teacher/subjects');
     }
     function recover_self($section_id, $subject_id)
     {
@@ -2353,10 +2353,10 @@ class Teacher extends BaseController
             $ApigoogleMod = new ApigoogleModel();
             $apigoogle = $ApigoogleMod->lockedSheet($subject[0]['sheet_id']);
             $session->set('flash_message', 'Notas consolidadas Correctamente: ' . $subject[0]['sheet_id']);
-            return redirect()->to(base_url() . 'teacher/subjects');
+            return redirect()->to(base_url() . 'index.php/teacher/subjects');
         } else {
             $session->set('flash_message_error', 'Error al consolidar Notas');
-            return redirect()->to(base_url() . 'teacher/subjects');
+            return redirect()->to(base_url() . 'index.php/teacher/subjects');
         }
     }
     /***********************************************CONSEJERO***********************************************************/
@@ -2488,7 +2488,7 @@ class Teacher extends BaseController
             $data['phase_id'] = $page_data['phase_id'];
             $respuesta = $self->insert_self_appraisal($data);
             $session->set('flash_message', 'Autoevaluación Guardada Correctamente');
-            return redirect()->to(base_url() . 'teacher/self_inicial/' . $section_id);
+            return redirect()->to(base_url() . 'index.php/teacher/self_inicial/' . $section_id);
         } else {
             $self_appraisal_id = $existe[0]['self_id'];
             $data['ser'] = $auto_ser;
@@ -2499,7 +2499,7 @@ class Teacher extends BaseController
             $data['dec5'] = $auto_decidir;
             $respuesta = $self->update_self_appraisal($data, $self_appraisal_id);
             $session->set('flash_message', 'Datos actualizados Correctamente');
-            return redirect()->to(base_url() . 'teacher/self_inicial/' . $section_id);
+            return redirect()->to(base_url() . 'index.php/teacher/self_inicial/' . $section_id);
         }
 
     }
@@ -4190,7 +4190,7 @@ class Teacher extends BaseController
 
         if ($subject[0]['sheet_id'] == 0) {
             $session->set('flash_message_error', 'Error al habilitar Planilla, no existe: ' . $curso_materia);
-            return redirect()->to(base_url() . 'teacher/subjects');
+            return redirect()->to(base_url() . 'index.php/teacher/subjects');
 
         } else {
             //Bloquemaos el Trimestre
@@ -4501,10 +4501,10 @@ class Teacher extends BaseController
 
         if ($respuesta > 0) {
             $session->set('flash_message', 'Se guardó la indisciplina Correctamente' . $to_parent . ' - ' . $to_director . ' - ' . $to_teachers);
-            return redirect()->to(base_url() . 'teacher/infractions_section/' . $_POST['section_id']);
+            return redirect()->to(base_url() . 'index.php/teacher/infractions_section/' . $_POST['section_id']);
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'teacher/infractions_section/' . $_POST['section_id']);
+            return redirect()->to(base_url() . 'index.php/teacher/infractions_section/' . $_POST['section_id']);
         }
     }
     function infraction_updated()
@@ -4535,10 +4535,10 @@ class Teacher extends BaseController
         $respuesta = $IinfractionMod->update_infraction($datos, $infraction_id);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Se actualizó la indisciplina Correctamente');
-            return redirect()->to(base_url() . 'teacher/infractions_section/' . $_POST['section_id']);
+            return redirect()->to(base_url() . 'index.php/teacher/infractions_section/' . $_POST['section_id']);
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'teacher/infractions_section/' . $_POST['section_id']);
+            return redirect()->to(base_url() . 'index.php/teacher/infractions_section/' . $_POST['section_id']);
         }
     }
     function infraction_deleted()
@@ -4553,10 +4553,10 @@ class Teacher extends BaseController
         $respuesta = $IinfractionMod->delete_infraction($data);
         if ($respuesta > 0) {
             $session->set('flash_message', 'Falta eliminada Correctamente');
-            return redirect()->to(base_url() . 'teacher/infractions_section/' . $_POST['section_id']);
+            return redirect()->to(base_url() . 'index.php/teacher/infractions_section/' . $_POST['section_id']);
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'teacher/infractions_section/' . $_POST['section_id']);
+            return redirect()->to(base_url() . 'index.php/teacher/infractions_section/' . $_POST['section_id']);
         }
     }
     function infraction_notify()
@@ -4568,7 +4568,7 @@ class Teacher extends BaseController
         //Parametros
         $student_id = $_POST['student_id'];
 
-        return redirect()->to(base_url() . 'teacher/infraction_letter/' . $student_id);
+        return redirect()->to(base_url() . 'index.php/teacher/infraction_letter/' . $student_id);
     }
     function infraction_letter($student_id = '', $subject_id = '', $cantidad = '')
     {
@@ -6176,7 +6176,7 @@ class Teacher extends BaseController
             }
         }
 
-        return redirect()->to(base_url('teacher/evaluation_planner'));
+        return redirect()->to(base_url('index.php/teacher/evaluation_planner'));
     }
 
     function get_my_evaluations()
@@ -6202,7 +6202,7 @@ class Teacher extends BaseController
         $EvaluationModel->deleteEvaluation($id);
         $session->setFlashdata('flash_message', 'Evaluación eliminada correctamente');
 
-        return redirect()->to(base_url('teacher/evaluation_planner'));
+        return redirect()->to(base_url('index.php/teacher/evaluation_planner'));
     }
 
     public function session_keep_alive()

@@ -90,7 +90,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="evaluation_form" action="<?php echo base_url(); ?>teacher/evaluation_save" method="POST"
+                <form id="evaluation_form" action="<?php echo base_url(); ?>index.php/teacher/evaluation_save" method="POST"
                     enctype="multipart/form-data">
                     <input type="hidden" name="teacher_id" value="<?php echo $session->get('teacher_id'); ?>">
                     <input type="hidden" name="id" id="evaluation_id"> <!-- For Edit -->
@@ -216,7 +216,7 @@
                 }
 
                 $.ajax({
-                    url: '<?php echo base_url(); ?>teacher/get_calendar_events',
+                    url: '<?php echo base_url(); ?>index.php/teacher/get_calendar_events',
                     type: 'POST',
                     data: { section_id: sectionId },
                     success: function (response) {
@@ -364,14 +364,14 @@
 
     function deleteEvaluation(id) {
         if (confirm('¿Está seguro de eliminar esta evaluación?')) {
-            window.location.href = '<?php echo base_url(); ?>teacher/evaluation_delete/' + id;
+            window.location.href = '<?php echo base_url(); ?>index.php/teacher/evaluation_delete/' + id;
         }
     }
 
     // Table Functions
     function loadMyEvaluations() {
         $.ajax({
-            url: '<?php echo base_url(); ?>teacher/get_my_evaluations',
+            url: '<?php echo base_url(); ?>index.php/teacher/get_my_evaluations',
             type: 'GET',
             success: function (response) {
                 populateMyExamsTable(response);
@@ -450,7 +450,7 @@
 
         if (date && section_id) {
             $.ajax({
-                url: '<?php echo base_url(); ?>teacher/evaluation_check_date',
+                url: '<?php echo base_url(); ?>index.php/teacher/evaluation_check_date',
                 type: 'POST',
                 data: { date: date, section_id: section_id },
                 success: function (response) {

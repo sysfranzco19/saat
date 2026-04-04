@@ -236,7 +236,7 @@
 
                         <!--<form class="form" novalidate="novalidate" id="kt_login_signin_form">-->
 
-                        <form method="post" role="form" id="form_login" action="<?php echo base_url('/login'); ?>"
+                        <form method="post" role="form" id="form_login" action="<?php echo site_url('/login'); ?>"
                             class="form" novalidate="novalidate">
 
                             <!--begin::Title-->
@@ -268,13 +268,15 @@
                             ?>
 
                             <?php
-
-                            if (isset($mensaje)) {
-
+                            if (isset($mensaje) && $mensaje != '') {
+                                $texto_error = "Ocurrió un error de validación.";
+                                if ($mensaje == '2') $texto_error = "Correo o contraseña incorrectos.";
                                 ?>
-
-                                <p class="text-red"><?php echo $mensaje; ?></p>
-
+                                <!--begin::Error Alert-->
+                                <div class="alert alert-danger font-weight-bold" role="alert" style="background-color: #ffe2e5; color: #f64e60; border-radius: 8px; padding: 10px 15px; margin-bottom: 20px; text-align: center;">
+                                    <?php echo $texto_error; ?>
+                                </div>
+                                <!--end::Error Alert-->
                             <?php } ?>
 
                             <!--begin::Form group-->
@@ -298,13 +300,36 @@
 
                                 <div class="d-flex justify-content-between mt-n5">
                                     <label class="font-size-h6 font-weight-bolder text-dark pt-5">Contraseña</label>
-                                    <a href="<?php echo base_url('/login/forgot_password'); ?>"
+                                    <a href="<?php echo base_url('index.php/login/forgot_password'); ?>"
                                         class="text-primary font-size-h6 font-weight-bolder text-hover-primary pt-5"
                                         id="kt_login_forgot" tabindex="3">
                                         Olvidaste tu contraseña ?</a>
                                 </div>
-                                <input class="form-control form-control-solid h-auto py-6 px-6 rounded-lg"
-                                    type="password" name="password" id="password" autocomplete="off" tabindex="2" />
+                                <div class="position-relative">
+                                    <input class="form-control form-control-solid h-auto py-6 px-6 rounded-lg pr-15"
+                                        type="password" name="password" id="password" autocomplete="off" tabindex="2" />
+                                    <span class="password-toggle" onclick="togglePassword()" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #a4b0be;">
+                                        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                                            <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                                <script>
+                                    function togglePassword() {
+                                        var input = document.getElementById("password");
+                                        var icon = document.getElementById("eye-icon");
+                                        if (input.type === "password") {
+                                            input.type = "text";
+                                            // Eye-slash icon path
+                                            icon.innerHTML = '<path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/><path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/><path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>';
+                                        } else {
+                                            input.type = "password";
+                                            // Normal eye icon path
+                                            icon.innerHTML = '<path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>';
+                                        }
+                                    }
+                                </script>
 
                             </div>
 

@@ -51,7 +51,7 @@
                         </div>
                         <div class="card-footer">
                             <button type="submit" class="btn btn-primary mr-2">Descargar</button>
-                            <a href="<?php echo base_url('secretary/dashboard');?>" class="btn btn-secondary">Cancelar</a>
+                            <a href="<?php echo base_url('index.php/secretary/dashboard');?>" class="btn btn-secondary">Cancelar</a>
                         </div>
                     </form>
                     <!--end::Form-->
@@ -116,7 +116,7 @@
                         </div>
                         <div class="card-footer">
                             <button type="submit" class="btn btn-primary mr-2">Descargar</button>
-                            <a href="<?php echo base_url('secretary/dashboard');?>" class="btn btn-secondary">Cancelar</a>
+                            <a href="<?php echo base_url('index.php/secretary/dashboard');?>" class="btn btn-secondary">Cancelar</a>
                         </div>
                     </form>
                     <!--end::Form-->

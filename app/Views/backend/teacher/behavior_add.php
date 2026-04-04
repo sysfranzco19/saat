@@ -403,7 +403,7 @@ jQuery(document).ready(function() {
             <div class="modal-body">
                 <!--<form class="form" action="<?php echo base_url(); ?>index.php/teacher/profile_edit" method="POST" >-->
                 <?php //echo form_open(base_url() . 'index.php/teacher/add_behavior/'.$teacher_id.'/'.$section_id , array('class' => 'form','name' => 'form_teacher')); ?>
-                <form action="<?php echo base_url(); ?>teacher/behavior_save" method="post" name="form_behavior" class="form" >
+                <form action="<?php echo base_url(); ?>index.php/teacher/behavior_save" method="post" name="form_behavior" class="form" >
                 <div class="form-group row">
                     <label class="col-xl-3 col-lg-3 col-form-label">Curso:</label>
                     <div class="col-lg-9 col-xl-6">

@@ -30,7 +30,7 @@
 
                             <!-- Button 1: Autoevaluación -->
                             <div class="mb-6">
-                                <a href="<?= base_url('student/self_appraisal') ?>"
+                                <a href="<?= base_url('index.php/student/self_appraisal') ?>"
                                     class="btn btn-light-primary font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <!-- User-folder Icon -->
@@ -57,7 +57,7 @@
 
                             <!-- Button 2: Cartas de Contenidos -->
                             <div class="mb-6">
-                                <a href="<?= base_url('student/content_letter') ?>"
+                                <a href="<?= base_url('index.php/student/content_letter') ?>"
                                     class="btn btn-light-info font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <!-- Group Icon -->
@@ -106,7 +106,7 @@
 
                             <!-- Button 4: Historial de Comportamiento -->
                             <div class="mb-6">
-                                <a href="<?= base_url('student/gamified_behavior') ?>"
+                                <a href="<?= base_url('index.php/student/gamified_behavior') ?>"
                                     class="btn btn-light-warning font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <!-- Layout-4-blocks Icon -->
@@ -202,7 +202,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('student/report_card') ?>"
+                                                    <a href="<?= base_url('index.php/student/report_card') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Boletín
                                                         de Notas</a>
                                                     <span
@@ -235,7 +235,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('student/evaluation_report') ?>"
+                                                    <a href="<?= base_url('index.php/student/evaluation_report') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Reporte
                                                         de Evaluaciones</a>
                                                     <span class="text-muted font-weight-bold d-block">Saber y

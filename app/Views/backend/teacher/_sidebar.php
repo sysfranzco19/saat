@@ -79,7 +79,7 @@ $name = strtoupper($session->get('name'));
 
                     <!--begin::Text-->
                     <div class="d-flex flex-column font-weight-bold">
-                        <a href="<?php echo base_url(); ?>/teacher/virtual_library_prim"
+                        <a href="<?php echo base_url(); ?>index.php/teacher/virtual_library_prim"
                             class="text-dark text-hover-primary mb-1 font-size-lg">Biblioteca de libros digitales
                             PRIMARIA</a>
                         <span class="text-muted">Libros y textos</span>
@@ -115,7 +115,7 @@ $name = strtoupper($session->get('name'));
 
                     <!--begin::Text-->
                     <div class="d-flex flex-column font-weight-bold">
-                        <a href="<?php echo base_url(); ?>/teacher/virtual_library_sec"
+                        <a href="<?php echo base_url(); ?>index.php/teacher/virtual_library_sec"
                             class="text-dark text-hover-primary mb-1 font-size-lg">Biblioteca de libros digitales
                             SECUNDARIA</a>
                         <span class="text-muted">Libros y textos</span>

@@ -3,7 +3,7 @@ function confirmar()
 {
     var respuesta = confirm("¿Esta seguro de reportar notas de Medio Trimestre?");
     if (respuesta == true){
-        window.location.assign('<?php echo base_url(); ?>teacher/half_phase_save/<?php echo $subject_id;?>')
+        window.location.assign('<?php echo base_url(); ?>index.php/teacher/half_phase_save/<?php echo $subject_id;?>')
     }else{
         return false;
     }
@@ -12,7 +12,7 @@ function confirmar_inicio()
 {
     var respuesta = confirm("¿Esta seguro de iniciar la consolidación?");
     if (respuesta == true){
-        window.location.assign('<?php echo base_url(); ?>teacher/review_notes/<?php echo $subject_id;?>')
+        window.location.assign('<?php echo base_url(); ?>index.php/teacher/review_notes/<?php echo $subject_id;?>')
     }else{
         return false;
     }

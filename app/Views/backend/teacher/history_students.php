@@ -12,7 +12,7 @@
                     </h3>
                 </div>
                 <div class="card-toolbar">
-                    <a href="<?= base_url('teacher/history') ?>"
+                    <a href="<?= base_url('index.php/teacher/history') ?>"
                         class="btn btn-light-primary font-weight-bolder btn-sm">
                         <i class="ki ki-long-arrow-back icon-sm"></i> Volver a Cursos
                     </a>
@@ -58,7 +58,7 @@
                                                 </span>
                                             </div>
                                             <div class="d-flex flex-column">
-                                                <a href="<?= base_url('teacher/student_profile/' . $row['student_id'] . '/' . $subject_id) ?>"
+                                                <a href="<?= base_url('index.php/teacher/student_profile/' . $row['student_id'] . '/' . $subject_id) ?>"
                                                     class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">
                                                     <?= $row['student'] ?>
                                                 </a>
@@ -68,7 +68,7 @@
                                         </div>
                                     </td>
                                     <td class="text-right pr-7">
-                                        <a href="<?= base_url('teacher/student_profile/' . $row['student_id'] . '/' . $subject_id) ?>"
+                                        <a href="<?= base_url('index.php/teacher/student_profile/' . $row['student_id'] . '/' . $subject_id) ?>"
                                             class="btn btn-light-primary font-weight-bold btn-sm" title="Ver Perfil">
                                             Ver Perfil
                                         </a>

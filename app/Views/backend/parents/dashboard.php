@@ -54,7 +54,7 @@
 
                             <!-- Button 2: Mis Hijos -->
                             <div class="mb-6">
-                                <a href="<?= base_url('parents/enrolled_children') ?>"
+                                <a href="<?= base_url('index.php/parents/enrolled_children') ?>"
                                     class="btn btn-light-info font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <!-- Group Icon -->
@@ -78,7 +78,7 @@
 
                             <!-- Button 3: Horario de Entrevistas -->
                             <div class="mb-6">
-                                <a href="<?= base_url('parents/interviews') ?>"
+                                <a href="<?= base_url('index.php/parents/interviews') ?>"
                                     class="btn btn-light-warning font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <!-- Time-schedule Icon -->
@@ -102,7 +102,7 @@
 
                             <!-- Button 4: Registro de Evaluaciones -->
                             <div class="mb-6">
-                                <a href="<?= base_url('parents/enrolled_children') ?>"
+                                <a href="<?= base_url('index.php/parents/enrolled_children') ?>"
                                     class="btn btn-light-danger font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <!-- Layout-4-blocks Icon -->
@@ -197,7 +197,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('parents/payment_methods') ?>"
+                                                    <a href="<?= base_url('index.php/parents/payment_methods') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Métodos
                                                         de Pago</a>
                                                     <span
@@ -232,7 +232,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('parents/contacts') ?>"
+                                                    <a href="<?= base_url('index.php/parents/contacts') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Números
                                                         de Contacto</a>
                                                     <span class="text-muted font-weight-bold d-block">Administración y
@@ -330,7 +330,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('parents/behaviors') ?>"
+                                                    <a href="<?= base_url('index.php/parents/behaviors') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Historial
                                                         de Comportamiento</a>
                                                     <span class="text-muted font-weight-bold d-block">Registro de
@@ -423,7 +423,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('parents/content_letter') ?>"
+                                                    <a href="<?= base_url('index.php/parents/content_letter') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Cartas
                                                         de Contenidos</a>
                                                     <span class="text-muted font-weight-bold d-block">Contenidos de

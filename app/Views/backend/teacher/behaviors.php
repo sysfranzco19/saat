@@ -52,8 +52,8 @@
                                 <?php echo $subject['cantidad'];?> reportes
                                 </td>
                                 <td>
-                                    <a href="<?php echo base_url(); ?>teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-danger btn-sm" >Reportar</a>
-                                    <a href="<?php echo base_url(); ?>teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-success btn-sm" >Ver Reportes del curso</a>
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-danger btn-sm" >Reportar</a>
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-success btn-sm" >Ver Reportes del curso</a>
                                 </td>
                             </tr>
                         <?php
@@ -98,8 +98,8 @@
                                 <?php echo $subject['cantidad'];?> reportes
                                 </td>
                                 <td>
-                                    <a href="<?php echo base_url(); ?>teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-danger btn-sm" >Reportar</a>
-                                    <a href="<?php echo base_url(); ?>teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-success btn-sm" >Ver Reportes del curso</a>
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-danger btn-sm" >Reportar</a>
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-success btn-sm" >Ver Reportes del curso</a>
                                 </td>
                             </tr>
                         <?php
@@ -145,8 +145,8 @@
                                 <?php echo $subject['cantidad'];?> reportes
                                 </td>
                                 <td>
-                                    <a href="<?php echo base_url(); ?>teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-danger btn-sm" >Reportar</a>
-                                    <a href="<?php echo base_url(); ?>teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-success btn-sm" >Ver Reportes del curso</a>
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-danger btn-sm" >Reportar</a>
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-success btn-sm" >Ver Reportes del curso</a>
                                 </td>
                             </tr>
                         <?php
@@ -193,8 +193,8 @@
                                     <?php echo $subject['cantidad'];?> reportes
                                 </td>
                                 <td>
-                                    <a href="<?php echo base_url(); ?>teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-danger btn-sm" >Reportar</a>
-                                    <a href="<?php echo base_url(); ?>teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-success btn-sm" >Ver Reportes del curso</a>
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-danger btn-sm" >Reportar</a>
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/behavior_add/<?php echo $subject['subject_id'];?>" class="btn btn-success btn-sm" >Ver Reportes del curso</a>
                                 </td>
                             </tr>
                         <?php

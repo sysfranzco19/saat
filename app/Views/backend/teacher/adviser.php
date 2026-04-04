@@ -229,7 +229,7 @@
 
                                                     <?php if ($curso['section_id'] < 231) { ?>
 
-                                                        <a href="<?php echo base_url(); ?>teacher/self_inicial/<?php echo $curso['section_id']; ?>"
+                                                        <a href="<?php echo base_url(); ?>index.php/teacher/self_inicial/<?php echo $curso['section_id']; ?>"
                                                             class="btn btn-outline-success font-weight-bold">Llenar
                                                             Autoevaluaciones</a>
 
@@ -250,7 +250,7 @@
                                                                     Reportes Conductuales
                                                                 </a>
                                                                 <a class="dropdown-item"
-                                                                    href="<?php echo base_url(); ?>teacher/adviser_behavior_log/<?php echo $curso['section_id']; ?>">Ver
+                                                                    href="<?php echo base_url(); ?>index.php/teacher/adviser_behavior_log/<?php echo $curso['section_id']; ?>">Ver
                                                                     Log de Incidencias del Curso
                                                                 </a>
                                                             </div>

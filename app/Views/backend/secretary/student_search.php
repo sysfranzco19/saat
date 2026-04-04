@@ -1,7 +1,7 @@
 <script type="text/javascript">
     function cargar(){
         var sel = document.getElementById('buscar').value;
-        window.location.assign('<?php echo base_url(); ?>secretary/student_search/<?php echo $user; ?>/' + sel )
+        window.location.assign('<?php echo base_url(); ?>index.php/secretary/student_search/<?php echo $user; ?>/' + sel )
         //alert('hola');
     }
 </script>
@@ -95,9 +95,9 @@ if (empty($busqueda)){
                                         Notas
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/notes_half_student/<?php echo $id;?>" target="_blank" >Medio Trimestre</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/student_notes/<?php echo $id;?>" target="_blank" >Nota Trimestral</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/report_card/<?php echo $id;?>" target="_blank" >Reporte Académico Trimestral</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/notes_half_student/<?php echo $id;?>" target="_blank" >Medio Trimestre</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/student_notes/<?php echo $id;?>" target="_blank" >Nota Trimestral</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/report_card/<?php echo $id;?>" target="_blank" >Reporte Académico Trimestral</a>
                                     </div>
                                 </div>-->
                                 <div class="btn-group">
@@ -105,10 +105,10 @@ if (empty($busqueda)){
                                         Asistencias
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/student_attendance/<?php echo $id;?>/all/0" target="_blank">Asistencias</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/student_licenses/<?php echo $id;?>/all/0" target="_blank">Licencias</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/student_absences/<?php echo $id;?>" target="_blank">Ausencias</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/student_delays/<?php echo $id;?>" target="_blank">Retrasos</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/student_attendance/<?php echo $id;?>/all/0" target="_blank">Asistencias</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/student_licenses/<?php echo $id;?>/all/0" target="_blank">Licencias</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/student_absences/<?php echo $id;?>" target="_blank">Ausencias</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/student_delays/<?php echo $id;?>" target="_blank">Retrasos</a>
                                     </div>
                                 </div>
                                 <div class="btn-group">
@@ -116,9 +116,9 @@ if (empty($busqueda)){
                                         Conductuales
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/error" target="_blank" >Comunicación</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/dashboard" target="_blank" >Entrevistas</a>
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>secretary/dashboard" target="_blank" >Infracciones</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/error" target="_blank" >Comunicación</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/dashboard" target="_blank" >Entrevistas</a>
+                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/dashboard" target="_blank" >Infracciones</a>
                                     </div>
                                 </div>
                             </td>

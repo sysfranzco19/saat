@@ -62,7 +62,7 @@ $fecha_actual = date('Y-m-d');
                     </h3>
                 </div>
 
-                <form action="<?php echo base_url() . 'teacher/attendance_date_inicial'; ?>" method="POST" class="form"
+                <form action="<?php echo base_url() . 'index.php/teacher/attendance_date_inicial'; ?>" method="POST" class="form"
                     name="form_date">
                     <div class="card-toolbar">
                         <!--begin::Dropdown-->
@@ -155,7 +155,7 @@ $fecha_actual = date('Y-m-d');
                 if (isset($students)) {
                     //echo form_open(base_url() . 'index.php/teacher/attendance_save/' , array('class' => 'form','name' => 'form_assists'));
                     ?>
-                    <form action="<?php echo base_url() . 'teacher/attendance_save'; ?>" method="POST" class="form"
+                    <form action="<?php echo base_url() . 'index.php/teacher/attendance_save'; ?>" method="POST" class="form"
                         name="form_assists">
                         <input type="hidden" name="subject_id" value="<?php echo $subject_id; ?>">
                         <input type="hidden" name="section_id" value="<?php echo $section_id; ?>">

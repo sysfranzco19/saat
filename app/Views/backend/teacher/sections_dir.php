@@ -37,11 +37,11 @@
                     <td>
                         <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/section_notes/<?php echo $row['section_id']; ?>" target="_blank" class="btn btn-secondary btn-sm" >Notas Centralizadas</a>
                     </td>
-                    <td><a href="<?php echo base_url(); ?>teacher/low_averages/<?php echo $row['section_id']; ?>" class="btn btn-light-danger font-weight-bold mr-2" target="_blank">Promedios Bajos</a></td>
+                    <td><a href="<?php echo base_url(); ?>index.php/teacher/low_averages/<?php echo $row['section_id']; ?>" class="btn btn-light-danger font-weight-bold mr-2" target="_blank">Promedios Bajos</a></td>
                     <td>
                     <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/generate_centralizer/<?php echo $row['section_id']; ?>" target="_blank" class="btn btn-primary btn-sm" >Descargar</a>
                     </td>
-                    <td><a href="<?php echo base_url(); ?>teacher/generate_ranking/<?php echo $row['section_id']; ?>" class="btn btn-light-warning font-weight-bold mr-2">Ranking</a></td>
+                    <td><a href="<?php echo base_url(); ?>index.php/teacher/generate_ranking/<?php echo $row['section_id']; ?>" class="btn btn-light-warning font-weight-bold mr-2">Ranking</a></td>
                 </tr>
                 <?php endforeach;?>
             </tbody>

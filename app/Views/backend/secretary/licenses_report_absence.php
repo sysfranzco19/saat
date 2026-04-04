@@ -1,7 +1,7 @@
 <script type="text/javascript">
     function enviarLicencia(licencia_id, student_id){
         $.ajax({
-            url: "<?php echo base_url(); ?>server/report_license/"+licencia_id+"/"+student_id,
+            url: "<?php echo base_url(); ?>index.php/server/report_license/"+licencia_id+"/"+student_id,
             type: "get",
             beforeSend: function(){
                 document.getElementById('mostrar_loading').style.display="block"
@@ -63,7 +63,7 @@
                     </table>
                     <div class="card-footer">
                         <button type="submit" class="btn btn-warning mr-2">Reportar</button>
-                        <a href="<?php echo base_url('secretary/licenses');?>" class="btn btn-secondary">Salir</a>
+                        <a href="<?php echo base_url('index.php/secretary/licenses');?>" class="btn btn-secondary">Salir</a>
                     </div>
                 </form>
             </div>

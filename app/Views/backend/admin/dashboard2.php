@@ -184,7 +184,7 @@
 												<!--end::Icon-->
 												<!--begin::Content-->
 														<div class="d-flex flex-column">
-															<a href="<?php echo base_url(); ?>admin/test_email" class="text-dark text-hover-primary font-weight-bold font-size-h4 mb-3">Prueba de Emails</a>
+															<a href="<?php echo base_url(); ?>index.php/admin/test_email" class="text-dark text-hover-primary font-weight-bold font-size-h4 mb-3">Prueba de Emails</a>
 															<div class="text-dark-75">Prueba de envios de correos Electrónicos</div>
 														</div>
 												<!--end::Content-->
@@ -220,7 +220,7 @@
 												<!--end::Icon-->
 												<!--begin::Content-->
 														<div class="d-flex flex-column">
-															<a href="<?php echo base_url(); ?>admin/update_tables" class="text-dark text-hover-primary font-weight-bold font-size-h4 mb-3">Actualizar Tablas</a>
+															<a href="<?php echo base_url(); ?>index.php/admin/update_tables" class="text-dark text-hover-primary font-weight-bold font-size-h4 mb-3">Actualizar Tablas</a>
 															<div class="text-dark-75">Actualizar Base de Datos</div>
 														</div>
 												<!--end::Content-->
@@ -257,7 +257,7 @@
 												<!--begin::Content-->
 														<div class="d-flex flex-column">
 															<!-- <a href="https://docs.google.com/forms/d/e/1FAIpQLScwDOFZRA6LBCrUN9NR3sbNhTAoV-Dgz7oYnTAd_D7ufRrdXA/viewform?usp=sf_link" class="text-dark text-hover-primary font-weight-bold font-size-h4 mb-3">Soporte</a> -->
-                                                            <a href="<?php echo base_url(); ?>teacher/infractions" class="text-dark text-hover-primary font-weight-bold font-size-h4 mb-3">Indisciplina</a>
+                                                            <a href="<?php echo base_url(); ?>index.php/teacher/infractions" class="text-dark text-hover-primary font-weight-bold font-size-h4 mb-3">Indisciplina</a>
 															<div class="text-dark-75">Planillas de indisciplina por cursos.</div>
 														</div>
 												<!--end::Content-->

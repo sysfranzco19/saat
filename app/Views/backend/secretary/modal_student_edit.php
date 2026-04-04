@@ -12,7 +12,7 @@ $student_info = $StudentMod->get_student(['student_id' => $param1])[0];
     </button>
 </div>
 
-<form action="<?php echo base_url(); ?>secretary/student_update" method="POST">
+<form action="<?php echo base_url(); ?>index.php/secretary/student_update" method="POST">
     <input type="hidden" name="student_id" value="<?php echo $param1; ?>">
     <div class="modal-body">
         <div class="row">

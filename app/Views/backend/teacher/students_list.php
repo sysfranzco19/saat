@@ -75,7 +75,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <a href="<?= base_url('teacher/student_profile/' . $stu['student_id'] . '/0') ?>"
+                                                    <a href="<?= base_url('index.php/teacher/student_profile/' . $stu['student_id'] . '/0') ?>"
                                                         class="btn btn-sm btn-light-primary font-weight-bold"
                                                         title="Ver Perfil">
                                                         <i class="flaticon-eye"></i> Perfil

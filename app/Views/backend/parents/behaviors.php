@@ -38,7 +38,7 @@
                                             <td><?php echo $stu['completo'];?></td>
                                             <td>Tiene <?php echo $stu['reportes'];?> reportes</td>
                                             <td>
-                                                <a href="<?php echo base_url(); ?>parents/behaviors_child/<?php echo $stu['student_id'];?>" class="btn btn-danger active">Ver comunicación</a>
+                                                <a href="<?php echo base_url(); ?>index.php/parents/behaviors_child/<?php echo $stu['student_id'];?>" class="btn btn-danger active">Ver comunicación</a>
                                             </td>
                                         </tr>
                                     <?php

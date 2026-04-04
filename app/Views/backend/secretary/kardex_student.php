@@ -24,10 +24,10 @@
                                     </select>
                                     <?php if ($student_id > 0): ?>
                                         <button type="button" class="btn btn-primary font-weight-bolder btn-sm ml-2" 
-                                            onclick="showAjaxModal('<?php echo base_url(); ?>modal/popup/modal_student_edit/<?php echo $student_id; ?>');">
+                                            onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/modal_student_edit/<?php echo $student_id; ?>');">
                                             <i class="fas fa-edit"></i> Editar
                                         </button>
-                                        <a href="<?php echo base_url(); ?>secretary/kardex_student_pdf/<?php echo $student_id; ?>"
+                                        <a href="<?php echo base_url(); ?>index.php/secretary/kardex_student_pdf/<?php echo $student_id; ?>"
                                             target="_blank" class="btn btn-danger font-weight-bolder btn-sm ml-2">
                                             <i class="far fa-file-pdf"></i> PDF
                                         </a>
@@ -140,7 +140,7 @@
 <script type="text/javascript">
     function cargar(student_id) {
         if (student_id != "") {
-            window.location.replace("<?php echo base_url(); ?>secretary/kardex_student/" + student_id);
+            window.location.replace("<?php echo base_url(); ?>index.php/secretary/kardex_student/" + student_id);
         }
     }
 </script>

@@ -20,7 +20,7 @@
                         <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
                             aria-haspopup="true">
                             <a href="javascript:void(0);"
-                                onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup_all/calendar_modal/0/0/0/0/0');"
+                                onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup_all/calendar_modal/0/0/0/0/0');"
                                 class="menu-link">
                                 <span class="menu-text">Calendario</span>
                                 <i class="menu-arrow"></i>
@@ -38,7 +38,7 @@
                                 <ul class="menu-subnav">
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?>secretary/kardex_student/0" class="menu-link">
+                                        <a href="<?php echo base_url(); ?>index.php/secretary/kardex_student/0" class="menu-link">
                                             <span class="svg-icon menu-icon">
                                                 <!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Address-card.svg-->
                                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -59,7 +59,7 @@
                                     </li>
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?>secretary/kardex_family/0" class="menu-link">
+                                        <a href="<?php echo base_url(); ?>index.php/secretary/kardex_family/0" class="menu-link">
                                             <span class="svg-icon menu-icon">
                                                 <!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Address-card.svg-->
                                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -80,7 +80,7 @@
                                     </li>
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?>/secretary/applicant/0" class="menu-link">
+                                        <a href="<?php echo base_url(); ?>index.php/secretary/applicant/0" class="menu-link">
                                             <span class="svg-icon menu-icon">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                     xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
@@ -176,7 +176,7 @@
                                 <ul class="menu-subnav">
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?>secretary/absences" class="menu-link">
+                                        <a href="<?php echo base_url(); ?>index.php/secretary/absences" class="menu-link">
                                             <span class="svg-icon menu-icon">
 
                                                 <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Box2.svg-->
@@ -228,7 +228,7 @@
                                         <div class="menu-submenu menu-submenu-classic menu-submenu-right">
                                             <ul class="menu-subnav">
                                                 <li class="menu-item" aria-haspopup="true">
-                                                    <a href="<?php echo base_url(); ?>secretary/licenses_received"
+                                                    <a href="<?php echo base_url(); ?>index.php/secretary/licenses_received"
                                                         class="menu-link">
                                                         <i class="menu-bullet menu-bullet-dot">
                                                             <span></span>
@@ -237,7 +237,7 @@
                                                     </a>
                                                 </li>
                                                 <li class="menu-item" aria-haspopup="true">
-                                                    <a href="<?php echo base_url(); ?>secretary/licenses"
+                                                    <a href="<?php echo base_url(); ?>index.php/secretary/licenses"
                                                         class="menu-link">
                                                         <i class="menu-bullet menu-bullet-dot">
                                                             <span></span>
@@ -246,7 +246,7 @@
                                                     </a>
                                                 </li>
                                                 <li class="menu-item" aria-haspopup="true">
-                                                    <a href="<?php echo base_url(); ?>secretary/licenses_all"
+                                                    <a href="<?php echo base_url(); ?>index.php/secretary/licenses_all"
                                                         class="menu-link">
                                                         <i class="menu-bullet menu-bullet-dot">
                                                             <span></span>
@@ -261,7 +261,7 @@
 
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?>secretary/delays/0" class="menu-link">
+                                        <a href="<?php echo base_url(); ?>index.php/secretary/delays/0" class="menu-link">
                                             <span class="svg-icon menu-icon">
                                                 <!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Address-card.svg-->
                                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -281,7 +281,7 @@
                                     </li>
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url('secretary/attendance_reports'); ?>"
+                                        <a href="<?php echo base_url('index.php/secretary/attendance_reports'); ?>"
                                             class="menu-link">
                                             <span class="svg-icon menu-icon"><svg xmlns="http://www.w3.org/2000/svg"
                                                     xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
@@ -300,7 +300,7 @@
                                     </li>
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url('secretary/licenses_reports'); ?>"
+                                        <a href="<?php echo base_url('index.php/secretary/licenses_reports'); ?>"
                                             class="menu-link">
                                             <span class="svg-icon menu-icon"><svg xmlns="http://www.w3.org/2000/svg"
                                                     xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
@@ -330,7 +330,7 @@
                             <div class="menu-submenu menu-submenu-classic menu-submenu-left">
                                 <ul class="menu-subnav">
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?>secretary/counselors" class="menu-link">
+                                        <a href="<?php echo base_url(); ?>index.php/secretary/counselors" class="menu-link">
                                             <span class="svg-icon menu-icon">
 
                                                 
@@ -525,7 +525,7 @@
 
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?>teacher/self_director" class="menu-link">
+                                        <a href="<?php echo base_url(); ?>index.php/teacher/self_director" class="menu-link">
                                             <span class="svg-icon menu-icon">
 
                                                 <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Box2.svg-->
@@ -552,7 +552,7 @@
                                     </li>
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?>teacher/teacher_notes" class="menu-link">
+                                        <a href="<?php echo base_url(); ?>index.php/teacher/teacher_notes" class="menu-link">
                                             <span class="svg-icon menu-icon">
 
                                                 <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Box2.svg-->

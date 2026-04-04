@@ -25,13 +25,13 @@ end::Modal-->
     $action = "";
     switch ($param4) {
         case '0':
-            $action = base_url('teacher/upfile_letter/'.$param3);
+            $action = base_url('index.php/teacher/upfile_letter/'.$param3);
             break;
         case 'pdcs':
-            $action = base_url('teacher/upfile_pdcs/'.$param3);
+            $action = base_url('index.php/teacher/upfile_pdcs/'.$param3);
             break;
         default:
-            $action = base_url('teacher/upfile_letter/'.$param3);
+            $action = base_url('index.php/teacher/upfile_letter/'.$param3);
             break;
     }
 ?>

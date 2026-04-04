@@ -35,7 +35,7 @@
                                 y detalles personales</span>
                         </h3>
                     </div>
-                    <form action="<?= base_url('secretary/profile_update') ?>" method="POST">
+                    <form action="<?= base_url('index.php/secretary/profile_update') ?>" method="POST">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
@@ -120,7 +120,7 @@
                                 segura</span>
                         </h3>
                     </div>
-                    <form action="<?= base_url('secretary/password_update') ?>" method="POST" id="password_form">
+                    <form action="<?= base_url('index.php/secretary/password_update') ?>" method="POST" id="password_form">
                         <div class="card-body">
                             <div class="form-group">
                                 <label>Contraseña Actual</label>

@@ -10,7 +10,7 @@
                     <span class="text-muted pt-2 font-size-sm d-block">Curso: <?php echo $completo; ?></span></h3>
                 </div>
                 <div class="card-toolbar">
-                    <a href="<?php echo base_url(); ?>teacher/notes_half_student_xls/<?php echo $student_id;?>" class="btn btn-success font-weight-bold mr-2">
+                    <a href="<?php echo base_url(); ?>index.php/teacher/notes_half_student_xls/<?php echo $student_id;?>" class="btn btn-success font-weight-bold mr-2">
                         <i class="la la-file-excel-o"></i> Descargar
                     </a>
                 </div>

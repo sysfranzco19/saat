@@ -26,10 +26,10 @@
                                     </select>
                                     <?php if ($family_id != 0): ?>
                                         <button type="button" class="btn btn-primary font-weight-bolder btn-sm ml-2" 
-                                            onclick="showAjaxModal('<?php echo base_url(); ?>modal/popup/modal_family_edit/<?php echo $family_id; ?>');">
+                                            onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/modal_family_edit/<?php echo $family_id; ?>');">
                                             <i class="fas fa-edit"></i> Editar
                                         </button>
-                                        <a href="<?php echo base_url(); ?>secretary/kardex_family_pdf/<?php echo $family_id; ?>"
+                                        <a href="<?php echo base_url(); ?>index.php/secretary/kardex_family_pdf/<?php echo $family_id; ?>"
                                             target="_blank" class="btn btn-danger font-weight-bolder btn-sm ml-2">
                                             <i class="far fa-file-pdf"></i> PDF
                                         </a>
@@ -195,7 +195,7 @@
                                                     <?php foreach ($students as $student): ?>
                                                         <tr>
                                                             <td class="pl-0">
-                                                                <a href="<?php echo base_url(); ?>secretary/kardex_student/<?php echo $student->student_id; ?>"
+                                                                <a href="<?php echo base_url(); ?>index.php/secretary/kardex_student/<?php echo $student->student_id; ?>"
                                                                     class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">
                                                                     <?php echo $student->lastname . ' ' . $student->lastname2 . ' ' . $student->name; ?>
                                                                 </a>
@@ -240,7 +240,7 @@
 <script type="text/javascript">
     function cargar(family_id) {
         if (family_id != "") {
-            window.location.replace("<?php echo base_url(); ?>secretary/kardex_family/" + family_id);
+            window.location.replace("<?php echo base_url(); ?>index.php/secretary/kardex_family/" + family_id);
         }
     }
 </script>

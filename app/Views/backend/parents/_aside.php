@@ -1,7 +1,7 @@
 <!--begin::Aside-->
 <div class="aside aside-left d-flex flex-column" id="kt_aside">
 					<!--begin::Brand-->
-					<a href="<?php echo base_url(); ?>parents/profile">
+					<a href="<?php echo base_url(); ?>index.php/parents/profile">
 					<div class=" d-flex flex-column align-items-center flex-column-auto py-9">
 
 						<!--begin::Logo-->
@@ -24,7 +24,7 @@
 
 							<!--begin::Item-->
 							<li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Dashboard">
-								<a href="<?php echo base_url(); ?>parents/dashboard" class="nav-link btn btn-icon btn-lg btn-borderless active">
+								<a href="<?php echo base_url(); ?>index.php/parents/dashboard" class="nav-link btn btn-icon btn-lg btn-borderless active">
 									<span class="svg-icon svg-icon-xxl">
 
 										<!--begin::Svg Icon | path:assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
@@ -44,7 +44,7 @@
 							<!--end::Item-->
 							<!--begin::Item-->
 							<li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Mis Hijos" >
-							<a href="<?php echo base_url(); ?>parents/enrolled_children" class="nav-link btn btn-icon btn-lg btn-borderless active">
+							<a href="<?php echo base_url(); ?>index.php/parents/enrolled_children" class="nav-link btn btn-icon btn-lg btn-borderless active">
 									<span class="svg-icon svg-icon-xxl">
 
 										<!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Group.svg-->

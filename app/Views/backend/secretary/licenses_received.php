@@ -2,7 +2,7 @@
     function enviarLicencia(licencia_id, student_id, btn){
         var originalHtml = btn ? btn.innerHTML : '';
         $.ajax({
-            url: "<?php echo base_url(); ?>secretary/license_send/"+licencia_id+"/"+student_id,
+            url: "<?php echo base_url(); ?>index.php/secretary/license_send/"+licencia_id+"/"+student_id,
             type: "get",
             beforeSend: function(){
                 if (btn) {

@@ -8,7 +8,7 @@
 		};
         $.ajax({
 			data: parametros,
-			url: "<?php echo base_url('server/student_fill'); ?>",
+			url: "<?php echo base_url('index.php/server/student_fill'); ?>",
 			type: "post",
 			success: function(response){
                 var content = JSON.parse(response);
@@ -37,7 +37,7 @@
 		};
         $.ajax({
 			data: parametros2,
-			url: "<?php echo base_url('server/fill_subject_section'); ?>",
+			url: "<?php echo base_url('index.php/server/fill_subject_section'); ?>",
 			type: "post",
 			success: function(response){
                 var content2 = JSON.parse(response);
@@ -217,7 +217,7 @@ $hora_actual = date("H:i");
                             </div>
                             <div class="card-footer">
                                 <button type="submit" class="btn btn-primary mr-2">Guardar Cambios</button>
-                                <a href="<?php echo base_url('secretary/absences');?>" class="btn btn-secondary">Cancelar</a>
+                                <a href="<?php echo base_url('index.php/secretary/absences');?>" class="btn btn-secondary">Cancelar</a>
                             </div>
                         </div>
                     </div>

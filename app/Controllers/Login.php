@@ -81,7 +81,7 @@ class Login extends BaseController
             ];
             $session = session();
             $session->set($data);
-            return redirect()->to(base_url('admin/dashboard'))->with('mensaje','1');
+            return redirect()->to(base_url('index.php/admin/dashboard'))->with('mensaje','1');
 
         }else{
             return redirect()->to(base_url('/'))->with('mensaje','Credenciales Inválidas '.$password.' = '.$datosUsuario[0]['password']);
@@ -89,12 +89,10 @@ class Login extends BaseController
         */
         $login_status = $this->validate_login($email, $password);
         if ($login_status == 'success') {
-            //$response['redirect_url'] = '';
-            //redirect(base_url() . 'index.php/login', 'refresh');
             $session = session();
-            return redirect()->to(base_url($session->get('login_type') . '/dashboard'))->with('mensaje', '4');
+            return redirect()->to(site_url($session->get('login_type') . '/dashboard'))->with('mensaje', '4');
         } else {
-            return redirect()->to(base_url('/'))->with('mensaje', '2');
+            return redirect()->to(site_url('/'))->with('mensaje', '2');
         }
     }
     function validate_login($email = '', $password = '')

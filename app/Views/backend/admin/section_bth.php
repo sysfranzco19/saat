@@ -5,7 +5,7 @@
         const encodedSheetId = encodeURIComponent(sheet_id);
         
         $.ajax({
-            url: "<?php echo base_url(); ?>admin/recover_self_esp/" + encodedSubjectId + "/" + encodedSheetId,
+            url: "<?php echo base_url(); ?>index.php/admin/recover_self_esp/" + encodedSubjectId + "/" + encodedSheetId,
             type: "get",
             beforeSend: function(){
                 document.getElementById('mostrar_loading').style.display = "block";
@@ -23,7 +23,7 @@
         const encodedMateria = encodeURIComponent(materia);
         
         $.ajax({
-            url: "<?php echo base_url(); ?>admin/centralizer_notes_esp/" + encodedSubjectId + "/" + encodedSheetId+ "/" + encodedMateria,
+            url: "<?php echo base_url(); ?>index.php/admin/centralizer_notes_esp/" + encodedSubjectId + "/" + encodedSheetId+ "/" + encodedMateria,
             type: "get",
             beforeSend: function(){
                 document.getElementById('mostrar_loading').style.display = "block";
@@ -99,12 +99,12 @@
                 ?>
                 <tr>
                     <td><?php echo $row['completo']; ?></td>
-                    <td><a href="<?php echo base_url(); ?>admin/subject_bth/<?php echo $row['section_id']; ?>" class='btn btn-light-success font-weight-bold mr-2'>Ir a las Planillas</a>
+                    <td><a href="<?php echo base_url(); ?>index.php/admin/subject_bth/<?php echo $row['section_id']; ?>" class='btn btn-light-success font-weight-bold mr-2'>Ir a las Planillas</a>
                     </td>
-                    <td><a href="<?php echo base_url(); ?>admin/create_notes_bth/<?php echo $row['section_id']; ?>" class="btn btn-light-warning font-weight-bold mr-2">Crear</a>
+                    <td><a href="<?php echo base_url(); ?>index.php/admin/create_notes_bth/<?php echo $row['section_id']; ?>" class="btn btn-light-warning font-weight-bold mr-2">Crear</a>
                     </td>
                     <td>
-                    <a href="<?php echo base_url(); ?>admin/centralize_notes_bth/<?php echo $row['section_id']; ?>/<?php echo $row['subject_id']; ?>" class='btn btn-secondary font-weight-bold mr-2' >Centralizar Notas</a>
+                    <a href="<?php echo base_url(); ?>index.php/admin/centralize_notes_bth/<?php echo $row['section_id']; ?>/<?php echo $row['subject_id']; ?>" class='btn btn-secondary font-weight-bold mr-2' >Centralizar Notas</a>
                     </td>
                     <td>
                         <a href="<?php echo base_url(); ?>index.php/admin/centralizador_bth/<?php echo $row['section_id']; ?>/<?php echo $row['subject_id']; ?>" class='btn btn-light-primary font-weight-bold mr-2' target="_blank" >Descargar</a>

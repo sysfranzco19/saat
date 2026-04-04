@@ -38,7 +38,7 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <a href="<?php echo base_url(); ?>admin/update_student" class="btn btn-light-primary font-weight-bold mr-2">Actualizar Student</a>
+                            <a href="<?php echo base_url(); ?>index.php/admin/update_student" class="btn btn-light-primary font-weight-bold mr-2">Actualizar Student</a>
                         </div>
                     </form>
                     <!--end::Form-->
@@ -239,7 +239,7 @@
                         <!--end::Example-->
                     </div>
                     <div class="card-footer">
-                            <a href="<?php echo base_url(); ?>admin/update_section" class="btn btn-light-success font-weight-bold mr-2">Actualizar Cursos</a>
+                            <a href="<?php echo base_url(); ?>index.php/admin/update_section" class="btn btn-light-success font-weight-bold mr-2">Actualizar Cursos</a>
                         </div>
                 </div>
                 <!--end::Card-->

@@ -3,7 +3,7 @@
     {
         // SHOW AJAX RESPONSE ON REQUEST SUCCESS
         $.ajax({
-			url: "<?php echo base_url(); ?>secretary/delay_get/<?php echo $param1; ?>",
+			url: "<?php echo base_url(); ?>index.php/secretary/delay_get/<?php echo $param1; ?>",
 			success: function(response)
 			{
                 var content = JSON.parse(response);

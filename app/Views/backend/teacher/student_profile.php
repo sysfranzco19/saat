@@ -26,7 +26,7 @@
                         $backPeriod = isset($_GET['periodo']) ? $_GET['periodo'] : '';
                         if ($backDate):
                             ?>
-                            <form action="<?= base_url('teacher/attendance_date') ?>" method="POST" style="display:inline;">
+                            <form action="<?= base_url('index.php/teacher/attendance_date') ?>" method="POST" style="display:inline;">
                                 <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
                                 <input type="hidden" name="fecha" value="<?= $backDate ?>">
                                 <input type="hidden" name="periodo" value="<?= $backPeriod ?>">
@@ -35,7 +35,7 @@
                                 </button>
                             </form>
                         <?php else: ?>
-                            <a href="<?= base_url('teacher/attendance/' . $subject_id) ?>"
+                            <a href="<?= base_url('index.php/teacher/attendance/' . $subject_id) ?>"
                                 class="btn btn-light-primary font-weight-bold">
                                 <i class="fa fa-arrow-left"></i> Volver a Asistencia
                             </a>
@@ -366,7 +366,7 @@
     function deleteBehavior(logId) {
         if (!confirm('¿Estás seguro de que deseas eliminar este registro?')) return;
 
-        $.post('<?= base_url('teacher/delete_behavior_ajax') ?>', {
+        $.post('<?= base_url('index.php/teacher/delete_behavior_ajax') ?>', {
             log_id: logId
         }, function (response) {
             if (response.status === 'success') {
@@ -391,7 +391,7 @@
         const logId = $('#edit-log-id').val();
         const obs = $('#edit-observation').val();
 
-        $.post('<?= base_url('teacher/update_behavior_observation_ajax') ?>', {
+        $.post('<?= base_url('index.php/teacher/update_behavior_observation_ajax') ?>', {
             log_id: logId,
             observation: obs
         }, function (response) {

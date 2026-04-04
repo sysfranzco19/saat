@@ -19,7 +19,7 @@
                         </div>
                     </div>
                     <div>
-                        <a href="<?= base_url('teacher/adviser') ?>" class="btn btn-light-primary font-weight-bold">
+                        <a href="<?= base_url('index.php/teacher/adviser') ?>" class="btn btn-light-primary font-weight-bold">
                             <i class="fa fa-arrow-left"></i> Volver a Consejería
                         </a>
                     </div>

@@ -3,7 +3,7 @@
     {
         // SHOW AJAX RESPONSE ON REQUEST SUCCESS
         $.ajax({
-			url: "<?php echo base_url(); ?>server/student_get/<?php echo $param2; ?>",
+			url: "<?php echo base_url(); ?>index.php/server/student_get/<?php echo $param2; ?>",
 			success: function(response)
 			{
 				document.getElementById('student').value = response;
@@ -14,7 +14,7 @@
     function getSubjects() {
         // SHOW AJAX RESPONSE ON REQUEST SUCCESS
         $.ajax({
-			url: "<?php echo base_url(); ?>server/fill_subjects/<?php echo $param1; ?>",
+			url: "<?php echo base_url(); ?>index.php/server/fill_subjects/<?php echo $param1; ?>",
 			success: function(response)
 			{
 				document.getElementById('subject_id').innerHTML = response;
@@ -26,7 +26,7 @@
     function getCriteria() {
         
         $.ajax({
-			url: "<?php echo base_url(); ?>server/fill_criteria/1",
+			url: "<?php echo base_url(); ?>index.php/server/fill_criteria/1",
 			success: function(response)
 			{
 				document.getElementById('criteria').innerHTML = response;
@@ -51,7 +51,7 @@
 		<i aria-hidden="true" class="ki ki-close"></i>
 	</button>
 </div>
-<?php //echo form_open(base_url() . 'teacher/assistance_edit/'.$param4, array('class' => 'form','name' => 'form_assistance')); ?>
+<?php //echo form_open(base_url() . 'index.php/teacher/assistance_edit/'.$param4, array('class' => 'form','name' => 'form_assistance')); ?>
 <form action="<?php echo base_url().'teacher/infraction_save'; ?>" method="post" class="form-horizontal" >
 <div class="modal-body">
     <div class="form-group row">

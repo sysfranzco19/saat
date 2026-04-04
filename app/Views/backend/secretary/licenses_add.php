@@ -8,7 +8,7 @@
         var parametros = { "student_id": student_id };
         $.ajax({
             data: parametros,
-            url: "<?php echo base_url('server/student_fill'); ?>",
+            url: "<?php echo base_url('index.php/server/student_fill'); ?>",
             type: "post",
             success: function(response) {
                 var content = JSON.parse(response);
@@ -107,7 +107,7 @@
         var family_id = document.getElementById('family_id').value;
         if (relationship <= 2) {
             $.ajax({
-                url: "<?php echo base_url('server/fill_parent_relationship'); ?>/" + family_id + '/' + relationship,
+                url: "<?php echo base_url('index.php/server/fill_parent_relationship'); ?>/" + family_id + '/' + relationship,
                 type: "get",
                 success: function(response) {
                     var content = JSON.parse(response);
@@ -287,7 +287,7 @@
 
                         <div class="card-footer">
                             <button type="submit" class="btn btn-primary mr-2">Registrar</button>
-                            <a href="<?php echo base_url('secretary/licenses'); ?>" class="btn btn-secondary">Cancelar</a>
+                            <a href="<?php echo base_url('index.php/secretary/licenses'); ?>" class="btn btn-secondary">Cancelar</a>
                         </div>
 
                     </div>

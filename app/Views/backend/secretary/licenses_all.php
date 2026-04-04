@@ -10,10 +10,10 @@
                     <span class="text-muted pt-2 font-size-sm d-block">Listado completo: días y períodos</span></h3>
                 </div>
                 <div class="card-toolbar">
-                    <a href="<?php echo base_url('secretary/licenses_add'); ?>" class="btn btn-primary btn-sm">
+                    <a href="<?php echo base_url('index.php/secretary/licenses_add'); ?>" class="btn btn-primary btn-sm">
                         <i class="flaticon2-plus icon-sm"></i> Nueva Licencia
                     </a>
-                    <a href="<?php echo base_url('secretary/licenses_periodo_add'); ?>" class="btn btn-primary btn-sm">
+                    <a href="<?php echo base_url('index.php/secretary/licenses_periodo_add'); ?>" class="btn btn-primary btn-sm">
                         <i class="flaticon2-plus icon-sm"></i> Nueva Licencia por Horas
                     </a>
                 </div>
@@ -52,7 +52,7 @@ $(document).ready(function() {
         serverSide: true,
         deferRender: true,
         ajax: {
-            url: '<?php echo base_url('secretary/licenses_all_data'); ?>',
+            url: '<?php echo base_url('index.php/secretary/licenses_all_data'); ?>',
             type: 'GET',
             error: function(xhr, error, thrown) {
                 console.error('DataTables AJAX error:', thrown);
@@ -101,8 +101,8 @@ $(document).ready(function() {
             },
             { data: 'licencias_id', orderable: false, searchable: false,
               render: function(data, type, row) {
-                  var html = '<a href="<?php echo base_url('secretary/licenses_edit/'); ?>' + data + '" class="btn btn-xs btn-icon btn-light-primary" title="Editar"><i class="flaticon2-edit icon-sm"></i></a> ' +
-                             '<a href="<?php echo base_url('secretary/license_report/'); ?>' + data + '" target="_blank" class="btn btn-xs btn-icon btn-light-info" title="Reporte PDF"><i class="flaticon2-file icon-sm"></i></a>';
+                  var html = '<a href="<?php echo base_url('index.php/secretary/licenses_edit/'); ?>' + data + '" class="btn btn-xs btn-icon btn-light-primary" title="Editar"><i class="flaticon2-edit icon-sm"></i></a> ' +
+                             '<a href="<?php echo base_url('index.php/secretary/license_report/'); ?>' + data + '" target="_blank" class="btn btn-xs btn-icon btn-light-info" title="Reporte PDF"><i class="flaticon2-file icon-sm"></i></a>';
                   if (row.documento) {
                       html += ' <a href="<?php echo base_url('uploads/comprobantes_medicos/'); ?>' + row.documento + '" target="_blank" class="btn btn-xs btn-icon btn-light-warning" title="Ver documento"><i class="fas fa-paperclip"></i></a>';
                   }

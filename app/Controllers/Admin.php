@@ -138,7 +138,7 @@ class Admin extends BaseController
             endforeach;
         endforeach;
         $session->set('flash_message', 'Total Notas Creadas Correctamente : ' . $n);
-        return redirect()->to(base_url() . 'admin/section_bth');
+        return redirect()->to(base_url() . 'index.php/admin/section_bth');
     }
     function centralize_notes_bth($section_id = '', $subject_id = '')
     {
@@ -184,7 +184,7 @@ class Admin extends BaseController
             $respuesta = $SubjectMod->update_subject($data, $subject_id);
         }
         $session->set('flash_message', 'Total Notas Centralizadas Correctamente : ' . $n);
-        return redirect()->to(base_url() . '/admin/section_bth');
+        return redirect()->to(base_url() . 'index.php/admin/section_bth');
     }
     function centralizador_bth($section_id = '', $subject_id = '')
     {
@@ -367,7 +367,7 @@ class Admin extends BaseController
         //$session->set('flash_message_error', 'Error al cargar');
         $session->set('flash_message', 'Correo enviado correctamente');
         //return view('backend/index', $page_data);
-        return redirect()->to(base_url() . 'admin/test_email');
+        return redirect()->to(base_url() . 'index.php/admin/test_email');
     }
     /*********************************************REPORTES ESTADISTICOS ****************************/
     public function dg_continuity_results()
@@ -469,7 +469,7 @@ class Admin extends BaseController
         $StudentMod = new StudentModel();
         $respuesta = $StudentMod->updateTStudent();
         $session->set('flash_message', 'Tabla estudiantes actualizada correctamente');
-        return redirect()->to(base_url() . 'admin/update_tables');
+        return redirect()->to(base_url() . 'index.php/admin/update_tables');
     }
     public function update_section()
     {
@@ -477,7 +477,7 @@ class Admin extends BaseController
         $SectionMod = new SectionModel();
         $respuesta = $SectionMod->updateTSection();
         $session->set('flash_message', 'Tabla Cursos actualizada correctamente');
-        return redirect()->to(base_url() . 'admin/update_tables');
+        return redirect()->to(base_url() . 'index.php/admin/update_tables');
     }
     /*************************MODIFICACIONES DE NOTAS******************* */
     function section_students()
@@ -609,10 +609,10 @@ class Admin extends BaseController
 
         if ($respuesta > 0) {
             $session->set('flash_message', 'Notas modificadas Correctamente');
-            return redirect()->to(base_url() . 'admin/student_notes/' . $student_id . '/' . $phase_id);
+            return redirect()->to(base_url() . 'index.php/admin/student_notes/' . $student_id . '/' . $phase_id);
         } else {
             $session->set('flash_message_error', 'Error al procesar');
-            return redirect()->to(base_url() . 'admin/student_notes/' . $student_id . '/' . $phase_id);
+            return redirect()->to(base_url() . 'index.php/admin/student_notes/' . $student_id . '/' . $phase_id);
         }
     }
     function send_alerta3_php()
@@ -633,7 +633,7 @@ class Admin extends BaseController
 
         if (!file_exists($templatePath)) {
             $session->set('flash_message', 'Error: No se encontró la plantilla HTML');
-            return redirect()->to(base_url() . 'admin/test_email');
+            return redirect()->to(base_url() . 'index.php/admin/test_email');
         }
 
         $html = file_get_contents($templatePath);
@@ -666,7 +666,7 @@ class Admin extends BaseController
             $session->set('flash_message', 'Error al enviar el correo');
         }
 
-        return redirect()->to(base_url() . 'admin/test_email');
+        return redirect()->to(base_url() . 'index.php/admin/test_email');
     }
     function recover_self_esp($subject_id, $sheet_id)
     {
@@ -787,7 +787,7 @@ class Admin extends BaseController
         $NivelMod->insert_nivel($data);
 
         $session->set('flash_message', 'Nivel creado correctamente');
-        return redirect()->to(base_url() . '/admin/nivel');
+        return redirect()->to(base_url() . 'index.php/admin/nivel');
     }
 
     public function nivel_get($id)
@@ -824,7 +824,7 @@ class Admin extends BaseController
         $NivelMod->update_nivel($data, $id);
 
         $session->set('flash_message', 'Nivel actualizado correctamente');
-        return redirect()->to(base_url() . '/admin/nivel');
+        return redirect()->to(base_url() . 'index.php/admin/nivel');
     }
 
     public function nivel_delete()
@@ -839,7 +839,7 @@ class Admin extends BaseController
         $NivelMod->delete_nivel($id);
 
         $session->set('flash_message', 'Nivel eliminado correctamente');
-        return redirect()->to(base_url() . '/admin/nivel');
+        return redirect()->to(base_url() . 'index.php/admin/nivel');
     }
 
     // Periodo CRUD
@@ -885,7 +885,7 @@ class Admin extends BaseController
         $PeriodoMod->insert_periodo($data);
 
         $session->set('flash_message', 'Periodo creado correctamente');
-        return redirect()->to(base_url() . '/admin/periodo');
+        return redirect()->to(base_url() . 'index.php/admin/periodo');
     }
 
     public function periodo_get($id)
@@ -921,7 +921,7 @@ class Admin extends BaseController
         $PeriodoMod->update_periodo($data, $id);
 
         $session->set('flash_message', 'Periodo actualizado correctamente');
-        return redirect()->to(base_url() . '/admin/periodo');
+        return redirect()->to(base_url() . 'index.php/admin/periodo');
     }
 
     public function periodo_delete()
@@ -936,6 +936,6 @@ class Admin extends BaseController
         $PeriodoMod->delete_periodo($id);
 
         $session->set('flash_message', 'Periodo eliminado correctamente');
-        return redirect()->to(base_url() . '/admin/periodo');
+        return redirect()->to(base_url() . 'index.php/admin/periodo');
     }
 }

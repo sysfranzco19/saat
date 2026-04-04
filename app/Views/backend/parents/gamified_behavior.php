@@ -74,7 +74,7 @@ $session = session();
                                 <label class="font-weight-bolder text-dark">Seleccionar Estudiante:</label>
                                 <select class="form-control" onchange="location = this.value;">
                                     <?php foreach ($students as $stu): ?>
-                                        <option value="<?= base_url(); ?>parents/gamified_behavior/<?= $stu['student_id'] ?>"
+                                        <option value="<?= base_url(); ?>index.php/parents/gamified_behavior/<?= $stu['student_id'] ?>"
                                             <?= ($stu['student_id'] == $student_id) ? 'selected' : '' ?>>
                                             <?= $stu['student'] ?> (<?= $stu['completo'] ?>)
                                         </option>

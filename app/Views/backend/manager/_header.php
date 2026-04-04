@@ -118,7 +118,7 @@
                                                 <ul class="menu-subnav">
                                                     <li class="menu-item" aria-haspopup="true">
                                                         <a href="javascript:void(0);"
-                                                            onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/delay_modal_day/0/0/0/0/0');"
+                                                            onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/delay_modal_day/0/0/0/0/0');"
                                                             class="menu-link">
                                                             <i class="menu-bullet menu-bullet-dot">
                                                                 <span></span>
@@ -363,7 +363,7 @@
                                 <div class="menu-submenu menu-submenu-classic menu-submenu-left">
                                     <ul class="menu-subnav">
                                         <li class="menu-item" aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?>teacher/student_search/director/0" class="menu-link">
+                                            <a href="<?php echo base_url(); ?>index.php/teacher/student_search/director/0" class="menu-link">
                                                 <span class="svg-icon menu-icon">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
                                                         <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -377,7 +377,7 @@
                                             </a>
                                         </li>
                                         <li class="menu-item" aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?>teacher/class_dir" class="menu-link">
+                                            <a href="<?php echo base_url(); ?>index.php/teacher/class_dir" class="menu-link">
                                                 <span class="svg-icon menu-icon">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
                                                         <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -390,7 +390,7 @@
                                             </a>
                                         </li>
                                         <li class="menu-item" aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?>teacher/sections_dir" class="menu-link">
+                                            <a href="<?php echo base_url(); ?>index.php/teacher/sections_dir" class="menu-link">
                                                 <span class="svg-icon menu-icon">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
                                                         <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -403,7 +403,7 @@
                                             </a>
                                         </li>
                                         <li class="menu-item" aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?>teacher/self_director" class="menu-link">
+                                            <a href="<?php echo base_url(); ?>index.php/teacher/self_director" class="menu-link">
                                                 <span class="svg-icon menu-icon">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
                                                         <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -417,7 +417,7 @@
                                             </a>
                                         </li>
                                         <li class="menu-item" aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?>teacher/teacher_notes" class="menu-link">
+                                            <a href="<?php echo base_url(); ?>index.php/teacher/teacher_notes" class="menu-link">
                                                 <span class="svg-icon menu-icon">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
                                                         <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">

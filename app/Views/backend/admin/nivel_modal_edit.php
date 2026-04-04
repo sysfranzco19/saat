@@ -5,7 +5,7 @@
 <script type="text/javascript">
     function getNivel() {
         $.ajax({
-            url: "<?php echo base_url(); ?>/admin/nivel_get/<?php echo $param1; ?>",
+            url: "<?php echo base_url(); ?>index.php/admin/nivel_get/<?php echo $param1; ?>",
             success: function(response) {
                 if (response) {
                     $('#nivel_input').val(response.nivel);

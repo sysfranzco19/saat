@@ -128,9 +128,9 @@
                                                             Notas
                                                         </button>
                                                         <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/notes_half_student/<?php echo $row['student_id'];?>" target="_blank" >Medio Trimestre</a>
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/student_notes/<?php echo $row['student_id'];?>" target="_blank" >Trimestreles</a>
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/report_card/<?php echo $row['student_id'];?>" target="_blank" >Reporte Académico Trimestral</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/notes_half_student/<?php echo $row['student_id'];?>" target="_blank" >Medio Trimestre</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/student_notes/<?php echo $row['student_id'];?>" target="_blank" >Trimestreles</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/report_card/<?php echo $row['student_id'];?>" target="_blank" >Reporte Académico Trimestral</a>
                                                         </div>
                                                     </div>
                                                     <div class="btn-group">
@@ -138,10 +138,10 @@
                                                             Asistencias
                                                         </button>
                                                         <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/student_attendance/<?php echo $row['student_id'];?>/all/0" target="_blank" >Asistencias</a>
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/student_licenses/<?php echo $row['student_id'];?>/all/0" target="_blank" >Licencias</a>
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/absences_student/<?php echo $row['student_id'];?>" target="_blank">Ausencias</a>
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/delays_student/<?php echo $row['student_id'];?>" target="_blank">Retrasos</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/student_attendance/<?php echo $row['student_id'];?>/all/0" target="_blank" >Asistencias</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/student_licenses/<?php echo $row['student_id'];?>/all/0" target="_blank" >Licencias</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/absences_student/<?php echo $row['student_id'];?>" target="_blank">Ausencias</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/delays_student/<?php echo $row['student_id'];?>" target="_blank">Retrasos</a>
                                                         </div>
                                                     </div>
                                                     <div class="btn-group">
@@ -149,9 +149,9 @@
                                                             Conductuales
                                                         </button>
                                                         <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/dashboard" target="_blank" >Comunicación</a>
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/dashboard" target="_blank" >Entrevistas</a>
-                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>teacher/dashboard" target="_blank" >Infracciones</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/dashboard" target="_blank" >Comunicación</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/dashboard" target="_blank" >Entrevistas</a>
+                                                            <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/teacher/dashboard" target="_blank" >Infracciones</a>
                                                         </div>
                                                     </div>
                                                 </td>

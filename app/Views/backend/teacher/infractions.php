@@ -30,12 +30,12 @@
                             <tr>
                                 <th scope="row" ><?php echo $cur['completo'];?></th>
                                 <td>
-                                    <a href="<?php echo base_url(); ?>teacher/infractions_section/<?php echo $cur['section_id'];?>" class="btn btn-danger btn-sm" >
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/infractions_section/<?php echo $cur['section_id'];?>" class="btn btn-danger btn-sm" >
                                     Ingresar a la Planilla</a>
                                 </td>
                                 <td>
                                     <div class="dropdown">
-                                        <a href="<?php echo base_url(); ?>teacher/infractions_excel/<?php echo $cur['section_id'];?>" class="btn btn-secondary btn-sm" >Descargar</a>
+                                        <a href="<?php echo base_url(); ?>index.php/teacher/infractions_excel/<?php echo $cur['section_id'];?>" class="btn btn-secondary btn-sm" >Descargar</a>
                                     </div>
                                 </td>
                             </tr>
@@ -48,12 +48,12 @@
                             <tr>
                                 <th scope="row" ><?php echo $cur['completo'];?></th>
                                 <td>
-                                    <a href="<?php echo base_url(); ?>teacher/infractions_section/<?php echo $cur['section_id'];?>" class="btn btn-danger btn-sm" >
+                                    <a href="<?php echo base_url(); ?>index.php/teacher/infractions_section/<?php echo $cur['section_id'];?>" class="btn btn-danger btn-sm" >
                                     Ingresar a la Planilla</a>
                                 </td>
                                 <td>
                                     <div class="dropdown">
-                                        <a href="<?php echo base_url(); ?>teacher/infractions_excel/<?php echo $cur['section_id'];?>" class="btn btn-secondary btn-sm" >Descargar</a>
+                                        <a href="<?php echo base_url(); ?>index.php/teacher/infractions_excel/<?php echo $cur['section_id'];?>" class="btn btn-secondary btn-sm" >Descargar</a>
                                     </div>
                                 </td>
                             </tr>
