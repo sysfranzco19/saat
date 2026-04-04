@@ -131,6 +131,23 @@
             box-shadow: 0 15px 25px rgba(88, 18, 53, 0.5) !important;
             transform: translateY(-3px) !important;
         }
+
+        /* Mobile specific fixes to stop the huge scrolling */
+        @media (max-width: 991.98px) {
+            .login-aside {
+                min-height: auto !important;
+                padding-bottom: 40px !important;
+            }
+            .aside-img {
+                display: none !important; /* Hide empty visual space */
+            }
+            .premium-logo {
+                max-height: 100px !important; /* Smaller on mobile */
+            }
+            .d-flex.flex-column-auto.flex-column.pt-15 {
+                padding-top: 30px !important;
+            }
+        }
     </style>
 </head>
 
