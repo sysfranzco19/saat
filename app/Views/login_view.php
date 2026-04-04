@@ -74,7 +74,7 @@
 
                     <a href="#" class="text-center mb-10">
 
-                        <img src="assets/media/logos/logo-letter-1.png" class="max-h-70px" alt="" />
+                        <img src="https://tiquipaya.edu.bo/logomini.png" class="max-h-70px" alt="Logo Colegio Tiquipaya" />
 
                     </a>
 
