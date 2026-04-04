@@ -49,7 +49,7 @@
     <style>
         /* Antigravity Premium UI Additions */
         body {
-            background-color: #f7f9fc !important;
+            background-color: #ffffff !important;
         }
         .login-aside {
             background: linear-gradient(135deg, #A82463 0%, #581235 100%) !important;
@@ -92,7 +92,7 @@
 
         /* Glassmorphism/Elevated Login Form */
         .login-content {
-            background-color: #f7f9fc;
+            background-color: #ffffff !important;
         }
         .login-form.login-signin {
             background: white;
