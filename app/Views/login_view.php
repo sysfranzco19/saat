@@ -52,7 +52,7 @@
             background-color: #f7f9fc !important;
         }
         .login-aside {
-            background: linear-gradient(135deg, #1c2b59 0%, #3a5b9b 100%) !important;
+            background: linear-gradient(135deg, #69143e 0%, #92225a 100%) !important;
             position: relative;
             overflow: hidden;
         }
@@ -114,21 +114,21 @@
         }
         .form-control-solid:focus {
             background-color: #ffffff !important;
-            border-color: #3a5b9b !important;
-            box-shadow: 0 0 0 4px rgba(58, 91, 155, 0.1) !important;
+            border-color: #92225a !important;
+            box-shadow: 0 0 0 4px rgba(146, 34, 90, 0.1) !important;
         }
 
         .btn-premium {
-            background: linear-gradient(135deg, #1c2b59 0%, #3a5b9b 100%) !important;
+            background: linear-gradient(135deg, #69143e 0%, #92225a 100%) !important;
             border: none !important;
             color: white !important;
-            box-shadow: 0 10px 20px rgba(28, 43, 89, 0.25) !important;
+            box-shadow: 0 10px 20px rgba(105, 20, 62, 0.25) !important;
             border-radius: 12px !important;
             transition: all 0.3s ease !important;
             font-weight: 600;
         }
         .btn-premium:hover {
-            box-shadow: 0 15px 25px rgba(28, 43, 89, 0.4) !important;
+            box-shadow: 0 15px 25px rgba(105, 20, 62, 0.4) !important;
             transform: translateY(-3px) !important;
         }
     </style>
