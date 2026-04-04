@@ -44,11 +44,94 @@
     <link rel="shortcut icon" href="<?php echo base_url(); ?>/assets/media/logos/favicon.ico" />
 
     <script type="text/javascript">
-
         var baseurl = '<?php echo base_url(); ?>';
-
     </script>
+    <style>
+        /* Antigravity Premium UI Additions */
+        body {
+            background-color: #f7f9fc !important;
+        }
+        .login-aside {
+            background: linear-gradient(135deg, #1c2b59 0%, #3a5b9b 100%) !important;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Dynamic subtle floating circles in background */
+        .login-aside::before, .login-aside::after {
+            content: "";
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 70%);
+            z-index: 0;
+        }
+        .login-aside::before { top: -10%; left: -20%; }
+        .login-aside::after { bottom: -10%; right: -20%; }
+        
+        /* Elevated Logo */
+        .premium-logo {
+            max-height: 140px !important; /* Made the logo much larger */
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.3));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            z-index: 1;
+        }
+        .premium-logo:hover {
+            transform: scale(1.08) translateY(-5px);
+        }
+        
+        .aside-title-text {
+            color: #ffffff !important;
+            text-shadow: 0px 2px 8px rgba(0,0,0,0.3);
+            font-weight: 700 !important;
+            letter-spacing: 0.5px;
+            z-index: 1;
+            position: relative;
+        }
 
+        /* Glassmorphism/Elevated Login Form */
+        .login-content {
+            background-color: #f7f9fc;
+        }
+        .login-form.login-signin {
+            background: white;
+            padding: 3.5rem 3rem;
+            border-radius: 20px;
+            box-shadow: 0px 20px 50px rgba(0, 0, 0, 0.05); border: 1px solid rgba(0,0,0,0.02);
+            transition: all 0.3s ease;
+        }
+        .login-form.login-signin:hover {
+            box-shadow: 0px 25px 60px rgba(0, 0, 0, 0.08); border: 1px solid rgba(0,0,0,0.04);
+            transform: translateY(-2px);
+        }
+        
+        .form-control-solid {
+            background-color: #f3f6f9 !important;
+            border-color: #f3f6f9 !important;
+            border-radius: 12px !important;
+            transition: all 0.2s ease;
+        }
+        .form-control-solid:focus {
+            background-color: #ffffff !important;
+            border-color: #3a5b9b !important;
+            box-shadow: 0 0 0 4px rgba(58, 91, 155, 0.1) !important;
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, #1c2b59 0%, #3a5b9b 100%) !important;
+            border: none !important;
+            color: white !important;
+            box-shadow: 0 10px 20px rgba(28, 43, 89, 0.25) !important;
+            border-radius: 12px !important;
+            transition: all 0.3s ease !important;
+            font-weight: 600;
+        }
+        .btn-premium:hover {
+            box-shadow: 0 15px 25px rgba(28, 43, 89, 0.4) !important;
+            transform: translateY(-3px) !important;
+        }
+    </style>
 </head>
 
 <body id="kt_body" class="header-fixed header-mobile-fixed subheader-enabled sidebar-enabled page-loading">
@@ -64,7 +147,7 @@
 
             <!--begin::Aside-->
 
-            <div class="login-aside d-flex flex-column flex-row-auto" style="background-color: #F2C98A;">
+            <div class="login-aside d-flex flex-column flex-row-auto">
 
                 <!--begin::Aside Top-->
 
@@ -74,7 +157,7 @@
 
                     <a href="#" class="text-center mb-10">
 
-                        <img src="https://tiquipaya.edu.bo/logomini.png" class="max-h-70px" alt="Logo Colegio Tiquipaya" />
+                        <img src="https://tiquipaya.edu.bo/logomini.png" class="premium-logo" alt="Logo Colegio Tiquipaya" />
 
                     </a>
 
@@ -82,7 +165,7 @@
 
                     <!--begin::Aside title-->
 
-                    <h3 class="font-weight-bolder text-center font-size-h4 font-size-h1-lg" style="color: #986923;">
+                    <h3 class="font-weight-bolder text-center font-size-h4 font-size-h1-lg aside-title-text">
                         Plataforma Educativa
 
                         <br />Colegio Tiquipaya
@@ -215,7 +298,7 @@
                             <div class="pb-lg-0 pb-5">
 
                                 <button type="submit" id="kt_login_signin_submit"
-                                    class="btn btn-primary font-weight-bolder font-size-h6 px-8 py-4 my-3 mr-3">Ingresar</button>
+                                    class="btn btn-premium font-weight-bolder font-size-h6 px-8 py-4 my-3 mr-3 w-100">Ingresar</button>
 
 
 
