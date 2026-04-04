@@ -9,7 +9,7 @@ $name = strtoupper($session->get('name'));
         <!--[html-partial:begin:{"id":"demo1/dist/inc/view/partials/content/widgets/stats/widget-13","page":"index"}]/-->
 
         <!--begin::Stats Widget 13-->
-        <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/dashboard"
+        <a href="<?php echo base_url(); ?>index.php/<?php echo $account_type; ?>/dashboard"
             class="card card-custom bg-danger bg-hover-state-danger card-shadowless gutter-b">
             <!--begin::Body-->
             <div class="card-body">

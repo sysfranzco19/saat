@@ -1108,10 +1108,10 @@ class Teacher extends BaseController
             ];
             $AssistanceMod = new AssistancesubjectModel();
             $dates = $AssistanceMod->get_assistance_subject($data);
-            if (count($dates) == 1) {
-                foreach ($dates as $fila) {
-                    $assistance_subject_id = $fila['assistance_subject_id'];
-                }
+            if (count($dates) >= 1) {
+                // If there are duplicates, we ensure we only update the LAST one or we update the generic target
+                $assistance_subject_id = $dates[count($dates)-1]['assistance_subject_id'];
+                
                 $datos = [
                     "status" => $statusVal,
                     "indiscipline" => $textVal,
@@ -1205,6 +1205,39 @@ class Teacher extends BaseController
         $page_data['page_title'] = 'Reporte de Asistencias';
         return view('backend/index', $page_data);
     }
+    
+    function assistance_add($subject_id = '')
+    {
+        $session = session();
+        $teacher_id = $session->get('teacher_id');
+        if ($session->get('login_type') != 'teacher')
+            return redirect()->to(base_url());
+        
+        $page_data['subject_id'] = $_POST['subject_id'];
+        $date_id = $_POST['date_id'];
+        $student_id = $_POST['student_id'];
+        $status = $_POST['chk_status'];
+        $obs = $_POST['obs'];
+
+        $AssistanceMod = new AssistancesubjectModel();
+        $data_attendance_subject = [
+            "status" => $status,
+            "indiscipline" => $obs,
+            "date_id" => $date_id,
+            "subject_id" => $page_data['subject_id'],
+            "student_id" => $student_id,
+            "periodos" => 1,
+        ];
+        $respuesta = $AssistanceMod->insert_assistance_subject($data_attendance_subject);
+
+        if ($respuesta) {
+            $session->set('flash_message', 'Asistencia registrada correctamente');
+        } else {
+            $session->set('flash_message_error', 'Error al registrar asistencia');
+        }
+        return redirect()->to(base_url() . 'index.php/teacher/attendance_report/' . $subject_id);
+    }
+
     function assistance_edit($subject_id = '')
     {
         $session = session();

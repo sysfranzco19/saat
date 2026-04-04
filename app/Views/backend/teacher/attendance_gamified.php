@@ -616,7 +616,7 @@
 
         hasUnsavedChanges = true;
 
-        $.post(BASE_URL + "/teacher/update_attendance_ajax", {
+        $.post(BASE_URL + "index.php/teacher/update_attendance_ajax", {
             student_id: studentId, status: newStatus, subject_id: SUBJECT_ID, date_id: DATE_ID
         });
     }
@@ -794,7 +794,7 @@
 
         hasUnsavedChanges = true;
 
-        $.post(BASE_URL + "/teacher/register_behavior", {
+        $.post(BASE_URL + "index.php/teacher/register_behavior", {
             student_id: studentId,
             behavior_id: behaviorId,
             points: points,
@@ -854,7 +854,7 @@
         }
 
         // Fetch Logs
-        $.post(BASE_URL + "/teacher/get_daily_log_ajax", {
+        $.post(BASE_URL + "index.php/teacher/get_daily_log_ajax", {
             student_id: studentId,
             date_id: DATE_ID,
             subject_id: SUBJECT_ID
@@ -917,7 +917,7 @@
 
         hasUnsavedChanges = true;
 
-        $.post(BASE_URL + "/teacher/delete_behavior_ajax", {
+        $.post(BASE_URL + "index.php/teacher/delete_behavior_ajax", {
             log_id: logId
         }, function (response) {
             if (response.status === 'success') {
@@ -995,7 +995,7 @@
 
         hasUnsavedChanges = true;
 
-        $.post(BASE_URL + "/teacher/register_behavior", {
+        $.post(BASE_URL + "index.php/teacher/register_behavior", {
             student_id: studentId,
             behavior_id: behaviorId,
             points: points,

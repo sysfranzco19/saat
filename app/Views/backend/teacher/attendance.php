@@ -22,7 +22,7 @@ $fecha_actual = date('Y-m-d');
 
             <div class="card-body pt-4">
                 <!-- Form Date and Period Selection -->
-                <form action="<?= base_url() . '/index.php/teacher/attendance_date' ?>" method="POST" id="form_date_period" name="form_date">
+                <form action="<?= base_url() . 'index.php/teacher/attendance_date' ?>" method="POST" id="form_date_period" name="form_date">
                     <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
                     <input type="hidden" name="curso" value="<?= $curso ?>">
 
@@ -85,7 +85,7 @@ $fecha_actual = date('Y-m-d');
                 <?php if (isset($students) && isset($date_id)): ?>
                     <!-- Students List Table -->
                     <hr>
-                    <form action="<?= base_url() . '/index.php/teacher/attendance_save' ?>" method="POST" id="form_assists" name="form_assists">
+                    <form action="<?= base_url() . 'index.php/teacher/attendance_save' ?>" method="POST" id="form_assists" name="form_assists">
                         <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
                         <input type="hidden" name="section_id" value="<?= $section_id ?>">
                         <input type="hidden" name="periodos" value="<?= $periodo ?? '' ?>">

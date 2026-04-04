@@ -12,14 +12,14 @@
                     <ul class="menu-nav">
                         <li class="menu-item menu-item-open menu-item-here menu-item-submenu menu-item-rel menu-item-open menu-item-here"
                             data-menu-toggle="click" aria-haspopup="true">
-                            <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/dashboard" class="menu-link">
+                            <a href="<?php echo base_url(); ?>index.php/<?php echo $account_type; ?>/dashboard" class="menu-link">
                                 <span class="menu-text">Dashboard</span>
                                 <i class="menu-arrow"></i>
                             </a>
                         </li>
                         <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
                             aria-haspopup="true">
-                            <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/subjects" class="menu-link">
+                            <a href="<?php echo base_url(); ?>index.php/<?php echo $account_type; ?>/subjects" class="menu-link">
                                 <span class="menu-text">Registros de Notas</span>
                                 <i class="menu-arrow"></i>
                             </a>
@@ -35,7 +35,7 @@
                                 <ul class="menu-subnav">
                                     <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                         aria-haspopup="true">
-                                        <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/subjects"
+                                        <a href="<?php echo base_url(); ?>index.php/<?php echo $account_type; ?>/subjects"
                                             class="menu-link">
                                             <span class="svg-icon menu-icon">
 
@@ -125,7 +125,7 @@
                             ?>
                             <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
                                 aria-haspopup="true">
-                                <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/adviser" class="menu-link">
+                                <a href="<?php echo base_url(); ?>index.php/<?php echo $account_type; ?>/adviser" class="menu-link">
                                     <span class="menu-text">Consejería</span><!-- calendario -->
                                     <span class="menu-desc"></span>
                                     <i class="menu-arrow"></i>
@@ -152,7 +152,7 @@
                                     <ul class="menu-subnav">
                                         <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                             aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/student_search/director/0"
+                                            <a href="<?php echo base_url(); ?>index.php/<?php echo $account_type; ?>/student_search/director/0"
                                                 class="menu-link">
                                                 <span class="svg-icon menu-icon">
                                                     <!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Address-card.svg-->
@@ -176,7 +176,7 @@
                                         </li>
                                         <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                             aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/class_dir"
+                                            <a href="<?php echo base_url(); ?>index.php/<?php echo $account_type; ?>/class_dir"
                                                 class="menu-link">
                                                 <span class="svg-icon menu-icon">
                                                     <!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Address-card.svg-->
@@ -197,7 +197,7 @@
                                         </li>
                                         <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                             aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/sections_dir"
+                                            <a href="<?php echo base_url(); ?>index.php/<?php echo $account_type; ?>/sections_dir"
                                                 class="menu-link">
                                                 <span class="svg-icon menu-icon">
                                                     <!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Address-card.svg-->
@@ -288,7 +288,7 @@
 
             <!--begin::Toolbar-->
             <div class="d-flex align-items-right py-3 py-lg-2">
-                <a href="<?php echo base_url(); ?>logout"
+                <a href="<?php echo base_url(); ?>index.php/logout"
                     class="btn btn-sm btn-light-primary font-weight-bolder py-2 px-5">Cerrar Sesión</a>
             </div>
             <!--end::Toolbar-->

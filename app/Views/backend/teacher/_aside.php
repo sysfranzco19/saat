@@ -148,7 +148,7 @@
                     					<!--begin::Footer-->
 					<div class="aside-footer d-flex flex-column align-items-center flex-column-auto py-8">
 						<!--begin::Quick Panel-->
-						<a href="<?php echo base_url();?>/logout" class="btn btn-icon btn-lg btn-borderless mb-1" id="" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Cerrar Sesión">
+						<a href="<?php echo base_url();?>index.php/logout" class="btn btn-icon btn-lg btn-borderless mb-1" id="" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Cerrar Sesión">
 							<span class="svg-icon svg-icon-xxl">
 
 								<!--begin::Svg Icon | path:assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
