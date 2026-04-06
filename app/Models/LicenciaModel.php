@@ -388,10 +388,14 @@ class LicenciaModel extends Model
             l.licencias_id,
             l.student_id,
             tl.tipo,
+            'dia' AS modalidad,
             CONCAT(e.lastname,' ',e.lastname2,' ',e.name) AS student,
             CONCAT(m.motivo,' - ',l.detalle) AS detalle,
             DATE_FORMAT(ld.fecha_inicio,'%d-%m-%Y') AS inicio,
             DATE_FORMAT(ld.fecha_fin,'%d-%m-%Y') AS fin,
+            ld.fecha_fin AS fecha_fin_cmp,
+            ld.cantidad_dias,
+            l.hora_salida,
             l.enviado,
             DATE_FORMAT(l.fecha_solicitud,'%d-%m-%Y') AS fecha
         FROM t_licencias l
@@ -407,10 +411,14 @@ class LicenciaModel extends Model
             l.licencias_id,
             l.student_id,
             tl.tipo,
+            'hora' AS modalidad,
             CONCAT(e.lastname,' ',e.lastname2,' ',e.name) AS student,
             CONCAT(m.motivo,' - ',l.detalle) AS detalle,
             DATE_FORMAT(lp.fecha,'%d-%m-%Y') AS inicio,
-            p.periodo AS fin,
+            CONCAT(p.periodo, IF(l.hora_salida IS NOT NULL AND l.hora_salida != '00:00:00', CONCAT(' (', TIME_FORMAT(l.hora_salida,'%H:%i'), ')'), '')) AS fin,
+            lp.fecha AS fecha_fin_cmp,
+            NULL AS cantidad_dias,
+            l.hora_salida,
             l.enviado,
             DATE_FORMAT(l.fecha_solicitud,'%d-%m-%Y') AS fecha
         FROM t_licencias l

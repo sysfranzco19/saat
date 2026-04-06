@@ -1,109 +1,129 @@
-<script type="text/javascript">
-    function cargar(){
-        var sel = document.getElementById('buscar').value;
-        window.location.assign('<?php echo base_url(); ?>index.php/teacher/student_search/<?php echo $user; ?>/' + sel )
-        //alert('hola');
-    }
-</script>
-<?php
-//Variable que contendrá el resultado de la búsqueda
-$texto = '';
-//Variable que contendrá el número de resgistros encontrados
-$registros = 'Resultados';
-$datos = array();
-$cursos = array();
-$entero = 0;
-if (empty($busqueda)){
-    $texto = 'Búsqueda sin resultados';
-}else{
-    //Si hay resultados...
-    if ($resultado!=NULL){ 
-        // Se recoge el número de resultados         
-        $registros = '<span>Se encontraron ' . count($resultado) . ' registros </span>';
-        // Se almacenan las cadenas de resultado
-        //$i=0;
-        foreach($resultado as $fila) {
-            $com_completo = $fila['lastname']." ".$fila['lastname2']." ".$fila['name'] ;
-            $texto .= $com_completo . '<br />';
-            $datos[$fila['student_id']]=$com_completo;
-            $cursos[$fila['student_id']]=$fila['completo'];
-            $cursos['section_'.$fila['student_id']]=$fila['section_id'];
-        }
-    }else{
-            $registros = "<span>No hay Resultados</span>";  
-    }
-}
-?>
 <!--begin::Entry-->
 <div class="d-flex flex-column-fluid">
-    <!--begin::Container-->
     <div class="container-fluid">
-        <!--begin::Card-->
         <div class="card card-custom">
-            <div class="card-header flex-wrap border-0 pt-6 pb-0">
+            <div class="card-header flex-wrap border-0 pt-6 pb-4">
                 <div class="card-title">
                     <h3 class="card-label">Buscar Estudiante
-                    <span class="d-block text-muted pt-2 font-size-sm">Buscar al estudiante por Apellido Paterno</span></h3>
+                        <span class="d-block text-muted pt-2 font-size-sm">Buscar por apellido paterno — resultados en tiempo real</span>
+                    </h3>
                 </div>
-                <div class="card-toolbar">
-                    <!--begin::Dropdown-->
-                    <div class="dropdown dropdown-inline mr-2">
-                        <div class="form-group">
-                            <input id="buscar" name="buscar" class="form-control" type="search" placeholder="Buscar aquí..." value="<?php echo $busqueda; ?>" autofocus >
-                            <input type="button" onclick="cargar()" class="btn btn-primary" value="Buscar">
-                        </div>                  
+                <div class="card-toolbar w-100 mt-3 d-flex align-items-center">
+                    <div class="input-group" style="max-width:400px;">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white border-right-0">
+                                <i class="flaticon2-search-1 text-muted"></i>
+                            </span>
+                        </div>
+                        <input id="buscar" name="buscar" class="form-control border-left-0 border-right-0"
+                            type="search" placeholder="Escriba el apellido..." autocomplete="off" autofocus>
+                        <div class="input-group-append">
+                            <span class="input-group-text bg-white" id="search-spinner" style="display:none;">
+                                <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                            </span>
+                            <span class="input-group-text bg-white" id="search-icon">
+                                <i class="flaticon2-search-1 text-muted" style="font-size:0.8rem;"></i>
+                            </span>
+                        </div>
                     </div>
-                    <!--end::Dropdown-->
+                    <small class="text-muted ml-3" id="result-count"></small>
                 </div>
             </div>
-            <div class="card-body" id="imp1">
-                <!--begin: Datatable-->
-                <table class="table">
-                    <thead class="thead-inverse">
+
+            <div class="card-body pt-2">
+                <table class="table table-hover">
+                    <thead class="bg-light">
                         <tr>
-                            <th>Estudiantes</th>
-                            <th>Curso</th>
-                            <th>Acción</th>
+                            <th class="font-weight-bolder text-dark-50">Estudiante</th>
+                            <th class="font-weight-bolder text-dark-50">Curso</th>
+                            <th class="font-weight-bolder text-dark-50 text-right">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
-                    <?php 
-                    //Resultado, número de registros y contenido.
-                    foreach ($datos as $id=>$nombre)
-                    {
-                    ?>
-                        <tr>
-                            <td><?php echo $nombre; ?></td>
-                            <td><?php echo $cursos[$id]; ?></td>
-                            <td>
-                                <!--
-                                <div class="btn-group dropup">
-                                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Acción</button>
-                                    <div class="dropdown-menu" style="">
-                                        <a class="dropdown-item" href="<?php echo base_url(); ?>index.php/secretary/student_attendance/<?php echo $id;?>/all/0">Ver Asistencias</a>
-                                        <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item" onclick="showAjaxModal('<?php echo base_url();?>index.php/modal/popup/modal_leave_days/<?php echo $id;?>/<?php echo $nombre;?>/<?php echo $cursos['section_'.$id];?>/0');">Registrar licencia por día</a>
-                                        <a class="dropdown-item" onclick="showAjaxModal('<?php echo base_url();?>index.php/modal/popup/modal_leave_hours/<?php echo $id;?>/<?php echo $nombre;?>/<?php echo $cursos['section_'.$id];?>/0');">Registrar licencia por hora</a>
-                                    </div>
-                                </div>-->
-                                <a href="<?php echo base_url(); ?>index.php/teacher/notes_half_student/<?php echo $id;?>" class="btn btn-warning btn-sm" >Medio Trimestre</a>
-                                <a href="<?php echo base_url(); ?>index.php/teacher/student_notes/<?php echo $id;?>" class="btn btn-danger btn-sm" >Ver notas</a>
-                                <a href="<?php echo base_url(); ?>index.php/teacher/student_attendance/<?php echo $id;?>/all/0" class="btn btn-success btn-sm"  >Ver Asistencias</a>
-                                <a href="<?php echo base_url(); ?>index.php/teacher/student_licenses/<?php echo $id;?>/all/0" class="btn btn-primary btn-sm"  >Ver Licencias</a>
+                    <tbody id="search-results-body">
+                        <tr id="placeholder-row">
+                            <td colspan="3" class="text-center text-muted py-6">
+                                Escriba al menos 2 letras para buscar
                             </td>
-                        </tr>
-                    <?php
-                    }
-                    ?>
-                        <tr>
-                            <td colspan="3"><?php echo $registros; ?></td>
                         </tr>
                     </tbody>
                 </table>
-                <!--end: Datatable-->
             </div>
         </div>
-        <!--end::Card-->
     </div>
-    <!--end::Container-->
 </div>
+
+<script>
+(function () {
+    var user        = '<?php echo esc($user); ?>';
+    var baseUrl     = '<?php echo base_url(); ?>';
+    var tbody       = document.getElementById('search-results-body');
+    var spinner     = document.getElementById('search-spinner');
+    var searchIcon  = document.getElementById('search-icon');
+    var countEl     = document.getElementById('result-count');
+    var debounceTimer;
+
+    function setPlaceholder(msg) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-6">' + msg + '</td></tr>';
+    }
+
+    function renderRow(s) {
+        var nombre = (s.lastname + ' ' + (s.lastname2 || '') + ' ' + s.name).replace(/\s+/g, ' ').trim();
+        var curso  = s.completo || s.nick_name || '';
+        var id     = s.student_id;
+        return '<tr>' +
+            '<td class="align-middle font-weight-bold">' + nombre + '</td>' +
+            '<td class="align-middle"><span class="badge badge-light-primary font-size-sm px-3 py-2">' + curso + '</span></td>' +
+            '<td class="text-right align-middle">' +
+                '<a href="' + baseUrl + 'index.php/teacher/student_licenses/' + id + '/all/0" class="btn btn-sm btn-primary">Licencias</a>' +
+            '</td>' +
+        '</tr>';
+    }
+
+    function doSearch(val) {
+        if (val.length < 2) {
+            setPlaceholder('Escriba al menos 2 letras para buscar');
+            countEl.textContent = '';
+            return;
+        }
+
+        spinner.style.display = 'inline-block';
+        searchIcon.style.display = 'none';
+        countEl.textContent = '';
+        setPlaceholder('Buscando...');
+
+        fetch(baseUrl + 'index.php/teacher/student_search_json/' + user + '/' + encodeURIComponent(val))
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function (data) {
+                spinner.style.display = 'none';
+                searchIcon.style.display = 'inline-block';
+
+                if (!data || data.length === 0) {
+                    setPlaceholder('Sin resultados para <strong>' + val + '</strong>');
+                    countEl.textContent = '';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                countEl.textContent = data.length + ' resultado' + (data.length !== 1 ? 's' : '');
+                var html = '';
+                data.forEach(function (s) { html += renderRow(s); });
+                tbody.innerHTML = html;
+            })
+            .catch(function (err) {
+                spinner.style.display = 'none';
+                searchIcon.style.display = 'inline-block';
+                setPlaceholder('Error al buscar. Intente nuevamente.');
+                console.error('student_search_json error:', err);
+            });
+    }
+
+    document.getElementById('buscar').addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        var val = this.value.trim();
+        debounceTimer = setTimeout(function () { doSearch(val); }, 350);
+    });
+})();
+</script>

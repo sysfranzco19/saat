@@ -393,6 +393,45 @@
                                                 </td>
                                             </tr>
 
+                                            <!-- Centro Profesiográfico -->
+                                            <tr>
+                                                <td class="pl-0 py-5">
+                                                    <div class="symbol symbol-45 symbol-light-primary mr-2">
+                                                        <span class="symbol-label">
+                                                            <span class="svg-icon svg-icon-2x svg-icon-primary">
+                                                                <!-- Building Icon -->
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                                                                    width="24px" height="24px" viewBox="0 0 24 24"
+                                                                    version="1.1">
+                                                                    <g stroke="none" stroke-width="1" fill="none"
+                                                                        fill-rule="evenodd">
+                                                                        <rect x="0" y="0" width="24" height="24" />
+                                                                        <path
+                                                                            d="M13,18 L11,18 L11,15 C11,14.4477153 11.4477153,14 12,14 C12.5522847,14 13,14.4477153 13,15 L13,18 Z"
+                                                                            fill="currentColor" />
+                                                                        <path
+                                                                            d="M5,8 L5,20 L19,20 L19,8 L5,8 Z M4,6 L20,6 C20.5522847,6 21,6.44771525 21,7 L21,21 C21,21.5522847 20.5522847,22 20,22 L4,22 C3.44771525,22 3,21.5522847 3,21 L3,7 C3,6.44771525 3.44771525,6 4,6 Z"
+                                                                            fill="currentColor" fill-rule="nonzero" opacity="0.3" />
+                                                                        <path
+                                                                            d="M12,1 L20,6 L4,6 L12,1 Z"
+                                                                            fill="currentColor" fill-rule="nonzero" opacity="0.3" />
+                                                                        <rect fill="currentColor" x="8" y="10" width="3" height="3" rx="0.5" />
+                                                                        <rect fill="currentColor" x="13" y="10" width="3" height="3" rx="0.5" />
+                                                                    </g>
+                                                                </svg>
+                                                            </span>
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td class="pl-0">
+                                                    <a href="https://tiquipaya.edu.bo/centroprofesiografico/"
+                                                        target="_blank"
+                                                        class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Centro Profesiográfico</a>
+                                                    <span class="text-muted font-weight-bold d-block">Orientación Vocacional</span>
+                                                </td>
+                                            </tr>
+
                                         </tbody>
                                     </table>
                                 </div>

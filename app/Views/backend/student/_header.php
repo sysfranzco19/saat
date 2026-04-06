@@ -25,7 +25,7 @@
 
             <!--begin::Toolbar-->
             <div class="d-flex align-items-right py-3 py-lg-2">
-                <a href="<?php echo base_url();?>logout" class="btn btn-sm btn-light-primary font-weight-bolder py-2 px-5">Cerrar Sesión</a>
+                <a href="<?php echo base_url();?>index.php/logout" class="btn btn-sm btn-light-primary font-weight-bolder py-2 px-5">Cerrar Sesión</a>
                 
                 <!--end::Dropdown<span class="menu-text"><?php echo $phase_name; ?></span>-->
             </div>

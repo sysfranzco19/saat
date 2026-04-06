@@ -2697,6 +2697,44 @@ class Teacher extends BaseController
         return view('backend/index', $page_data);
     }
 
+    function licencia_get($licencia_id = 0)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return $this->response->setJSON([])->setStatusCode(403);
+        $LicenciaModel = new LicenciaModel();
+        $respuesta = $LicenciaModel->getLicencia($licencia_id);
+        return $this->response->setJSON(!empty($respuesta) ? $respuesta[0] : []);
+    }
+
+    function student_search_json($user = '', $sel = '')
+    {
+        $session = session();
+        $teacher_id = $session->get('teacher_id');
+        if ($session->get('login_type') != 'teacher')
+            return $this->response->setJSON([])->setStatusCode(403);
+
+        $result = [];
+        if (!empty($sel) && $sel !== '0') {
+            if ($user == 'teacher') {
+                $SubjectMod = new SubjectModel();
+                $subjects = $SubjectMod->subjects_docente($teacher_id);
+                $section_ids = [];
+                foreach ($subjects as $sub) {
+                    $section_ids[] = $sub->section_id;
+                }
+                $section_ids = array_unique($section_ids);
+                $StudentMod = new StudentModel();
+                $result = $StudentMod->students_by_sections($section_ids, $sel) ?? [];
+            } else {
+                $StudentMod = new StudentModel();
+                $result = $StudentMod->students_user($user, $sel, $teacher_id) ?? [];
+            }
+        }
+
+        return $this->response->setJSON($result);
+    }
+
     function student_licenses($student_id = '', $filter = 'all', $offset = 0)
     {
         $session = session();
@@ -2713,9 +2751,12 @@ class Teacher extends BaseController
 
         // Load Licenses
         $LicenciaModel = new LicenciaModel();
-        $page_data['licencias'] = $LicenciaModel->licenciasStudent($student_id);
+        $licencias = $LicenciaModel->licenciasStudent($student_id);
+        $page_data['licencias'] = $licencias;
+        $page_data['student_name'] = !empty($licencias) ? $licencias[0]->student : '';
 
         $page_data['student_id'] = $student_id;
+        $page_data['user'] = $session->get('login_type');
         $page_data['page_name'] = 'student_licenses';
         $page_data['page_title'] = 'Licencias del Estudiante';
         return view('backend/index', $page_data);

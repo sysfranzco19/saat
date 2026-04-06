@@ -267,6 +267,7 @@ $routes->get('parents/virtual_library_prim', 'Parents::virtual_library_prim');
 $routes->get('parents/virtual_library_sec', 'Parents::virtual_library_sec');
 $routes->get('parents/class_protocol', 'Parents::class_protocol');
 $routes->get('parents/biosafety_protocol', 'Parents::biosafety_protocol');
+$routes->get('parents/achievement_diffusion', 'Parents::achievement_diffusion');
 $routes->get('parents/profile', 'Parents::profile');
 $routes->get('parents/infractions', 'Parents::infractions');
 $routes->get('parents/report_licenses/(:any)', 'Parents::report_licenses/$1');
@@ -391,6 +392,7 @@ $routes->get('teacher/adviser_behavior_log/(:num)', 'Teacher::adviser_behavior_l
 $routes->get('teacher/self_inicial/(:any)', 'Teacher::self_inicial/$1');
 $routes->post('teacher/autoeval/(:any)', 'Teacher::autoeval/$1');
 $routes->get('teacher/student_search/(:any)', 'Teacher::student_search/$1');
+$routes->get('teacher/student_search_json/(:any)/(:any)', 'Teacher::student_search_json/$1/$2');
 $routes->get('teacher/student_notes/(:any)', 'Teacher::student_notes/$1');
 $routes->get('teacher/self_appraisal/(:any)', 'Teacher::self_appraisal/$1');
 //********************************TEACHER DIRECTOR **************/
@@ -399,6 +401,7 @@ $routes->get('teacher/family_search/(:any)', 'Teacher::family_search/$1');
 $routes->get('teacher/family_info/(:any)', 'Teacher::family_info/$1');
 $routes->get('teacher/student_attendance/(:any)', 'Teacher::student_attendance/$1');
 $routes->get('teacher/student_licenses/(:any)', 'Teacher::student_licenses/$1');
+$routes->get('teacher/licencia_get/(:num)', 'Teacher::licencia_get/$1');
 $routes->get('teacher/sections_dir', 'Teacher::sections_dir');
 $routes->get('teacher/class_dir', 'Teacher::class_dir');
 $routes->get('teacher/subjects_section/(:any)', 'Teacher::subjects_section/$1');

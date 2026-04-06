@@ -151,26 +151,6 @@ $name = strtoupper($session->get('name'));
 
 
 
-                <!--begin::Item-->
-                <div class="d-flex align-items-center mb-10">
-                    <!--begin::Symbol-->
-                    <div class="symbol symbol-40 symbol-light-success mr-5">
-                        <span class="symbol-label">
-                            <span class="svg-icon svg-icon-lg svg-icon-success">
-                                <i class="flaticon-star text-success icon-lg"></i>
-                            </span>
-                        </span>
-                    </div>
-                    <!--end::Symbol-->
-                    <!--begin::Text-->
-                    <div class="d-flex flex-column font-weight-bold">
-                        <a href="<?php echo base_url(); ?>index.php/parents/gamified_behavior"
-                            class="text-dark-75 text-hover-primary mb-1 font-size-lg">Comportamiento</a>
-                        <span class="text-muted">Historial de incidencias y puntos del Ser</span>
-                    </div>
-                    <!--end::Text-->
-                </div>
-                <!--end::Item-->
 
                 <!--begin::Item-->
                 <div class="d-flex align-items-center mb-10">
