@@ -582,7 +582,6 @@ class Teacher extends BaseController
         }
 
         $BehaviorMod = new BehaviorModel();
-        // Filter logs by the current subject to show only this teacher's materia
         $logs = $BehaviorMod->getStudentLog($student_id, null, $subject_id > 0 ? $subject_id : null, $page_data['phase_id']);
         $page_data['logs'] = $logs;
 
@@ -622,23 +621,33 @@ class Teacher extends BaseController
         }
         $page_data['puntos_del_ser'] = $puntosDelSer;
 
-        // --- Chart Data Logic (built directly from logs) ---
+        // --- Chart Data Logic ---
+        // Start with ALL behavior types at count 0
+        $allTypes = $BehaviorMod->findAll();
         $behaviorCounts = [];
+        foreach ($allTypes as $bt) {
+            $behaviorCounts[$bt['id']] = [
+                'name'   => $bt['name'],
+                'icon'   => $bt['icon'],
+                'count'  => 0,
+                'points' => $bt['points'],
+                'type'   => $bt['type']
+            ];
+        }
+
+        $logisticIds   = [10, 11]; // IDs de Enfermería y Salida al Baño
         $positiveCount = 0;
         $negativeCount = 0;
-        $neutralCount = 0;
+        $neutralCount  = 0;
         foreach ($logs as $log) {
             $bid = $log['behavior_type_id'];
-            if (!isset($behaviorCounts[$bid])) {
-                $behaviorCounts[$bid] = [
-                    'name'   => $log['name'],
-                    'icon'   => $log['icon'],
-                    'count'  => 0,
-                    'points' => $log['points'],
-                    'type'   => $log['type']
-                ];
+            if (isset($behaviorCounts[$bid])) {
+                $behaviorCounts[$bid]['count']++;
             }
-            $behaviorCounts[$bid]['count']++;
+            // Logística no suma a ningún contador
+            if (in_array($bid, $logisticIds) || $log['type'] === 'logistica') {
+                continue;
+            }
             if ($log['type'] == 'positive') {
                 $positiveCount++;
             } elseif ($log['type'] == 'negative') {
@@ -650,8 +659,8 @@ class Teacher extends BaseController
 
         $page_data['positive_incidents'] = $positiveCount;
         $page_data['negative_incidents'] = $negativeCount;
-        $page_data['neutral_incidents'] = $neutralCount;
-        $page_data['behavior_counts'] = $behaviorCounts;
+        $page_data['neutral_incidents']  = $neutralCount;
+        $page_data['behavior_counts']    = $behaviorCounts;
 
         $page_data['student'] = $student;
         $page_data['subject_id'] = $subject_id;
@@ -659,6 +668,108 @@ class Teacher extends BaseController
         $page_data['page_title'] = 'Perfil del Estudiante';
 
         return view('backend/index', $page_data);
+    }
+
+    function incidence_register()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return redirect()->to(base_url());
+
+        $teacher_id = $session->get('teacher_id');
+
+        $SubjectMod = new SubjectModel();
+        $subjects   = $SubjectMod->subjects_teacher($teacher_id);
+
+        $BehaviorMod = new BehaviorModel();
+        $behaviors   = $BehaviorMod->getBehaviors();
+
+        $Setting = new SettingModel();
+        $page_data['phase_id']    = $Setting->get_phase_id();
+        $page_data['phase_name']  = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name']  = $Setting->get_system_name();
+        $page_data['subjects']    = $subjects;
+        $page_data['behaviors']   = $behaviors;
+        $page_data['page_name']   = 'incidence_register';
+        $page_data['page_title']  = 'Registrar Incidencia';
+
+        return view('backend/index', $page_data);
+    }
+
+    function search_students_incidence()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return $this->response->setJSON([]);
+
+        $teacher_id = $session->get('teacher_id');
+        $query      = $this->request->getGet('q');
+        $section_id = $this->request->getGet('section_id');
+
+        $db = \Config\Database::connect('tiquipaya');
+        $builder = $db->table('t_student s')
+            ->select('s.student_id, CONCAT(s.lastname," ",s.lastname2," ",s.name) as nombre, sec.completo, s.section_id')
+            ->join('section sec', 'sec.section_id = s.section_id')
+            ->join('subject sub', 'sub.section_id = s.section_id')
+            ->where('sub.teacher_id', $teacher_id)
+            ->where('s.activo', 1)
+            ->groupBy('s.student_id')
+            ->orderBy('s.lastname', 'ASC');
+
+        if ($section_id) {
+            // Búsqueda por curso
+            $builder->where('s.section_id', $section_id);
+        } elseif (strlen($query) >= 2) {
+            // Búsqueda por nombre
+            $builder->groupStart()
+                ->like('s.lastname', $query)
+                ->orLike('s.lastname2', $query)
+                ->orLike('s.name', $query)
+            ->groupEnd()
+            ->limit(15);
+        } else {
+            return $this->response->setJSON([]);
+        }
+
+        return $this->response->setJSON($builder->get()->getResultArray());
+    }
+
+    function resolve_date_id()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return $this->response->setJSON(['status' => 'error']);
+
+        $subject_id = $this->request->getPost('subject_id');
+        $date       = $this->request->getPost('date');
+
+        if (!$subject_id || !$date)
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Faltan datos']);
+
+        try {
+            $Setting  = new SettingModel();
+            $phase_id = $Setting->get_phase_id();
+
+            $asistDb  = \Config\Database::connect('asistencia');
+
+            // Solo busca — nunca crea
+            $existing = $asistDb->table('attendance_dates')
+                ->where('date_class', $date)
+                ->where('phase_id', $phase_id)
+                ->get()->getRowArray();
+
+            return $this->response->setJSON([
+                'status'  => 'success',
+                'date_id' => $existing ? $existing['date_id'] : 0,
+                'found'   => (bool) $existing,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     function behavior_analysis_student($student_id, $subject_id = 0)
@@ -746,24 +857,32 @@ class Teacher extends BaseController
     function register_behavior()
     {
         /*try {*/
-            $studentId = $this->request->getPost('student_id');
-            $behaviorId = $this->request->getPost('behavior_id');
-            $points = $this->request->getPost('points');
-            $subjectId = $this->request->getPost('subject_id');
-            $dateId = $this->request->getPost('date_id');
-            $period = $this->request->getPost('period') ?: 1;
+            $studentId   = $this->request->getPost('student_id');
+            $behaviorId  = $this->request->getPost('behavior_id');
+            $subjectId   = $this->request->getPost('subject_id');
+            $dateId      = $this->request->getPost('date_id') ?? 0;
+            $period      = $this->request->getPost('period') ?: 1;
             $observation = $this->request->getPost('observation');
+            $customDate  = $this->request->getPost('custom_date'); // fecha elegida manualmente
 
-            if (!$studentId || !$behaviorId || !$dateId || !$subjectId) {
+            if (!$studentId || !$behaviorId || !$subjectId) {
                 return $this->response->setJSON([
                     'status' => 'error',
-                    'message' => 'Faltan parámetros requeridos (Estudiante, Comportamiento, Fecha o Materia)'
+                    'message' => 'Faltan parámetros requeridos (Estudiante, Comportamiento o Materia)'
                 ]);
             }
 
-            // 1. Log the behavior first
+            // Si no hay date_id real, necesitamos al menos la fecha custom
+            if (!$dateId && !$customDate) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Falta la fecha de la incidencia'
+                ]);
+            }
+
+            // 1. Log the behavior
             $BehaviorMod = new BehaviorModel();
-            $logResult = $BehaviorMod->logBehavior($studentId, $behaviorId, $subjectId, $dateId, $observation, $period);
+            $logResult = $BehaviorMod->logBehavior($studentId, $behaviorId, $subjectId, $dateId, $observation, $period, $customDate);
 
             /*if ($logResult) {*/
                 // 2. Now calculate the new score

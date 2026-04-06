@@ -91,11 +91,11 @@
                                 <div class="d-flex align-items-center justify-content-between p-4">
                                     <div class="d-flex flex-column mr-2">
                                         <a href="#" class="h4 text-dark text-hover-primary mb-1">Incidencias</a>
-                                        <span class="text-muted font-weight-bold">Total</span>
+                                        <span class="text-muted font-weight-bold">Negativas</span>
                                     </div>
                                     <span
                                         class="label label-xl label-light-primary label-inline font-weight-bold py-4 font-size-h3">
-                                        <?= count($logs) ?>
+                                        <?= $negative_incidents ?? 0 ?>
                                     </span>
                                 </div>
                             </div>
@@ -143,8 +143,8 @@
                         <h3 class="card-title font-weight-bolder">Resumen de Comportamiento</h3>
                     </div>
                     <div class="card-body d-flex flex-column flex-md-row">
-                        <!-- Chart Container (Compact & Vertical) -->
-                        <div class="flex-grow-1 mr-md-8" style="min-height: 250px;">
+                        <!-- Chart Container -->
+                        <div class="flex-grow-1 mr-md-8" style="min-width: 0; overflow: hidden;">
                             <div id="chart_behavior"></div>
                         </div>
 
@@ -176,71 +176,62 @@
             </div>
         </div>
 
-        <!-- Add ApexCharts CDN if not available -->
-        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            <?php
+            $chartData = [];
+            $chartCategories = [];
+            foreach ($behavior_counts as $b) {
+                $chartData[] = (int) $b['count'];
+                $chartCategories[] = html_entity_decode($b['name'], ENT_QUOTES, 'UTF-8');
+            }
+            ?>
+
+            <?php if (!empty($behavior_counts)): ?>
+            (function () {
                 var options = {
                     series: [{
                         name: 'Incidencias',
-                        data: [
-                            <?php
-                            foreach ($behavior_counts as $b) {
-                                if ($b['count'] > 0)
-                                    echo $b['count'] . ",";
-                            }
-                            ?>
-                        ]
+                        data: <?= json_encode($chartData) ?>
                     }],
                     chart: {
                         type: 'bar',
-                        height: 250, // Compact height
+                        height: <?= count($behavior_counts) * 38 + 40 ?>,
                         toolbar: { show: false }
                     },
                     plotOptions: {
                         bar: {
-                            borderRadius: 4,
-                            columnWidth: '45%', // Thinner bars for vertical look
-                            distributed: true,  // Different colors per bar
+                            horizontal: true,
+                            borderRadius: 3,
+                            barHeight: '55%',
+                            distributed: true
                         }
                     },
                     dataLabels: {
-                        enabled: false
+                        enabled: true,
+                        formatter: function(val) { return val > 0 ? val : ''; },
+                        style: { fontSize: '11px' }
                     },
-                    legend: {
-                        show: false
-                    },
+                    legend: { show: false },
                     xaxis: {
-                        categories: [
-                            <?php
-                            foreach ($behavior_counts as $b) {
-                                if ($b['count'] > 0) {
-                                    $decodedName = html_entity_decode($b['name'], ENT_QUOTES, 'UTF-8');
-                                    echo "[" . json_encode($decodedName) . "],";
-                                }
-                            }
-                            ?>
-                        ],
+                        categories: <?= json_encode($chartCategories) ?>,
                         labels: {
-                            style: {
-                                fontSize: '10px'
-                            },
-                            rotate: -45
-                        }
+                            formatter: function(val) { return Math.floor(val); }
+                        },
+                        tickAmount: <?= max($chartData) ?: 1 ?>
                     },
-                    grid: {
-                        borderColor: '#f1f1f1',
-                    }
+                    yaxis: {
+                        labels: { style: { fontSize: '12px' } }
+                    },
+                    grid: { borderColor: '#f1f1f1' },
+                    colors: ['#663259', '#1BC5BD', '#FFA800', '#F64E60', '#8950FC', '#6993FF', '#3699FF', '#0BB783', '#EE2D41', '#8833FF']
                 };
 
-                // Only render if data exists
-                <?php if (!empty($logs)): ?>
-                    var chart = new ApexCharts(document.querySelector("#chart_behavior"), options);
-                    chart.render();
-                <?php else: ?>
-                    document.querySelector("#chart_behavior").innerHTML = "<div class='d-flex align-items-center justify-content-center h-100 text-muted'>Sin datos para graficar</div>";
-                <?php endif; ?>
-            });
+                var chart = new ApexCharts(document.querySelector("#chart_behavior"), options);
+                chart.render();
+            })();
+            <?php else: ?>
+            document.querySelector("#chart_behavior").innerHTML = "<div class='d-flex align-items-center justify-content-center h-100 text-muted pt-8'>Sin datos para graficar</div>";
+            <?php endif; ?>
         </script>
 
 
@@ -260,6 +251,9 @@
                             <tr class="text-left">
                                 <th style="min-width: 150px">Fecha</th>
                                 <th style="min-width: 200px">Motivo</th>
+                                <?php if ($subject_id == 0): ?>
+                                <th style="min-width: 140px">Materia</th>
+                                <?php endif; ?>
                                 <th style="min-width: 120px">Tipo</th>
                                 <th style="min-width: 100px" class="text-right">Puntos</th>
                                 <th style="min-width: 100px" class="text-right">Acciones</th>
@@ -301,10 +295,20 @@
                                                 <?php endif; ?>
                                             </div>
                                         </td>
+                                        <?php if ($subject_id == 0): ?>
                                         <td>
-                                            <span
-                                                class="label label-lg label-inline <?= $log['points'] >= 0 ? 'label-light-success' : 'label-light-danger' ?> font-weight-bold py-4">
-                                                <?= $log['points'] >= 0 ? 'Positivo' : 'Negativo' ?>
+                                            <span class="text-dark-75 font-weight-bold font-size-sm">
+                                                <?= !empty($log['subject_name']) ? $log['subject_name'] : '<span class="text-muted">—</span>' ?>
+                                            </span>
+                                        </td>
+                                        <?php endif; ?>
+                                        <td>
+                                            <?php
+                                            $logisticIds = [10, 11];
+                                            $isLogistic  = in_array($log['behavior_type_id'], $logisticIds) || $log['type'] === 'logistica';
+                                            ?>
+                                            <span class="label label-lg label-inline <?= $isLogistic ? 'label-light-info' : ($log['points'] >= 0 ? 'label-light-success' : 'label-light-danger') ?> font-weight-bold py-4">
+                                                <?= $isLogistic ? 'Logística' : ($log['points'] >= 0 ? 'Positivo' : 'Negativo') ?>
                                             </span>
                                         </td>
                                         <td class="text-right">

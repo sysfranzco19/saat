@@ -343,6 +343,9 @@ $routes->get('teacher/history', 'Teacher::history'); // New
 $routes->get('teacher/history_students/(:num)', 'Teacher::history_students/$1'); // New
 $routes->get('teacher/history_students/(:num)/(:num)', 'Teacher::history_students/$1/$2'); // New
 $routes->get('teacher/student_profile/(:num)/(:num)', 'Teacher::student_profile/$1/$2'); // New
+$routes->get('teacher/incidence_register', 'Teacher::incidence_register');
+$routes->get('teacher/search_students_incidence', 'Teacher::search_students_incidence');
+$routes->post('teacher/resolve_date_id', 'Teacher::resolve_date_id');
 $routes->get('teacher/attendance_report/(:num)', 'Teacher::attendance_report/$1');
 $routes->post('teacher/assistance_edit/(:num)', 'Teacher::assistance_edit/$1');
 $routes->post('teacher/attendance_date_edit/(:num)', 'Teacher::attendance_date_edit/$1');

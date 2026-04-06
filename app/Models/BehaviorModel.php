@@ -36,22 +36,28 @@ class BehaviorModel extends Model
     /**
      * Log a student behavior occurrence
      */
-    public function logBehavior($studentId, $behaviorTypeId, $subjectId, $dateId, $observation = null, $period = 1)
+    public function logBehavior($studentId, $behaviorTypeId, $subjectId, $dateId, $observation = null, $period = 1, $customDate = null)
     {
-        // Force Timezone for accurate logging
         date_default_timezone_set('America/La_Paz');
 
         $db = \Config\Database::connect();
         $builder = $db->table('behavior_log');
 
+        // Si viene fecha manual del profesor, usarla siempre en created_at
+        if ($customDate) {
+            $createdAt = $customDate . ' ' . date('H:i:s');
+        } else {
+            $createdAt = date('Y-m-d H:i:s');
+        }
+
         return $builder->insert([
-            'student_id' => $studentId,
+            'student_id'       => $studentId,
             'behavior_type_id' => $behaviorTypeId,
-            'subject_id' => $subjectId,
-            'date_id' => $dateId,
-            'period' => $period,
-            'observation' => $observation,
-            'created_at' => date('Y-m-d H:i:s')
+            'subject_id'       => $subjectId,
+            'date_id'          => $dateId,
+            'period'           => $period,
+            'observation'      => $observation,
+            'created_at'       => $createdAt
         ]);
     }
 
@@ -89,9 +95,11 @@ class BehaviorModel extends Model
 
         $sql = "SELECT bl.id, bl.student_id, bl.behavior_type_id, bl.subject_id, bl.period,
                        bl.date_id, bl.created_at, bl.observation,
-                       bt.name, bt.points, bt.icon, bt.type
+                       bt.name, bt.points, bt.icon, bt.type,
+                       sub.name AS subject_name
                 FROM behavior_log bl
                 INNER JOIN behavior_types bt ON bt.id = bl.behavior_type_id
+                LEFT JOIN tiqui0_tiquisaat26.subject sub ON sub.subject_id = bl.subject_id
                 WHERE bl.student_id = ?";
         $params = [$student_id];
 
