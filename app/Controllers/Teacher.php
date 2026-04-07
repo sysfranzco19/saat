@@ -661,6 +661,108 @@ class Teacher extends BaseController
         return view('backend/index', $page_data);
     }
 
+    function incidence_register()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return redirect()->to(base_url());
+
+        $teacher_id = $session->get('teacher_id');
+
+        $SubjectMod = new SubjectModel();
+        $subjects   = $SubjectMod->subjects_teacher($teacher_id);
+
+        $BehaviorMod = new BehaviorModel();
+        $behaviors   = $BehaviorMod->getBehaviors();
+
+        $Setting = new SettingModel();
+        $page_data['phase_id']    = $Setting->get_phase_id();
+        $page_data['phase_name']  = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name']  = $Setting->get_system_name();
+        $page_data['subjects']    = $subjects;
+        $page_data['behaviors']   = $behaviors;
+        $page_data['page_name']   = 'incidence_register';
+        $page_data['page_title']  = 'Registrar Incidencia';
+
+        return view('backend/index', $page_data);
+    }
+
+    function search_students_incidence()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return $this->response->setJSON([]);
+
+        $teacher_id = $session->get('teacher_id');
+        $query      = $this->request->getGet('q');
+        $section_id = $this->request->getGet('section_id');
+
+        $db = \Config\Database::connect('tiquipaya');
+        $builder = $db->table('t_student s')
+            ->select('s.student_id, CONCAT(s.lastname," ",s.lastname2," ",s.name) as nombre, sec.completo, s.section_id')
+            ->join('section sec', 'sec.section_id = s.section_id')
+            ->join('subject sub', 'sub.section_id = s.section_id')
+            ->where('sub.teacher_id', $teacher_id)
+            ->where('s.activo', 1)
+            ->groupBy('s.student_id')
+            ->orderBy('s.lastname', 'ASC');
+
+        if ($section_id) {
+            // Búsqueda por curso
+            $builder->where('s.section_id', $section_id);
+        } elseif (strlen($query) >= 2) {
+            // Búsqueda por nombre
+            $builder->groupStart()
+                ->like('s.lastname', $query)
+                ->orLike('s.lastname2', $query)
+                ->orLike('s.name', $query)
+            ->groupEnd()
+            ->limit(15);
+        } else {
+            return $this->response->setJSON([]);
+        }
+
+        return $this->response->setJSON($builder->get()->getResultArray());
+    }
+
+    function resolve_date_id()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return $this->response->setJSON(['status' => 'error']);
+
+        $subject_id = $this->request->getPost('subject_id');
+        $date       = $this->request->getPost('date');
+
+        if (!$subject_id || !$date)
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Faltan datos']);
+
+        try {
+            $Setting  = new SettingModel();
+            $phase_id = $Setting->get_phase_id();
+
+            $asistDb  = \Config\Database::connect('asistencia');
+
+            // Solo busca — nunca crea
+            $existing = $asistDb->table('attendance_dates')
+                ->where('date_class', $date)
+                ->where('phase_id', $phase_id)
+                ->get()->getRowArray();
+
+            return $this->response->setJSON([
+                'status'  => 'success',
+                'date_id' => $existing ? $existing['date_id'] : 0,
+                'found'   => (bool) $existing,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     function behavior_analysis_student($student_id, $subject_id = 0)
     {
         $session = session();
@@ -2853,29 +2955,7 @@ class Teacher extends BaseController
         $page_data['page_title'] = 'Asistencias';
         return view('backend/index', $page_data);
     }
-    function sections_dir()
-    {
-        $session = session();
-        $teacher_id = $session->get('teacher_id');
-        if ($session->get('adviser'))
-            return redirect()->to(base_url());
 
-        //Section
-        $data = ["director_id" => $teacher_id];
-        $Section = new SectionModel();
-        $cursos = $Section->get_section($data);
-        $page_data['sections'] = $cursos;
-        //Settings
-        $Setting = new SettingModel();
-        $page_data['login_type'] = $session->get('login_type');
-        $page_data['phase_id'] = $Setting->get_phase_id();
-        $page_data['phase_name'] = $Setting->get_phase_name();
-        $page_data['system_title'] = $Setting->get_system_title();
-        $page_data['system_name'] = $Setting->get_system_name();
-        $page_data['page_name'] = 'sections_dir';
-        $page_data['page_title'] = 'Cursos del Director';
-        return view('backend/index', $page_data);
-    }
 
     function class_dir()
     {

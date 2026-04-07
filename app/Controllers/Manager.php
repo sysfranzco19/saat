@@ -2322,5 +2322,29 @@ class Manager extends BaseController
 
         return $this->response->setJSON($rows);
     }
+
+    function sections_dir()
+    {
+        $session = session();
+        $teacher_id = $session->get('teacher_id');
+        if ($session->get('adviser'))
+            return redirect()->to(base_url());
+
+        //Section
+        $data = ["director_id" => $teacher_id];
+        $Section = new SectionModel();
+        $cursos = $Section->get_section($data);
+        $page_data['sections'] = $cursos;
+        //Settings
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_name'] = 'sections_dir';
+        $page_data['page_title'] = 'Cursos del Director';
+        return view('backend/index', $page_data);
+    }
 }
 

@@ -1,12 +1,12 @@
 <!--begin::Aside-->
 <div class="aside aside-left d-flex flex-column" id="kt_aside">
 	<!--begin::Brand-->
-	<a href="<?php echo base_url(); ?>index.php/teacher/profile">
+	<a href="<?php echo base_url(); ?>teacher/profile">
 	<div class=" d-flex flex-column align-items-center flex-column-auto py-9">
 		<!--begin::Logo-->
 		<div class="btn p-0 symbol symbol-40 symbol-success" href="index.php" >
 			<div class="symbol-label">
-				<img alt="Logo" src="assets/media/svg/avatars/007-boy-2.svg" class="h-75 align-self-end" />
+				<img alt="Logo" src="<?php echo base_url(); ?>/assets/media/svg/avatars/007-boy-2.svg" class="h-75 align-self-end" />
 			</div>
 		</div>
 		<!--end::Logo-->
@@ -20,7 +20,7 @@
 
 			<!--begin::Item-->
 			<li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Dashboard">
-				<a href="<?php echo base_url(); ?>index.php/teacher/dashboard" class="nav-link btn btn-icon btn-lg btn-borderless active">
+				<a href="<?php echo base_url(); ?>teacher/dashboard" class="nav-link btn btn-icon btn-lg btn-borderless active">
 					<span class="svg-icon svg-icon-xxl">
 
 						<!--begin::Svg Icon | path:assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
@@ -105,7 +105,7 @@
 						
 
 <!--
-						<a href="<?php echo base_url(); ?>index.php/teacher/inbox" class="nav-link btn btn-icon btn-lg btn-borderless active"  data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="" data-original-title="Mensajes">
+						<a href="<?php echo base_url(); ?>teacher/inbox" class="nav-link btn btn-icon btn-lg btn-borderless active"  data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="" data-original-title="Mensajes">
 							<span class="svg-icon svg-icon-xxl">
 								<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
 									<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -132,7 +132,7 @@
                     
 					<!--begin::Footer
 					<div class="aside-footer d-flex flex-column align-items-center flex-column-auto py-8">
-						<a href="<?php echo base_url();?>index.php/login/logout" class="btn btn-icon btn-lg btn-borderless mb-1" id="" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Cerrar Sesión">
+						<a href="<?php echo base_url();?>login/logout" class="btn btn-icon btn-lg btn-borderless mb-1" id="" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Cerrar Sesión">
 							<span class="svg-icon svg-icon-xxl">
 								<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
 									<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">

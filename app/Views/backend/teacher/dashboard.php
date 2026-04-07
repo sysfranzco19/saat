@@ -261,6 +261,27 @@
                                 <div class="table-responsive">
                                     <table class="table table-borderless table-vertical-center">
                                         <tbody>
+                                            <!-- Registrar Incidencia -->
+                                            <tr>
+                                                <td class="pl-0 py-5" style="width: 60px;">
+                                                    <div class="symbol symbol-45 symbol-light-warning mr-2">
+                                                        <span class="symbol-label">
+                                                            <span class="svg-icon svg-icon-2x svg-icon-warning">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                                                    <path opacity="0.3" d="M2 4V16C2 16.6 2.4 17 3 17H13L16.6 20.6C17.1 21.1 18 20.8 18 20V17H21C21.6 17 22 16.6 22 16V4C22 3.4 21.6 3 21 3H3C2.4 3 2 3.4 2 4Z" fill="currentColor"/>
+                                                                    <rect x="6" y="8" width="8" height="2" rx="1" fill="currentColor"/>
+                                                                    <rect x="6" y="12" width="5" height="2" rx="1" fill="currentColor"/>
+                                                                </svg>
+                                                            </span>
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td class="pl-0">
+                                                    <a href="<?= base_url('teacher/incidence_register') ?>"
+                                                        class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Registrar Incidencia</a>
+                                                    <span class="text-muted font-weight-bold d-block">Registro rápido por estudiante y fecha</span>
+                                                </td>
+                                            </tr>
                                             <!-- Historial de Comportamiento -->
                                             <tr>
                                                 <td class="pl-0 py-5" style="width: 60px;">

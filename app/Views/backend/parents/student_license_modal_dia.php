@@ -86,18 +86,6 @@
     fillFecha(1);
     updateParentText();
 
-    document.getElementById('motivo_id').addEventListener('change', function () {
-        var divComprobante = document.getElementById('div_comprobante_medico');
-        var inputComprobante = document.getElementById('comprobante_medico');
-        if (this.value == '5') {
-            divComprobante.style.display = '';
-            inputComprobante.required = true;
-        } else {
-            divComprobante.style.display = 'none';
-            inputComprobante.required = false;
-            inputComprobante.value = '';
-        }
-    });
 
 </script>
 <!--begin::Modal-->
@@ -142,10 +130,10 @@
             <input type="date" class="form-control" value="" id="fecha_fin" name="fecha_fin" required disabled>
         </div>
         <!-- Campo para subir comprobante médico -->
-        <div class="form-group" id="div_comprobante_medico" style="display:none;">
+        <div class="form-group" id="div_comprobante_medico">
             <label>Adjunte una fotografía o imagen del documento que respalde la solicitud de licencia. <span class="text-danger">*</span></label>
             <input type="file" class="form-control" id="comprobante_medico" name="comprobante_medico"
-                accept=".jpg, .jpeg, .png, .pdf">
+                accept=".jpg, .jpeg, .png, .pdf" required>
         </div>
     </div>
     <div class="modal-footer">
@@ -176,20 +164,75 @@
         fechaFin.min = today;
         fechaFin.max = "";
 
+        // Calcula la fecha máxima sumando N días hábiles (excluye sábado y domingo)
+        function sumarDiasHabiles(fechaStr, dias) {
+            let partes = fechaStr.split("-");
+            let fecha = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+            let agregados = 0;
+            while (agregados < dias) {
+                fecha.setDate(fecha.getDate() + 1);
+                let dow = fecha.getDay(); // 0=Dom, 6=Sáb
+                if (dow !== 0 && dow !== 6) {
+                    agregados++;
+                }
+            }
+            let y = fecha.getFullYear();
+            let m = ("0" + (fecha.getMonth() + 1)).slice(-2);
+            let d = ("0" + fecha.getDate()).slice(-2);
+            return y + "-" + m + "-" + d;
+        }
+
+        // Cuenta los días hábiles entre dos fechas (inclusivo en ambos extremos)
+        function contarDiasHabiles(inicioStr, finStr) {
+            let partes = inicioStr.split("-");
+            let inicio = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+            partes = finStr.split("-");
+            let fin = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+            let count = 0;
+            let cur = new Date(inicio);
+            while (cur <= fin) {
+                let dow = cur.getDay();
+                if (dow !== 0 && dow !== 6) count++;
+                cur.setDate(cur.getDate() + 1);
+            }
+            return count;
+        }
+
         // Evento cuando cambia la fecha de inicio
         fechaInicio.addEventListener("change", function () {
             if (fechaInicio.value) {
-                let fechaMax = new Date(fechaInicio.value);
-                fechaMax.setDate(fechaMax.getDate() + 3); // Máximo 3 días después
+                let dow = new Date(fechaInicio.value + "T00:00:00").getDay();
+                if (dow === 0 || dow === 6) {
+                    alert("La fecha de inicio no puede ser sábado ni domingo.");
+                    fechaInicio.value = "";
+                    fechaFin.value = "";
+                    fechaFin.min = "";
+                    fechaFin.max = "";
+                    return;
+                }
+                let fechaMax = sumarDiasHabiles(fechaInicio.value, 3);
                 fechaFin.min = fechaInicio.value;
-                fechaFin.max = fechaMax.toISOString().split("T")[0];
+                fechaFin.max = fechaMax;
+                fechaFin.value = "";
             }
         });
 
         // Evento cuando cambia la fecha de fin
         fechaFin.addEventListener("change", function () {
+            if (!fechaFin.value) return;
+            let dow = new Date(fechaFin.value + "T00:00:00").getDay();
+            if (dow === 0 || dow === 6) {
+                alert("La fecha de fin no puede ser sábado ni domingo.");
+                fechaFin.value = "";
+                return;
+            }
             if (fechaFin.value < fechaInicio.value) {
                 alert("La fecha de fin no puede ser anterior a la fecha de inicio.");
+                fechaFin.value = "";
+                return;
+            }
+            if (contarDiasHabiles(fechaInicio.value, fechaFin.value) > 3) {
+                alert("El rango no puede superar 3 días hábiles (lunes a viernes).");
                 fechaFin.value = "";
             }
         });

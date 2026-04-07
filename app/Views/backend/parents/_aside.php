@@ -7,7 +7,7 @@
 						<!--begin::Logo-->
 						<div class="btn p-0 symbol symbol-40 symbol-success" href="index.php" >
 							<div class="symbol-label">
-								<img alt="Logo" src="assets/media/svg/avatars/007-boy-2.svg" class="h-75 align-self-end" />
+								<img alt="Logo" src="<?php echo base_url(); ?>assets/media/svg/avatars/007-boy-2.svg" class="h-75 align-self-end" />
 							</div>
 						</div>
 
@@ -67,7 +67,7 @@
 
 							<!--end::Item
 							<li class="nav-item mb-2" data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="Mensajes">
-							<a href="<?php echo base_url(); ?>index.php/parents/inbox" class="nav-link btn btn-icon btn-lg btn-borderless active"  data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="" data-original-title="Mensajes">
+							<a href="<?php echo base_url(); ?>parents/inbox" class="nav-link btn btn-icon btn-lg btn-borderless active"  data-toggle="tooltip" data-placement="right" data-container="body" data-boundary="window" title="" data-original-title="Mensajes">
 							<span class="svg-icon svg-icon-xxl">
 								<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
 									<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">

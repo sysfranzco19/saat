@@ -214,7 +214,7 @@
     <!-- Table Card -->
     <div class="card card-custom gutter-b shadow-sm">
         <div class="card-body py-2">
-            <form action="<?= base_url() . '/teacher/attendance_save' ?>" method="POST" id="form_attendance_save">
+            <form action="<?= base_url() . 'teacher/attendance_save' ?>" method="POST" id="form_attendance_save">
                 <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
                 <input type="hidden" name="section_id" value="<?= $section_id ?>">
                 <input type="hidden" name="date_id" value="<?= $date_id ?>">
@@ -333,7 +333,7 @@
                                             <div>
                                                 <!-- Link to Profile -->
                                                 <!-- Link to Profile -->
-                                                <a href="<?= base_url('teacher/student_profile/' . $student['student_id'] . '/' . $subject_id) . '?date=' . $date . '&periodo=' . $periodo ?>"
+                                                <a href="<?= base_url('index.php/teacher/student_profile/' . $student['student_id'] . '/' . $subject_id) . '?date=' . $date . '&periodo=' . $periodo ?>"
                                                     target="_blank" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg"><?= $student['student'] ?></a>
                                                 <span class="text-muted font-weight-bold d-block font-size-sm mt-1">
                                                     <span class="text-danger">
@@ -446,9 +446,6 @@
                                                     </button>
                                                 <?php endforeach; ?>
                                             <?php endif; ?>
-
-
-
 
                                         </div>
                                     </td>
@@ -616,7 +613,7 @@
 
         hasUnsavedChanges = true;
 
-        $.post(BASE_URL + "/teacher/update_attendance_ajax", {
+        $.post(BASE_URL + "index.php/teacher/update_attendance_ajax", {
             student_id: studentId, status: newStatus, subject_id: SUBJECT_ID, date_id: DATE_ID
         });
     }
@@ -794,7 +791,7 @@
 
         hasUnsavedChanges = true;
 
-        $.post(BASE_URL + "/teacher/register_behavior", {
+        $.post(BASE_URL + "index.php/teacher/register_behavior", {
             student_id: studentId,
             behavior_id: behaviorId,
             points: points,
@@ -854,7 +851,7 @@
         }
 
         // Fetch Logs
-        $.post(BASE_URL + "/teacher/get_daily_log_ajax", {
+        $.post(BASE_URL + "index.php/teacher/get_daily_log_ajax", {
             student_id: studentId,
             date_id: DATE_ID,
             subject_id: SUBJECT_ID
@@ -917,7 +914,7 @@
 
         hasUnsavedChanges = true;
 
-        $.post(BASE_URL + "/teacher/delete_behavior_ajax", {
+        $.post(BASE_URL + "index.php/teacher/delete_behavior_ajax", {
             log_id: logId
         }, function (response) {
             if (response.status === 'success') {
@@ -995,7 +992,7 @@
 
         hasUnsavedChanges = true;
 
-        $.post(BASE_URL + "/teacher/register_behavior", {
+        $.post(BASE_URL + "index.php/teacher/register_behavior", {
             student_id: studentId,
             behavior_id: behaviorId,
             points: points,

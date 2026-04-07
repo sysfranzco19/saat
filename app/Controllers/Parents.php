@@ -599,6 +599,24 @@ class Parents extends BaseController
         return view('backend/index', $page_data);
     }
 
+    function achievement_diffusion()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'parents')
+            return redirect()->to(base_url());
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+
+        $page_data['account_type'] = 'parents';
+        $page_data['page_name'] = 'achievement_diffusion';
+        $page_data['page_title'] = 'Difusión de Logro Estudiantil';
+        return view('backend/index', $page_data);
+    }
+    
     function profile()
     {
         $session = session();

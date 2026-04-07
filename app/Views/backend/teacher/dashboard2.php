@@ -237,9 +237,8 @@
                                                 <td class="pl-0">
                                                     <a href="https://tiquipaya.edu.bo/ctdocs/infografias.pdf"
                                                         target="_blank"
-                                                        class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Infografías</a>
-                                                    <span class="text-muted font-weight-bold d-block">Recursos
-                                                        visuales</span>
+                                                        class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">REGULACIONES INSTITUCIONALES</a>
+                                                    <span class="text-muted font-weight-bold d-block">2026</span>
                                                 </td>
                                             </tr>
                                         </tbody>
