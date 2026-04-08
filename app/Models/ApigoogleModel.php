@@ -464,8 +464,8 @@ class ApigoogleModel extends Model
                     if (isset($row[10]))  { $data['ser_average']   = $row[10]; }
                     if (isset($row[21]))  { $data['saber_average']  = $row[21]; }
                     if (isset($row[37]))  { $data['hacer_average']  = $row[37]; }
-                    if (isset($row[44]))  { $data['autoevaluacion'] = $row[44]; }
-                    if (isset($row[45]))  { $data['total_average']  = $row[45]; }
+                    if (isset($row[38]))  { $data['autoevaluacion'] = $row[38]; }
+                    if (isset($row[39]))  { $data['total_average']  = $row[39]; }
                     if (isset($row[3]))   { $data['total_vc']       = $row[3];  }
                     $data['saved_on'] = date("Y-m-d");
                     $csamarks->set($data);

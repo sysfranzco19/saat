@@ -163,6 +163,31 @@ $routes->post('manager/edatomedico_create', 'Manager::edatomedico_create');
 $routes->post('manager/edatomedico_update', 'Manager::edatomedico_update');
 $routes->post('manager/edatomedico_delete', 'Manager::edatomedico_delete');
 
+//******************************** BEGIN - MANAGER DIRECTOR **************/
+$routes->get('manager/class_dir', 'Manager::class_dir');
+$routes->get('manager/subjects_section/(:any)', 'Manager::subjects_section/$1');
+$routes->get('manager/notes_half_student/(:any)', 'Manager::notes_half_student/$1');
+$routes->get('manager/notes_half_student_xls/(:any)', 'Manager::notes_half_student_xls/$1');
+$routes->get('manager/self_director', 'Manager::self_director');
+$routes->get('manager/generate_centralizer/(:any)', 'Manager::generate_centralizer/$1');
+$routes->get('manager/generate_ranking/(:any)', 'Manager::generate_ranking/$1');
+$routes->get('manager/ranking_class/(:any)', 'Manager::ranking_class/$1');
+$routes->get('manager/low_averages/(:any)', 'Manager::low_averages/$1');
+$routes->get('manager/low_averages_xlsx/(:any)', 'Manager::low_averages_xlsx/$1');
+$routes->get('manager/saber_hacer_xlsx/(:any)', 'Manager::saber_hacer_xlsx/$1');
+$routes->get('manager/section_notes/(:any)', 'Manager::section_notes/$1');
+$routes->get('manager/teacher_notes', 'Manager::teacher_notes');
+$routes->get('manager/delays_student/(:any)', 'Manager::delays_student/$1');
+$routes->get('manager/absences_student/(:any)', 'Manager::absences_student/$1');
+$routes->get('manager/student_statistics/(:any)', 'Manager::student_statistics/$1');
+$routes->get('manager/student_infractions/(:any)', 'Manager::student_infractions/$1');
+$routes->get('manager/student_communications/(:any)', 'Manager::student_communications/$1');
+$routes->get('manager/grade_averages/(:any)', 'Manager::grade_averages/$1');
+//******************************** END - MANAGER DIRECTOR **************/
+
+$routes->get('director/sections_statistics', 'Director::sections_statistics');
+$routes->get('director/low_averages/(:any)', 'Director::low_averages/$1');
+
 //$routes->get('admin/dashboard', 'Admin::dashboard');
 //$routes->get('parents/dashboard', 'Parents::dashboard');
 
@@ -396,7 +421,9 @@ $routes->get('teacher/student_search/(:any)', 'Teacher::student_search/$1');
 $routes->get('teacher/student_search_json/(:any)/(:any)', 'Teacher::student_search_json/$1/$2');
 $routes->get('teacher/student_notes/(:any)', 'Teacher::student_notes/$1');
 $routes->get('teacher/self_appraisal/(:any)', 'Teacher::self_appraisal/$1');
-//********************************TEACHER DIRECTOR **************/
+
+
+
 $routes->get('teacher/student_search/(:any)', 'Teacher::student_search/$1');
 $routes->get('teacher/family_search/(:any)', 'Teacher::family_search/$1');
 $routes->get('teacher/family_info/(:any)', 'Teacher::family_info/$1');
@@ -404,27 +431,8 @@ $routes->get('teacher/student_attendance/(:any)', 'Teacher::student_attendance/$
 $routes->get('teacher/student_licenses/(:any)', 'Teacher::student_licenses/$1');
 $routes->get('teacher/licencia_get/(:num)', 'Teacher::licencia_get/$1');
 
-$routes->get('teacher/class_dir', 'Teacher::class_dir');
-$routes->get('teacher/subjects_section/(:any)', 'Teacher::subjects_section/$1');
-$routes->get('teacher/notes_half_student/(:any)', 'Teacher::notes_half_student/$1');
-$routes->get('teacher/notes_half_student_xls/(:any)', 'Teacher::notes_half_student_xls/$1');
-$routes->get('teacher/self_director', 'Teacher::self_director');
-$routes->get('teacher/generate_centralizer/(:any)', 'Teacher::generate_centralizer/$1');
-$routes->get('teacher/generate_ranking/(:any)', 'Teacher::generate_ranking/$1');
-$routes->get('teacher/ranking_class/(:any)', 'Teacher::ranking_class/$1');
-$routes->get('teacher/low_averages/(:any)', 'Teacher::low_averages/$1');
-$routes->get('teacher/low_averages_xlsx/(:any)', 'Teacher::low_averages_xlsx/$1');
-$routes->get('teacher/saber_hacer_xlsx/(:any)', 'Teacher::saber_hacer_xlsx/$1');
-$routes->get('teacher/section_notes/(:any)', 'Teacher::section_notes/$1');
-$routes->get('teacher/teacher_notes', 'Teacher::teacher_notes');
-$routes->get('teacher/delays_student/(:any)', 'Teacher::delays_student/$1');
-$routes->get('teacher/absences_student/(:any)', 'Teacher::absences_student/$1');
-$routes->get('teacher/student_statistics/(:any)', 'Teacher::student_statistics/$1');
-$routes->get('teacher/student_infractions/(:any)', 'Teacher::student_infractions/$1');
-$routes->get('teacher/student_communications/(:any)', 'Teacher::student_communications/$1');
-$routes->get('teacher/grade_averages/(:any)', 'Teacher::grade_averages/$1');
-$routes->get('director/sections_statistics', 'Director::sections_statistics');
-$routes->get('director/low_averages/(:any)', 'Director::low_averages/$1');
+
+
 
 
 /*********************************SERVER ***************/

@@ -880,8 +880,11 @@ class Parents extends BaseController
 
         if ($tipo == '2') {
             // Licencia por periodo
-            $fecha_p  = date("Y-m-d", strtotime($_POST['fecha_solicitud']));
-            $periodo_id = (int)$_POST['periodo_id'];
+            // Acepta 'fecha' (modal_hora) o toma la fecha de hoy como fallback
+            $fecha_p    = isset($_POST['fecha']) && $_POST['fecha'] !== ''
+                          ? date("Y-m-d", strtotime($_POST['fecha']))
+                          : date("Y-m-d");
+            $periodo_id = (int)($_POST['periodo_id'] ?? 0);
         } else {
             // Licencia por días
             $inicio = date("Y-m-d", strtotime($_POST['fecha_inicio']));
@@ -897,10 +900,10 @@ class Parents extends BaseController
                 "SELECT l.licencias_id FROM t_licencias l
                  INNER JOIN t_licencias_periodo lp ON lp.licencias_id = l.licencias_id
                  WHERE l.student_id = ? AND l.tipo_id = ? AND l.motivo_id = ? AND l.detalle = ?
-                   AND lp.fecha = ? AND lp.periodo_id = ?
+                   AND lp.fecha = ?
                    AND l.fecha_solicitud >= ?
                  LIMIT 1",
-                [$student_id, $tipo, $motivo_id, $detalle, $fecha_p, $periodo_id, $hace5min]
+                [$student_id, $tipo, $motivo_id, $detalle, $fecha_p, $hace5min]
             )->getRow();
         } else {
             $exists = $db_asis->query(

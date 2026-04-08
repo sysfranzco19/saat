@@ -32,6 +32,7 @@ use App\Models\EdatomedicoModel;
 use App\Models\ManagerModel;
 use App\Models\SelfappraisalModel;
 use App\Models\EvaluationModel;
+use App\Models\BehaviorsModel;
 
 class Manager extends BaseController
 {
@@ -2326,12 +2327,12 @@ class Manager extends BaseController
     function sections_dir()
     {
         $session = session();
-        $teacher_id = $session->get('teacher_id');
+        $manager_id = $session->get('manager_id');
         if ($session->get('adviser'))
             return redirect()->to(base_url());
 
         //Section
-        $data = ["director_id" => $teacher_id];
+        $data = ["director_id" => $manager_id];
         $Section = new SectionModel();
         $cursos = $Section->get_section($data);
         $page_data['sections'] = $cursos;
@@ -2346,5 +2347,1308 @@ class Manager extends BaseController
         $page_data['page_title'] = 'Cursos del Director';
         return view('backend/index', $page_data);
     }
+
+    function generate_centralizer($section_id = '')
+    {
+        $session = session();
+        $teacher_id = $session->get('teacher_id');
+        if ($session->get('adviser'))
+            return redirect()->to(base_url());
+        //Settings
+        $Setting = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $gestion = $Setting->get_gestion();
+        //Estudiantes del curso
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->student_active($section_id);
+        $conter = 8;
+        //Instanciamos la libreria
+        $obj_Reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
+        //**************ABRIMOS EXCEL DE ACUERDO A EL CURSO QUE CORRESPONDE
+        if ($section_id >= 211 And $section_id <= 224) {
+            $obj_PHPExcel = $obj_Reader->load('templates/cp16.xlsx');
+            $obj_PHPExcel->setActiveSheetIndex(0);
+            //******************RELLENAMOS LOS NOMBREs
+            //******************RELLENAMOS LOS NOMBREs
+            foreach ($students as $row):
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                $obj_PHPExcel->getActiveSheet()->SetCellValue('B' . $conter, $est);
+                //******************RELLENAMOS NOTAS*************************
+                for ($i = 0; $i < $phase_id; $i++) {
+                    list($cnat, $ing, $lening, $prom, $lenque, $fisqui) = array(0, 0, 0, 0, 0, 0);
+                    $b = 1 + $i;
+                    //Notas
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    foreach ($notas as $nota) {
+                        if (!isset($nota['obtained_mark'])) {
+                            $nota['obtained_mark'] = '0';
+                        }
+                        switch ($nota['name']) {
+                            case 'LENGUAJE':
+                                $lening += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(2 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'READING':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(6 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'GRAMMAR':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(10 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'SOCIALES':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(22 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'E. FÍSICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(26 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MÚSICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(30 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'ARTE':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(34 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MATEMÁTICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(38 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'COMPUTACIÓN':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(42 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'SCIENCE':
+                                $cnat += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, $nota['obtained_mark']);
+                                //$obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54, $conter, '=PROMEDIO(AU'.$conter.';AY'.$conter.')');
+                                break;
+                            case 'C. NATURALES':
+                                $cnat += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(50 + $b, $conter, $nota['obtained_mark']);
+                                //$obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54, $conter, '=PROMEDIO(AU'.$conter.';AY'.$conter.')');
+                                break;
+                            case 'F. HUMANA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(58 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                        }
+                    }
+                    if ($ing != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(14 + $b, $conter, round($ing / 2));
+                        $lening += round($ing / 2);
+                    }
+                    if ($lening != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(18 + $b, $conter, round($lening / 2));
+                    }
+                    if ($cnat != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54 + $b, $conter, round($cnat / 2));
+                    }
+                    $prom += round($lening / 2) + round($cnat / 2);
+                    if ($prom != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(62 + $b, $conter, round($prom / 9));
+                    }
+                }
+                $conter++;
+            endforeach;
+
+        } elseif ($section_id >= 231 And $section_id <= 263) {
+            $obj_PHPExcel = $obj_Reader->load('templates/cp16.xlsx');
+            $obj_PHPExcel->setActiveSheetIndex(0);
+            //******************RELLENAMOS LOS NOMBREs
+            foreach ($students as $row):
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                $obj_PHPExcel->getActiveSheet()->SetCellValue('B' . $conter, $est);
+                //******************RELLENAMOS NOTAS*************************
+                for ($i = 0; $i < $phase_id; $i++) {
+                    list($cnat, $ing, $lening, $prom, $lenque, $val) = array(0, 0, 0, 0, 0, 0);
+                    $b = 1 + $i;
+                    //Notas
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    foreach ($notas as $nota) {
+                        if (!isset($nota['obtained_mark'])) {
+                            $nota['obtained_mark'] = '0';
+                        }
+                        switch ($nota['name']) {
+                            case 'LENGUAJE':
+                                $lening += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(44 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'READING':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(48 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'GRAMMAR':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(52 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'SOCIALES':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(6 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'E. FÍSICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(10 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MÚSICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(14 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'ARTE':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(18 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MATEMÁTICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(22 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'COMPUTACIÓN':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(26 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'SCIENCE':
+                                $cnat += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
+                                //$obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54, $conter, '=PROMEDIO(AU'.$conter.';AY'.$conter.')');
+                                break;
+                            case 'C. NATURALES':
+                                $cnat += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, $nota['obtained_mark']);
+                                //$obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54, $conter, '=PROMEDIO(AU'.$conter.';AY'.$conter.')');
+                                break;
+                            case 'RULER':
+                                //$prom+=round($nota['obtained_mark']);
+                                $val += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(76 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'CHARACTER':
+                                //$prom+=round($nota['obtained_mark']);
+                                $val += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(80 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                        }
+                    }
+                    if ($ing != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(56 + $b, $conter, round($ing / 2));
+                        $lening += round($ing / 2);
+                    }
+                    if ($lening != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, round($lening / 2));
+                    }
+                    if ($cnat != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(72 + $b, $conter, round($cnat / 2));
+                    }
+                    if ($val != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(84 + $b, $conter, round($val / 2));
+                    }
+                    $prom += round($lening / 2) + round($cnat / 2) + round($val / 2);
+                    if ($prom != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(38 + $b, $conter, round($prom / 9));
+                    }
+                }
+                $conter++;
+            endforeach;
+        } elseif ($section_id >= 271 And $section_id <= 283) {
+            //***************1RO Y 2DO DE SECUNDARIA
+            $obj_PHPExcel = $obj_Reader->load('templates/cs12.xlsx');
+            $obj_PHPExcel->setActiveSheetIndex(0);
+            //******************RELLENAMOS LOS NOMBREs
+            foreach ($students as $row):
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                $obj_PHPExcel->getActiveSheet()->SetCellValue('B' . $conter, $est);
+                //******************RELLENAMOS NOTAS*************************
+                for ($i = 0; $i < $phase_id; $i++) {
+                    list($cnat, $ing, $lening, $prom, $lenque, $fisqui) = array(0, 0, 0, 0, 0, 0);
+                    $b = 1 + $i;
+                    //Notas
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    foreach ($ed_fisica as $ef) {
+                        $prom += round($ef['total_average']);
+                        if ($ef['total_average'] != 0) {
+                            $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(14 + $b, $conter, $ef['total_average']);
+                        }
+                    }
+                    //para las otras materias
+                    foreach ($notas as $nota) {
+                        if (!isset($nota['obtained_mark'])) {
+                            $nota['obtained_mark'] = '0';
+                        }
+                        switch ($nota['name']) {
+                            case 'LENGUAJE':
+                                $lenque += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(52 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'QUECHUA':
+                                $lenque += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(56 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'LITERATURE':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'GRAMMAR':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'SOCIALES':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(10 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MÚSICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(18 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'ART. PLAST.':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(22 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MATEMÁTICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(26 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'TEC. TECNOLÓGICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(30 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'BIOLOGÍA':
+                                $fisqui += round($nota['obtained_mark'] * 0.8);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(76 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'FÍSICA':
+                                $fisqui += round($nota['obtained_mark'] * 0.1);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(80 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'QUÍMICA':
+                                $fisqui += round($nota['obtained_mark'] * 0.1);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(84 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'PSICOLOGÍA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(38 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'VAL_ESP_REL':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(42 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                        }
+                    }
+                    if ($lenque != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, round($lenque / 2));
+                    }
+                    if ($ing != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(72 + $b, $conter, round($ing / 2));
+                    }
+                    if ($fisqui != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(88 + $b, $conter, $fisqui);
+                    }
+                    $prom += round($lenque / 2) + round($ing / 2) + $fisqui;
+                    if ($prom != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, round($prom / 11));
+                    }
+                }
+                $conter++;
+            endforeach;
+        } elseif ($section_id >= 311 And $section_id <= 323) {
+            //***************3RO y 4to DE sECUNDARIA***********************
+            $obj_PHPExcel = $obj_Reader->load('templates/cs34.xlsx');
+            $obj_PHPExcel->setActiveSheetIndex(0);
+            //******************RELLENAMOS LOS NOMBREs
+            foreach ($students as $row):
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                $obj_PHPExcel->getActiveSheet()->SetCellValue('B' . $conter, $est);
+                //******************RELLENAMOS NOTAS*************************
+                for ($i = 0; $i < $phase_id; $i++) {
+                    list($cnat, $ing, $lening, $prom, $lenque, $fisqui) = array(0, 0, 0, 0, 0, 0);
+                    $b = 1 + $i;
+                    //Notas
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    //solo para educacion fisica
+                    foreach ($ed_fisica as $ef) {
+                        $prom += round($ef['total_average']);
+                        if ($ef['total_average'] != 0) {
+                            $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(14 + $b, $conter, $ef['total_average']);
+                        }
+                    }
+                    //para las otras materias
+                    foreach ($notas as $nota) {
+                        if (!isset($nota['obtained_mark'])) {
+                            $nota['obtained_mark'] = '0';
+                        }
+                        switch ($nota['name']) {
+                            case 'LITERATURA':
+                                $lenque += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'LENGUAJE':
+                                $lenque += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'QUECHUA':
+                                $lenque += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'LITERATURE':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(72 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'GRAMMAR':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(76 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'SOCIALES':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(10 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MÚSICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(18 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'ART. PLAST.':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(22 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MATEMÁTICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(26 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'TEC. TECNOLÓGICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(30 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'BIOLOGÍA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(34 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'FÍSICA':
+                                $fisqui += round($nota['obtained_mark']);
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(38 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'QUÍMICA':
+                                $fisqui += round($nota['obtained_mark']);
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(42 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'PSICOLOGÍA':
+                                $prom += round($nota['obtained_mark']);
+                                //$obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(62, 6, 'Psicología');
+                                $obj_PHPExcel->getActiveSheet()->SetCellValue('BK6', 'Psicología');
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'FILOSOFÍA':
+                                $prom += round($nota['obtained_mark']);
+                                //$obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(62, 6, 'Filosofía');
+                                $obj_PHPExcel->getActiveSheet()->SetCellValue('BK6', 'Filosofía');
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'VAL_ESP_REL':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(50 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                        }
+                    }
+                    if ($lenque != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, round($lenque / 2));
+                    }
+                    if ($ing != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(80 + $b, $conter, round($ing / 2));
+                    }
+                    $prom += round($lenque / 2) + round($ing / 2);
+                    if ($prom != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54 + $b, $conter, round($prom / 13));
+                    }
+                }
+                $conter++;
+            endforeach;
+        } elseif ($section_id >= 331 And $section_id <= 343) {
+            //*************** 5tO y 6to DE sECUNDARIA **************************
+            $obj_PHPExcel = $obj_Reader->load('templates/cs56.xlsx');
+            $obj_PHPExcel->setActiveSheetIndex(0);
+            //******************RELLENAMOS LOS NOMBREs
+            foreach ($students as $row):
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                $obj_PHPExcel->getActiveSheet()->SetCellValue('B' . $conter, $est);
+                //******************RELLENAMOS NOTAS*************************
+                for ($i = 0; $i < $phase_id; $i++) {
+                    list($cnat, $ing, $lening, $prom, $lenque, $fisqui) = array(0, 0, 0, 0, 0, 0);
+                    $b = 1 + $i;
+                    //Notas
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    //solo para educacion fisica
+                    foreach ($ed_fisica as $ef) {
+                        $prom += round($ef['total_average']);
+                        if ($ef['total_average'] != 0) {
+                            $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(14 + $b, $conter, $ef['total_average']);
+                        }
+                    }
+                    //para las otras materias
+                    foreach ($notas as $nota) {
+                        if (!isset($nota['obtained_mark'])) {
+                            $nota['obtained_mark'] = '0';
+                        }
+                        switch ($nota['name']) {
+                            case 'LITERATURA':
+                                $lenque += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->getStyle('C' . $conter)->getFill()->getStartColor()->setRGB('FF0000');
+                                break;
+                            case 'QUECHUA':
+                                $lenque += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'LITERATURE':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(72 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'GRAMMAR':
+                                $ing += $nota['obtained_mark'];
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(76 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'SOCIALES':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(10 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MÚSICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(18 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'ART. PLAST.':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(22 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'MATEMÁTICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(26 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'TEC. TECNOLÓGICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'BIOLOGÍA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(34 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'FÍSICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(38 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'QUÍMICA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(42 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'FILOSOFÍA':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                            case 'VAL_ESP_REL':
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(50 + $b, $conter, $nota['obtained_mark']);
+                                break;
+                        }
+                    }
+                    if ($lenque != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, round($lenque / 2));
+                    }
+                    if ($ing != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(80 + $b, $conter, round($ing / 2));
+                    }
+                    $prom += round($lenque / 2) + round($ing / 2);
+                    if ($prom != 0) {
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54 + $b, $conter, round($prom / 13));
+                    }
+                }
+                $conter++;
+            endforeach;
+        }
+
+        //Section
+        $data = ["section_id" => $section_id];
+        $SectionMod = new SectionModel();
+        $section = $SectionMod->get_section($data);
+        $fileName = $section[0]['completo'] . '.xlsx';
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('A4', "GESTIÓN " . $gestion . " NOTAS OFICIALES");
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('A5', strtoupper($section[0]['completo']));
+        $fecha_actual = date("d/m/Y");
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('A43', 'Generado el : ' . $fecha_actual);
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($obj_PHPExcel, "Xlsx");
+        $writer->save($fileName);
+        return $this->response->download($fileName, null);
+    }
+
+    //******************************** BEGIN - DIRECTOR **************/
+
+    public function delays_student($student_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->datosStudent($student_id);
+        $page_data['student'] = $students[0]->nombre;
+        $page_data['completo'] = $students[0]->completo;
+        $DelayMod = new DelayModel();
+        $page_data['delays'] = $DelayMod->get_delay_student($student_id);
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_title'] = "Retrasos del Estudiante";
+        $page_data['page_name'] = "delays_student";
+        return view('backend/index', $page_data);
+    }
+
+    public function absences_student($student_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->datosStudent($student_id);
+        $page_data['student'] = $students[0]->nombre;
+        $page_data['completo'] = $students[0]->completo;
+        $AbsenceMod = new AbsenceModel();
+        $page_data['absences'] = $AbsenceMod->get_absences_student($student_id);
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_title'] = "Ausencias del Estudiante";
+        $page_data['page_name'] = "absences_student";
+        return view('backend/index', $page_data);
+    }
+
+    function subjects_section($section_id = '')
+    {
+        $session = session();
+        $manager_id = $session->get('manager_id');
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $data = ["director_id" => $manager_id];
+        $Section = new SectionModel();
+        $cursos = $Section->get_section($data);
+        $page_data['completo'] = $cursos[0]['completo'];
+        $Subject = new SubjectModel();
+        $subjects = $Subject->subjects_section($section_id);
+        $page_data['subjects'] = $subjects;
+        $Setting = new SettingModel();
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_name'] = 'subjects_section';
+        $page_data['page_title'] = 'Registros de Notas';
+        return view('backend/index', $page_data);
+    }
+
+    function notes_half_student_xls($student_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $Setting = new SettingModel();
+        $phase_name = $Setting->get_phase_name();
+        $phase_id = $Setting->get_phase_id();
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->datosStudent($student_id);
+        $student = $students[0]->nombre;
+        $completo = $students[0]->completo;
+        $CsamarksMod = new CsamarksModel();
+        $csamarks = $CsamarksMod->csamarks_half_student($student_id, $phase_id);
+        $fileName = "half_" . $student . ".xlsx";
+        $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
+        $spreadsheet = $reader->load('templates/half.xlsx');
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setCellValueByColumnAndRow(1, 3, strtoupper($phase_name));
+        $sheet->setCellValueByColumnAndRow(1, 4, strtoupper($student));
+        $sheet->setCellValueByColumnAndRow(1, 5, strtoupper($completo));
+        $count = 8;
+        foreach ($csamarks as $row):
+            $saber = 0;
+            $hacer = 0;
+            if (isset($row['saber'])) {
+                $saber = round($row['saber']);
+            }
+            if (isset($row['hacer'])) {
+                $hacer = round($row['hacer']);
+            }
+            $prom = round(($saber + $hacer) / 2);
+            $sheet->setCellValueByColumnAndRow(1, $count, $row['materia']);
+            $sheet->setCellValueByColumnAndRow(2, $count, $row['docente']);
+            $sheet->setCellValueByColumnAndRow(3, $count, $saber);
+            $sheet->setCellValueByColumnAndRow(4, $count, $hacer);
+            $sheet->setCellValueByColumnAndRow(5, $count, $prom);
+            $count += 1;
+        endforeach;
+        $fecha_actual = date("d/m/Y");
+        $sheet->setCellValueByColumnAndRow(5, 35, $fecha_actual);
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, "Xlsx");
+        $writer->save($fileName);
+        return $this->response->download($fileName, null);
+    }
+
+    function section_notes($section_id = '')
+    {
+        $session = session();
+        $manager_id = $session->get('manager_id');
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $self = new SelfappraisalModel();
+        $autos = $self->self_director($manager_id, $page_data['phase_id']);
+        $page_data['students'] = $autos;
+        $data = ["section_id" => $section_id];
+        $SectionMod = new SectionModel();
+        $section = $SectionMod->get_section($data);
+        $page_data['section_id'] = $section_id;
+        $page_data['completo'] = $section[0]['completo'];
+        $Subject = new SubjectModel();
+        $subjects = $Subject->subjects_section($section_id);
+        $page_data['subjects'] = $subjects;
+        $StudentMod = new StudentModel();
+        $page_data['students'] = $StudentMod->student_active($section_id);
+        $CsamarksMod = new CsamarksModel();
+        $page_data['notas'] = $CsamarksMod->csamarks_section($section_id);
+        $page_data['page_name'] = 'section_notes';
+        $page_data['page_title'] = 'Centralizador de Notas';
+        return view('backend/index', $page_data);
+    }
+
+    function teacher_notes()
+    {
+        $session = session();
+        $manager_id = $session->get('manager_id');
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $Subject = new SubjectModel();
+        $subjects = $Subject->dir_notes_teacher($manager_id);
+        $page_data['teachers'] = $subjects;
+        $subjects2 = $Subject->dir_notes_subject($manager_id);
+        $page_data['subjects'] = $subjects2;
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_name'] = 'teacher_notes';
+        $page_data['page_title'] = 'Centralizador de Notas';
+        return view('backend/index', $page_data);
+    }
+
+    function student_statistics($student_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_name'] = 'student_statistics';
+        $page_data['page_title'] = 'Estadísticas Estudiantes';
+        return view('backend/index', $page_data);
+    }
+
+    function student_communications($student_id)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->datosStudent($student_id);
+        $page_data['student'] = $students[0]->nombre;
+        $page_data['completo'] = $students[0]->completo;
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $BehaviorsMod = new BehaviorsModel();
+        $respuesta = $BehaviorsMod->update_behaviors_student($student_id);
+        $students = $BehaviorsMod->behaviors_student($page_data['phase_id'], $student_id);
+        $page_data['behaviors'] = $students;
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_name'] = 'student_communications';
+        $page_data['page_title'] = 'Reporte de Faltas Leves';
+        return view('backend/index', $page_data);
+    }
+
+    function grade_averages($class_id, $phase_id)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $CsamarksMod = new CsamarksModel();
+        $page_data['averages'] = $CsamarksMod->csamarks_avg_grade($class_id, $phase_id);
+        $data = ["class_id" => $class_id];
+        $Section = new SectionModel();
+        $curso = $Section->get_section($data);
+        $page_data['grade'] = $curso[0]['grade'];
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_name'] = 'grade_averages';
+        $page_data['page_title'] = 'Promedios bajos grado';
+        return view('backend/index', $page_data);
+    }
+
+    function generate_ranking($section_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $Setting = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->student_active($section_id);
+        $conter = 8;
+        $obj_Reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
+        $obj_PHPExcel = $obj_Reader->load('templates/rnk.xlsx');
+        $notaBim = array(0, 0, 0, 0, 0);
+        $alumnos = [];
+        if ($section_id >= 211 And $section_id <= 224) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_active($section_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
+            }
+        } elseif ($section_id >= 231 And $section_id <= 263) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_active($section_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                for ($i = 0; $i <= $phase_id; $i++) {
+                    $b = 1 + $i;
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $cnat = 0;
+                    $ing = 0;
+                    $lening = 0;
+                    $prom = 0;
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    foreach ($ed_fisica as $ef) {
+                        $prom += round($ef['total_average']);
+                    }
+                    foreach ($notas as $nota) {
+                        switch ($nota['name']) {
+                            case 'LENGUAJE': $lening += $nota['obtained_mark']; break;
+                            case 'READING': $ing += $nota['obtained_mark']; break;
+                            case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
+                            case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
+                            case 'MÚSICA': $prom += round($nota['obtained_mark']); break;
+                            case 'ARTE': $prom += round($nota['obtained_mark']); break;
+                            case 'MATEMÁTICA': $prom += round($nota['obtained_mark']); break;
+                            case 'COMPUTACIÓN': $prom += round($nota['obtained_mark']); break;
+                            case 'SCIENCE': $cnat += $nota['obtained_mark']; break;
+                            case 'C. NATURALES': $cnat += $nota['obtained_mark']; break;
+                            case 'F. HUMANA': $prom += round($nota['obtained_mark']); break;
+                        }
+                    }
+                    if ($ing != 0) { $lening += round($ing / 2); }
+                    $prom += round($lening / 2) + round($cnat / 2);
+                    if ($prom != 0) { $notaBim[$b] = round($prom / 9, 5); }
+                }
+                $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
+            }
+        } elseif ($section_id >= 271 And $section_id <= 283) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_active($section_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                for ($i = 0; $i <= $phase_id; $i++) {
+                    $b = 1 + $i;
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $lenque = 0; $ing = 0; $cnat = 0; $prom = 0;
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    foreach ($ed_fisica as $ef) { $prom += round($ef['total_average']); }
+                    foreach ($notas as $nota) {
+                        switch ($nota['name']) {
+                            case 'LITERATURA': $lenque += $nota['obtained_mark']; break;
+                            case 'LENGUAJE': $lenque += $nota['obtained_mark']; break;
+                            case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
+                            case 'LITERATURE': $ing += $nota['obtained_mark']; break;
+                            case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
+                            case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
+                            case 'MÚSICA': $prom += round($nota['obtained_mark']); break;
+                            case 'ART. PLAST.': $prom += round($nota['obtained_mark']); break;
+                            case 'MATEMÁTICA': $prom += round($nota['obtained_mark']); break;
+                            case 'TEC. TECNOLÓGICA': $prom += round($nota['obtained_mark']); break;
+                            case 'BIOLOGÍA': $cnat += round($nota['obtained_mark'] * 0.8); break;
+                            case 'FÍSICA': $cnat += round($nota['obtained_mark'] * 0.1); break;
+                            case 'QUÍMICA': $cnat += round($nota['obtained_mark'] * 0.1); break;
+                            case 'PSICOLOGÍA': $prom += round($nota['obtained_mark']); break;
+                            case 'FILOSOFÍA': $prom += round($nota['obtained_mark']); break;
+                            case 'VAL_ESP_REL': $prom += round($nota['obtained_mark']); break;
+                        }
+                    }
+                    $prom += round($lenque / 2) + round($ing / 2) + round($cnat);
+                    if ($prom != 0) { $notaBim[$b] = round($prom / 11, 2); }
+                }
+                $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
+            }
+        } elseif ($section_id >= 311 And $section_id <= 323) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_active($section_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                for ($i = 0; $i <= $phase_id; $i++) {
+                    $b = 1 + $i;
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $lenque = 0; $ing = 0; $prom = 0;
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    foreach ($ed_fisica as $ef) { $prom += round($ef['total_average']); }
+                    foreach ($notas as $nota) {
+                        switch ($nota['name']) {
+                            case 'LITERATURA': $lenque += $nota['obtained_mark']; break;
+                            case 'LENGUAJE': $lenque += $nota['obtained_mark']; break;
+                            case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
+                            case 'LITERATURE': $ing += $nota['obtained_mark']; break;
+                            case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
+                            case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
+                            case 'MÚSICA': $prom += round($nota['obtained_mark']); break;
+                            case 'ART. PLAST.': $prom += round($nota['obtained_mark']); break;
+                            case 'MATEMÁTICA': $prom += round($nota['obtained_mark']); break;
+                            case 'TEC. TECNOLÓGICA': $prom += round($nota['obtained_mark']); break;
+                            case 'BIOLOGÍA': $prom += round($nota['obtained_mark']); break;
+                            case 'FÍSICA': $prom += round($nota['obtained_mark']); break;
+                            case 'QUÍMICA': $prom += round($nota['obtained_mark']); break;
+                            case 'PSICOLOGÍA': $prom += round($nota['obtained_mark']); break;
+                            case 'FILOSOFÍA': $prom += round($nota['obtained_mark']); break;
+                            case 'VAL_ESP_REL': $prom += round($nota['obtained_mark']); break;
+                        }
+                    }
+                    $prom += round($lenque / 2) + round($ing / 2);
+                    if ($prom != 0) { $notaBim[$b] = round($prom / 13, 2); }
+                }
+                $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
+            }
+        } elseif ($section_id >= 331 And $section_id <= 343) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_active($section_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                $final = 0;
+                for ($i = 0; $i <= $phase_id; $i++) {
+                    $b = 1 + $i;
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $lenque = 0; $ing = 0; $prom = 0;
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    foreach ($ed_fisica as $ef) { $prom += round($ef['total_average']); }
+                    foreach ($notas as $nota) {
+                        switch ($nota['name']) {
+                            case 'LITERATURA': $lenque += round($nota['obtained_mark']); break;
+                            case 'QUECHUA': $lenque += round($nota['obtained_mark']); break;
+                            case 'LITERATURE': $ing += round($nota['obtained_mark']); break;
+                            case 'GRAMMAR': $ing += round($nota['obtained_mark']); break;
+                            case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
+                            case 'MÚSICA': $prom += round($nota['obtained_mark']); break;
+                            case 'ART. PLAST.': $prom += round($nota['obtained_mark']); break;
+                            case 'MATEMÁTICA': $prom += round($nota['obtained_mark']); break;
+                            case 'TEC. TECNOLÓGICA': $prom += round($nota['obtained_mark']); break;
+                            case 'BIOLOGÍA': $prom += round($nota['obtained_mark']); break;
+                            case 'FÍSICA': $prom += round($nota['obtained_mark']); break;
+                            case 'QUÍMICA': $prom += round($nota['obtained_mark']); break;
+                            case 'FILOSOFÍA': $prom += round($nota['obtained_mark']); break;
+                            case 'VAL_ESP_REL': $prom += round($nota['obtained_mark']); break;
+                        }
+                    }
+                    $prom += round($lenque / 2);
+                    $prom += round($ing / 2);
+                    if ($prom != 0) { $notaBim[$b] = round($prom / 13, 2); }
+                }
+                $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
+            }
+        }
+        $fila = 8;
+        foreach ($alumnos as $key => $row) { $aux[$key] = $row['final']; }
+        array_multisort($aux, SORT_DESC, $alumnos);
+        foreach ($alumnos as $key => $row) {
+            $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(2, $fila, $row['nombre']);
+            if ($row['prom1'] != 0) { $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(3, $fila, $row['prom1']); }
+            if ($row['prom2'] != 0) { $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(4, $fila, $row['prom2']); }
+            if ($row['prom3'] != 0) { $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(5, $fila, $row['prom3']); }
+            $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(7, $fila, $row['final']);
+            $fila++;
+        }
+        $data = ["section_id" => $section_id];
+        $SectionMod = new SectionModel();
+        $section = $SectionMod->get_section($data);
+        $fileName = 'RNK_' . $section[0]['completo'] . '.xlsx';
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('A5', strtoupper($section[0]['completo']));
+        $fecha_actual = date("d/m/Y");
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('F42', 'Generado el : ' . $fecha_actual);
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($obj_PHPExcel, "Xlsx");
+        $writer->save($fileName);
+        return $this->response->download($fileName, null);
+    }
+
+    function ranking_class($class_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $Setting = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->student_class($class_id);
+        $conter = 8;
+        $obj_Reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
+        $obj_PHPExcel = $obj_Reader->load('templates/rnkgrade.xlsx');
+        $notaBim = array(0, 0, 0, 0, 0);
+        $alumnos = [];
+        if ($class_id >= 21 And $class_id <= 22) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_class($class_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'] . ' - ' . $row['nick_name'];
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
+            }
+        } elseif ($class_id >= 23 And $class_id <= 26) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_class($class_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
+                for ($i = 0; $i <= $phase_id; $i++) {
+                    $b = 1 + $i;
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $cnat = 0; $ing = 0; $lening = 0; $fhum = 0; $prom = 0;
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    foreach ($ed_fisica as $ef) { $prom += round($ef['total_average']); }
+                    foreach ($notas as $nota) {
+                        if ($nota['obtained_mark'] !== null) {
+                            switch ($nota['name']) {
+                                case 'LENGUAJE': $lening += $nota['obtained_mark']; break;
+                                case 'READING': $ing += $nota['obtained_mark']; break;
+                                case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
+                                case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
+                                case 'MÚSICA': $prom += round($nota['obtained_mark']); break;
+                                case 'ARTE': $prom += round($nota['obtained_mark']); break;
+                                case 'MATEMÁTICA': $prom += round($nota['obtained_mark']); break;
+                                case 'COMPUTACIÓN': $prom += round($nota['obtained_mark']); break;
+                                case 'SCIENCE': $cnat += $nota['obtained_mark']; break;
+                                case 'C. NATURALES': $cnat += $nota['obtained_mark']; break;
+                                case 'F. HUMANA': $prom += round($nota['obtained_mark']); break;
+                                case 'RULER': $fhum += $nota['obtained_mark']; break;
+                                case 'CHARACTER': $fhum += $nota['obtained_mark']; break;
+                            }
+                        }
+                    }
+                    if ($ing != 0) { $lening += round($ing / 2); }
+                    $prom += round($lening / 2) + round($cnat / 2) + round($fhum / 2);
+                    if ($prom != 0) { $notaBim[$b] = round($prom / 9, 5); }
+                }
+                $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
+            }
+        } elseif ($class_id >= 27 And $class_id <= 28) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_class($class_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'] . ' - ' . $row['nick_name'];
+                $CsamarksMod = new CsamarksModel();
+                $notas = $CsamarksMod->csamarks_student_pa($row['student_id']);
+                $lenque1 = 0; $lenque2 = 0; $lenque3 = 0; $lenque_pa = 0;
+                $ing1 = 0; $ing2 = 0; $ing3 = 0; $ing_pa = 0;
+                $nat1 = 0; $nat2 = 0; $nat3 = 0; $nat_pa = 0;
+                $prom1 = 0; $prom2 = 0; $prom3 = 0; $prom_pa = 0;
+                foreach ($notas as $nota) {
+                    if ($nota['PA'] !== null) {
+                        switch ($nota['name']) {
+                            case 'LITERATURA':
+                                $lenque1 += $nota['T1']; $lenque2 += $nota['T2']; $lenque3 += $nota['T3']; $lenque_pa += round($nota['PA']); break;
+                            case 'LENGUAJE':
+                                $lenque1 += $nota['T1']; $lenque2 += $nota['T2']; $lenque3 += $nota['T3']; $lenque_pa += round($nota['PA']); break;
+                            case 'QUECHUA':
+                                $lenque1 += $nota['T1']; $lenque2 += $nota['T2']; $lenque3 += $nota['T3']; $lenque_pa += round($nota['PA']); break;
+                            case 'LITERATURE':
+                                $ing1 += $nota['T1']; $ing2 += $nota['T2']; $ing3 += $nota['T3']; $ing_pa += round($nota['PA']); break;
+                            case 'GRAMMAR':
+                                $ing1 += $nota['T1']; $ing2 += $nota['T2']; $ing3 += $nota['T3']; $ing_pa += round($nota['PA']); break;
+                            case 'FÍSICA':
+                                $nat1 += $nota['T1']; $nat2 += $nota['T2']; $nat3 += $nota['T3']; $nat_pa += round($nota['PA']); break;
+                            case 'QUÍMICA':
+                                $nat1 += $nota['T1']; $nat2 += $nota['T2']; $nat3 += $nota['T3']; $nat_pa += round($nota['PA']); break;
+                            case 'BTH CONTENIDOS': break;
+                            case 'BTH INGLÉS': break;
+                            default:
+                                $prom1 += round($nota['T1']); $prom2 += round($nota['T2']); $prom3 += round($nota['T3']); $prom_pa += round($nota['PA']); break;
+                        }
+                    }
+                }
+                $prom1 += round($lenque1 / 2, 0) + round($ing1 / 2, 0) + round($nat1 / 2, 0);
+                $prom2 += round($lenque2 / 2) + round($ing2 / 2) + round($nat2 / 2);
+                $prom3 += round($lenque3 / 2) + round($ing3 / 2) + round($nat3 / 2);
+                $prom_pa += round($lenque_pa / 2) + round($ing_pa / 2) + round($nat_pa / 2);
+                if ($prom1 != 0) { $prom1 = round($prom1 / 11, 0); }
+                if ($prom2 != 0) { $prom2 = round($prom2 / 11, 0); }
+                if ($prom3 != 0) { $prom3 = round($prom3 / 11, 0); }
+                if ($prom_pa != 0) { $prom_pa = round($prom_pa / 11, 0); }
+                $alumnos[] = array('nombre' => $est, 'prom1' => $prom1, 'prom2' => $prom2, 'prom3' => $prom3, 'prom4' => 0, 'final' => $prom_pa);
+            }
+        } elseif ($class_id >= 31 And $class_id <= 32) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_class($class_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'] . ' - ' . $row['nick_name'];
+                for ($i = 0; $i <= $phase_id; $i++) {
+                    $b = 1 + $i;
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $lenque = 0; $ing = 0; $prom = 0;
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    foreach ($ed_fisica as $ef) {
+                        if ($ef['total_average'] !== null) { $prom += round($ef['total_average']); }
+                    }
+                    foreach ($notas as $nota) {
+                        if ($nota['obtained_mark'] !== null) {
+                            switch ($nota['name']) {
+                                case 'LITERATURA': $lenque += $nota['obtained_mark']; break;
+                                case 'LENGUAJE': $lenque += $nota['obtained_mark']; break;
+                                case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
+                                case 'LITERATURE': $ing += $nota['obtained_mark']; break;
+                                case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
+                                case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
+                                case 'MÚSICA': $prom += round($nota['obtained_mark']); break;
+                                case 'ART. PLAST.': $prom += round($nota['obtained_mark']); break;
+                                case 'MATEMÁTICA': $prom += round($nota['obtained_mark']); break;
+                                case 'TEC. TECNOLÓGICA': $prom += round($nota['obtained_mark']); break;
+                                case 'BIOLOGÍA': $prom += round($nota['obtained_mark']); break;
+                                case 'FÍSICA': $prom += round($nota['obtained_mark']); break;
+                                case 'QUÍMICA': $prom += round($nota['obtained_mark']); break;
+                                case 'PSICOLOGÍA': $prom += round($nota['obtained_mark']); break;
+                                case 'FILOSOFÍA': $prom += round($nota['obtained_mark']); break;
+                                case 'VAL_ESP_REL': $prom += round($nota['obtained_mark']); break;
+                            }
+                        }
+                    }
+                    $prom += round($lenque / 2) + round($ing / 2);
+                    if ($prom != 0) { $notaBim[$b] = round($prom / 13, 2); }
+                }
+                $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
+            }
+        } elseif ($class_id >= 33 And $class_id <= 34) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->student_class($class_id);
+            foreach ($students as $row) {
+                $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'] . ' - ' . $row['nick_name'];
+                for ($i = 0; $i <= $phase_id; $i++) {
+                    $b = 1 + $i;
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $lenque = 0; $ing = 0; $prom = 0;
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    foreach ($ed_fisica as $ef) {
+                        if ($ef['total_average'] !== null) { $prom += round($ef['total_average']); }
+                    }
+                    foreach ($notas as $nota) {
+                        if ($nota['obtained_mark'] !== null) {
+                            switch ($nota['name']) {
+                                case 'LITERATURA': $lenque += $nota['obtained_mark']; break;
+                                case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
+                                case 'LITERATURE': $ing += $nota['obtained_mark']; break;
+                                case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
+                                case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
+                                case 'MÚSICA': $prom += round($nota['obtained_mark']); break;
+                                case 'ART. PLAST.': $prom += round($nota['obtained_mark']); break;
+                                case 'MATEMÁTICA': $prom += round($nota['obtained_mark']); break;
+                                case 'TEC. TECNOLÓGICA': $prom += round($nota['obtained_mark']); break;
+                                case 'BIOLOGÍA': $prom += round($nota['obtained_mark']); break;
+                                case 'FÍSICA': $prom += round($nota['obtained_mark']); break;
+                                case 'QUÍMICA': $prom += round($nota['obtained_mark']); break;
+                                case 'FILOSOFÍA': $prom += round($nota['obtained_mark']); break;
+                                case 'VAL_ESP_REL': $prom += round($nota['obtained_mark']); break;
+                            }
+                        }
+                    }
+                    $prom += round($lenque / 2) + round($ing / 2);
+                    if ($prom != 0) { $notaBim[$b] = round($prom / 13, 2); }
+                }
+                $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
+            }
+        }
+        $fila = 8;
+        foreach ($alumnos as $key => $row) { $aux[$key] = $row['final']; }
+        array_multisort($aux, SORT_DESC, $alumnos);
+        foreach ($alumnos as $key => $row) {
+            $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(2, $fila, $row['nombre']);
+            if ($row['prom1'] != 0) { $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(3, $fila, $row['prom1']); }
+            if ($row['prom2'] != 0) { $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(4, $fila, $row['prom2']); }
+            if ($row['prom3'] != 0) { $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(5, $fila, $row['prom3']); }
+            $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(7, $fila, $row['final']);
+            $fila++;
+        }
+        $data = ["class_id" => $class_id];
+        $SectionMod = new SectionModel();
+        $section = $SectionMod->get_section($data);
+        $fileName = 'RNK_' . $section[0]['grade'] . '.xlsx';
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('A5', strtoupper($section[0]['grade']));
+        $fecha_actual = date("d/m/Y");
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('F102', 'Generado el : ' . $fecha_actual);
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($obj_PHPExcel, "Xlsx");
+        $writer->save($fileName);
+        return $this->response->download($fileName, null);
+    }
+
+    function low_averages($section_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $data = ["section_id" => $section_id];
+        $Section = new SectionModel();
+        $curso = $Section->get_section($data);
+        $page_data['section_id'] = $curso[0]['section_id'];
+        $page_data['curso'] = $curso[0]['completo'];
+        $Subject = new SubjectModel();
+        $page_data['materias'] = $Subject->subjects_section($section_id);
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->studentsSection($section_id, 0);
+        $page_data['students'] = $students;
+        $CsamarksMod = new CsamarksModel();
+        $page_data['avgs'] = $CsamarksMod->csamarks_avgs($section_id, 1);
+        $page_data['notas'] = $CsamarksMod->csamarks_notes($section_id, 1);
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_name'] = 'low_averages';
+        $page_data['page_title'] = 'Promedios más Bajos';
+        return view('backend/index', $page_data);
+    }
+
+    function low_averages_xlsx($section_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $Setting = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $gestion = $Setting->get_gestion();
+        $Subject = new SubjectModel();
+        $materias = $Subject->subjects_section($section_id);
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->studentsSection($section_id, 0);
+        $CsamarksMod = new CsamarksModel();
+        $avgs = $CsamarksMod->csamarks_avgs($section_id, 1);
+        $notas = $CsamarksMod->csamarks_notes($section_id, 1);
+        $obj_Reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
+        $obj_PHPExcel = $obj_Reader->load('templates/low.xlsx');
+        $obj_PHPExcel->setActiveSheetIndex(0);
+        $column = 4;
+        $ed_fisica = 0;
+        foreach ($materias as $mat):
+            if ($mat['name'] == 'E. FÍSICA') { $ed_fisica++; }
+            $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow($column, 5, $mat['name']);
+            if ($ed_fisica == 1) { $column = $column - 1; }
+            $column++;
+        endforeach;
+        $conter = 6;
+        foreach ($students as $row1):
+            foreach ($avgs as $avg) {
+                if ($row1['student_id'] == $avg['student_id']) {
+                    $alumnos[] = array('student_id' => $row1['student_id'], 'nombre' => $row1['student'], 'promedio' => round($avg['promedio'], 2));
+                    break;
+                }
+            }
+        endforeach;
+        foreach ($alumnos as $key => $row) { $aux[$key] = $row['promedio']; }
+        array_multisort($aux, SORT_ASC, $alumnos);
+        $nro = 0;
+        $conter = 6;
+        foreach ($alumnos as $key => $row):
+            $nro += 1;
+            $obj_PHPExcel->getActiveSheet()->SetCellValue('B' . $conter, $row['nombre']);
+            $obj_PHPExcel->getActiveSheet()->SetCellValue('C' . $conter, $row['promedio']);
+            $column = 4;
+            $ed_fisica = 0;
+            foreach ($materias as $mat):
+                if ($mat['name'] == 'E. FÍSICA') { $ed_fisica++; }
+                if (count($notas) > 0) {
+                    foreach ($notas as $not):
+                        if ($mat['subject_id'] == $not['subject_id'] AND $row['student_id'] == $not['student_id']) {
+                            $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow($column, $conter, $not['total_average']);
+                        }
+                    endforeach;
+                }
+                if ($ed_fisica == 1) { $column = $column - 1; }
+                $column++;
+            endforeach;
+            $conter++;
+        endforeach;
+        $data = ["section_id" => $section_id];
+        $SectionMod = new SectionModel();
+        $section = $SectionMod->get_section($data);
+        $fileName = 'NotasBajas_' . $section[0]['completo'] . '.xlsx';
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('D3', strtoupper($section[0]['completo']));
+        $fecha_actual = date("d/m/Y");
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('D4', 'Generado el : ' . $fecha_actual);
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($obj_PHPExcel, "Xlsx");
+        $writer->save($fileName);
+        return $this->response->download($fileName, null);
+    }
+
+    function saber_hacer_xlsx($section_id = '', $phase_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'manager')
+            return redirect()->to(base_url());
+        $CsamarksMod = new CsamarksModel();
+        $notas = $CsamarksMod->saber_hacer_section($section_id, $phase_id);
+        $obj_Reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
+        $obj_PHPExcel = $obj_Reader->load('templates/saber_hacer.xlsx');
+        $obj_PHPExcel->setActiveSheetIndex(0);
+        $conter = 6;
+        foreach ($notas as $not):
+            $obj_PHPExcel->getActiveSheet()->SetCellValue('B' . $conter, $not['student']);
+            $obj_PHPExcel->getActiveSheet()->SetCellValue('C' . $conter, $not['saber']);
+            $obj_PHPExcel->getActiveSheet()->SetCellValue('D' . $conter, $not['hacer']);
+            $conter++;
+        endforeach;
+        $data = ["section_id" => $section_id];
+        $SectionMod = new SectionModel();
+        $section = $SectionMod->get_section($data);
+        $fileName = 'SaberHacer_' . $section[0]['completo'] . '.xlsx';
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('B3', strtoupper($section[0]['completo']));
+        $fecha_actual = date("d/m/Y");
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('B4', 'Generado el : ' . $fecha_actual);
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($obj_PHPExcel, "Xlsx");
+        $writer->save($fileName);
+        return $this->response->download($fileName, null);
+    }
+
+    //******************************** END - DIRECTOR **************/
 }
 
