@@ -18,7 +18,7 @@
                                 <div class="d-flex flex-column  flex-center">
                                     <!--begin::Image-->
                                     <div class="bgi-no-repeat bgi-size-cover rounded min-h-180px w-100"
-                                        style="background-image: url(https://tiquipaya.edu.bo/download/coltiqui.jpg)">
+                                        style="background-image: url(<?= base_url() ?>assets/images/coltiqui.jpg)">
                                     </div>
                                     <!--end::Image-->
 

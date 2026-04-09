@@ -12,7 +12,7 @@
                     <div class="card-body p-0 d-flex flex-column">
                         <!--begin::Header-->
                         <div class="bgi-no-repeat bgi-size-cover rounded-top w-100 d-flex flex-column justify-content-end align-items-center mb-8"
-                            style="background-image: url(https://tiquipaya.edu.bo/download/coltiqui.jpg); height: 250px;">
+                            style="background-image: url(<?= base_url() ?>assets/images/coltiqui.jpg); height: 250px;">
                             <div class="d-flex flex-column align-items-center mb-5">
                                 <a href="https://colegiotiquipaya.edu.bo/" target="_blank"
                                     class="text-white font-weight-bolder font-size-h3 m-0 pb-1"
@@ -127,7 +127,7 @@
                                 <div class="mr-6">
                                     <div class="symbol shadow-sm"
                                         style="width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.8); overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff;">
-                                        <img src="https://tiquipaya.edu.bo/ctdocs/logodash.png" alt="Logo"
+                                        <img src="<?= base_url() ?>assets/images/logodash.png" alt="Logo"
                                             style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.3);">
                                     </div>
                                 </div>

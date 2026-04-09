@@ -2582,19 +2582,15 @@ class Manager extends BaseController
                         switch ($nota['name']) {
                             case 'LENGUAJE':
                                 $lenque += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(52 + $b, $conter, $nota['obtained_mark']);
-                                break;
-                            case 'QUECHUA':
-                                $lenque += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(56 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(2 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'LITERATURE':
                                 $ing += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(52 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'GRAMMAR':
                                 $ing += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(56 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'SOCIALES':
                                 $prom += round($nota['obtained_mark']);
@@ -2618,15 +2614,15 @@ class Manager extends BaseController
                                 break;
                             case 'BIOLOGÍA':
                                 $fisqui += round($nota['obtained_mark'] * 0.8);
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(76 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'FÍSICA':
                                 $fisqui += round($nota['obtained_mark'] * 0.1);
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(80 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'QUÍMICA':
                                 $fisqui += round($nota['obtained_mark'] * 0.1);
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(84 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(72 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'PSICOLOGÍA':
                                 $prom += round($nota['obtained_mark']);
@@ -2638,14 +2634,11 @@ class Manager extends BaseController
                                 break;
                         }
                     }
-                    if ($lenque != 0) {
-                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, round($lenque / 2));
-                    }
                     if ($ing != 0) {
-                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(72 + $b, $conter, round($ing / 2));
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, round($ing / 2));
                     }
                     if ($fisqui != 0) {
-                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(88 + $b, $conter, $fisqui);
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(76 + $b, $conter, $fisqui);
                     }
                     $prom += round($lenque / 2) + round($ing / 2) + $fisqui;
                     if ($prom != 0) {
@@ -2684,24 +2677,20 @@ class Manager extends BaseController
                         }
                         switch ($nota['name']) {
                             case 'LITERATURA':
-                                $lenque += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, $nota['obtained_mark']);
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(2 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'LENGUAJE':
-                                $lenque += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, $nota['obtained_mark']);
-                                break;
-                            case 'QUECHUA':
-                                $lenque += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(2 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'LITERATURE':
                                 $ing += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(72 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'GRAMMAR':
                                 $ing += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(76 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'SOCIALES':
                                 $prom += round($nota['obtained_mark']);
@@ -2755,15 +2744,12 @@ class Manager extends BaseController
                                 break;
                         }
                     }
-                    if ($lenque != 0) {
-                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, round($lenque / 2));
-                    }
                     if ($ing != 0) {
-                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(80 + $b, $conter, round($ing / 2));
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, round($ing / 2));
                     }
-                    $prom += round($lenque / 2) + round($ing / 2);
+                    $prom += round($ing / 2) + $fisqui;
                     if ($prom != 0) {
-                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54 + $b, $conter, round($prom / 13));
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54 + $b, $conter, round($prom / 11));
                     }
                 }
                 $conter++;
@@ -2798,21 +2784,16 @@ class Manager extends BaseController
                         }
                         switch ($nota['name']) {
                             case 'LITERATURA':
-                                $lenque += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, $nota['obtained_mark']);
-                                $obj_PHPExcel->getActiveSheet()->getStyle('C' . $conter)->getFill()->getStartColor()->setRGB('FF0000');
-                                break;
-                            case 'QUECHUA':
-                                $lenque += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
+                                $prom += round($nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(2 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'LITERATURE':
                                 $ing += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(72 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'GRAMMAR':
                                 $ing += $nota['obtained_mark'];
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(76 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(64 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'SOCIALES':
                                 $prom += round($nota['obtained_mark']);
@@ -2856,13 +2837,10 @@ class Manager extends BaseController
                                 break;
                         }
                     }
-                    if ($lenque != 0) {
-                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, round($lenque / 2));
-                    }
                     if ($ing != 0) {
-                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(80 + $b, $conter, round($ing / 2));
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, round($ing / 2));
                     }
-                    $prom += round($lenque / 2) + round($ing / 2);
+                    $prom += round($ing / 2);
                     if ($prom != 0) {
                         $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54 + $b, $conter, round($prom / 13));
                     }

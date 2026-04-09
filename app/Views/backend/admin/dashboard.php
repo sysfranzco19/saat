@@ -17,7 +17,7 @@
                                 <!--begin::Header-->
                                 <div class="d-flex flex-column  flex-center">
                                     <!--begin::Image-->
-                                    <div class="bgi-no-repeat bgi-size-cover rounded min-h-180px w-100" style="background-image: url(https://tiquipaya.edu.bo/download/coltiqui.jpg)"></div>
+                                    <div class="bgi-no-repeat bgi-size-cover rounded min-h-180px w-100" style="background-image: url(<?= base_url() ?>assets/images/coltiqui.jpg)"></div>
                                     <!--end::Image-->
                                     <!--begin::Title-->
                                     <a  class="card-title font-weight-bolder text-dark-75 text-hover-primary font-size-h4 m-0 pt-7 pb-1">Colegio Tiquipaya</a>
