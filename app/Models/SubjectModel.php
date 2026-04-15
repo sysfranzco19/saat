@@ -62,12 +62,33 @@ t4.link
         if ($section_id > 230) {
             if ($sex == 'M') {
                 $sql = "SELECT s.*, t.name as profe FROM subject as s
-INNER JOIN teacher as t ON(s.teacher_id=t.teacher_id)
-WHERE s.teacher_id<>9 AND s.section_id=" . $section_id;
+                        INNER JOIN teacher as t ON(s.teacher_id=t.teacher_id)
+                        WHERE s.teacher_id<>9 AND s.section_id=" . $section_id;
             } else {
                 $sql = "SELECT s.*, t.name as profe FROM subject as s
-    INNER JOIN teacher as t ON(s.teacher_id=t.teacher_id)
-    WHERE s.teacher_id<>11 AND s.section_id=" . $section_id;
+                INNER JOIN teacher as t ON(s.teacher_id=t.teacher_id)
+                WHERE s.teacher_id<>11 AND s.section_id=" . $section_id;
+            }
+        } else {
+            $sql = "SELECT s.*, t.name as profe FROM subject as s
+        INNER JOIN teacher as t ON(s.teacher_id=t.teacher_id)
+        WHERE s.section_id=" . $section_id;
+        }
+        $subject = $this->db->query($sql);
+        return $subject->getResultArray();
+    }
+    public function subjects_student_bth($section_id, $sex)
+    {
+        $sql = "";
+        if ($section_id > 230) {
+            if ($sex == 'M') {
+                $sql = "SELECT s.*, t.name as profe FROM subject as s
+                        INNER JOIN teacher as t ON(s.teacher_id=t.teacher_id)
+                        WHERE s.teacher_id<>9 AND s.section_id=" . $section_id;
+            } else {
+                $sql = "SELECT s.*, t.name as profe FROM subject as s
+                INNER JOIN teacher as t ON(s.teacher_id=t.teacher_id)
+                WHERE s.teacher_id<>11 AND s.section_id=" . $section_id;
             }
         } else {
             $sql = "SELECT s.*, t.name as profe FROM subject as s

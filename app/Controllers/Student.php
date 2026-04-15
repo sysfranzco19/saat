@@ -244,15 +244,12 @@ class Student extends BaseController
         $student_id = $session->get('student_id');
         if ($session->get('login_type') != 'student')
             return redirect()->to(base_url());
-        //Estudiante
         $StudentMod = new StudentModel();
         $students = $StudentMod->datosStudent($student_id);
-        //Settings
         $page_data['student_id'] = $student_id;
         $page_data['student'] = $students[0]->nombre;
         $page_data['section'] = $students[0]->completo;
         $page_data['section_id'] = $students[0]->section_id;
-        //Fase Actual
         $Setting = new SettingModel();
         $page_data['login_type'] = $session->get('login_type');
         $page_data['phase_id'] = $Setting->get_phase_id();
@@ -260,79 +257,35 @@ class Student extends BaseController
         $page_data['system_title'] = $Setting->get_system_title();
         $page_data['system_name'] = $Setting->get_system_name();
         $page_data['page_title'] = 'Autoevaluación';
-        //Verificamos si esxiste registrada la autoevaluacion
-        //Autoevaluaciones
-        $data = [
-            "student_id" => $student_id,
-            "phase_id" => $page_data['phase_id']
-        ];
         $self = new SelfappraisalModel();
-        $existe = $self->get_self_appraisal($data);
-        //Guardamos segun el Curso
-        if ($page_data['section_id'] < 271) {
-            $chk1 = $_POST['chk_ser_1'];
-            $chk2 = $_POST['chk_ser_2'];
-            $chk3 = $_POST['chk_ser_3'];
-            $chk4 = $_POST['chk_ser_4'];
-            $chk5 = $_POST['chk_ser_5'];
-            $data['ser'] = $chk1 . "-" . $chk2 . "-" . $chk3 . "-" . $chk4 . "-" . $chk5;
-            $data['ser100'] = round(($_POST['TotalSer5'] + $_POST['TotalDecidir5']) / 2);
-            $data['ser5'] = $_POST['TotalSer5'];
-            $data['ser_descripcion'] = $_POST['text_ser'];
-            $chd1 = $_POST['chk_decidir_1'];
-            $chd2 = $_POST['chk_decidir_2'];
-            $chd3 = $_POST['chk_decidir_3'];
-            $chd4 = $_POST['chk_decidir_4'];
-            $chd5 = $_POST['chk_decidir_5'];
-            $data['dec'] = $chd1 . "-" . $chd2 . "-" . $chd3 . "-" . $chd4 . "-" . $chd5;
-            $data['dec100'] = round(($_POST['TotalSer5'] + $_POST['TotalDecidir5']) / 2);
-            $data['dec5'] = $_POST['TotalDecidir5'];
-            $data['dec_descripcion'] = $_POST['text_decidir'];
-            $data['student_id'] = $page_data['student_id'];
-            $data['phase_id'] = $page_data['phase_id'];
-            if (count($existe) == 0) {
-                $respuesta = $self->insert_self_appraisal($data);
-                $session->set('flash_message', 'Autoevaluación Guardada Correctamente');
+        $existe = $self->get_self_appraisal([
+            "student_id" => $student_id,
+            "phase_id"   => $page_data['phase_id']
+        ]);
+        if (count($existe) == 0) {
+            $datos = [
+                'student_id' => $student_id,
+                'phase_id'   => $page_data['phase_id'],
+            ];
+            $sum = 0;
+            for ($i = 1; $i <= 10; $i++) {
+                $val = intval($_POST['chk_auto_' . $i] ?? 0);
+                $datos['auto' . $i] = $val;
+                $sum += $val;
             }
-            $page_data['page_name'] = 'self_appraisal1';
-        } else {
-            $chk1 = $_POST['chk_ser_1'];
-            $chk2 = $_POST['chk_ser_2'];
-            $chk3 = $_POST['chk_ser_3'];
-            $chk4 = $_POST['chk_ser_4'];
-            $chk5 = $_POST['chk_ser_5'];
-            $data['ser'] = $chk1 . "-" . $chk2 . "-" . $chk3 . "-" . $chk4 . "-" . $chk5;
-            $data['ser100'] = round(($_POST['TotalSer5'] + $_POST['TotalDecidir5']) / 2);
-            $data['ser5'] = $_POST['TotalSer5'];
-            $data['ser_descripcion'] = $_POST['text_ser'];
-            $chd1 = $_POST['chk_decidir_1'];
-            $chd2 = $_POST['chk_decidir_2'];
-            $chd3 = $_POST['chk_decidir_3'];
-            $chd4 = $_POST['chk_decidir_4'];
-            $chd5 = $_POST['chk_decidir_5'];
-            $data['dec'] = $chd1 . "-" . $chd2 . "-" . $chd3 . "-" . $chd4 . "-" . $chd5;
-            $data['dec100'] = round(($_POST['TotalSer5'] + $_POST['TotalDecidir5']) / 2);
-            $data['dec5'] = $_POST['TotalDecidir5'];
-            $data['dec_descripcion'] = $_POST['text_decidir'];
-            $data['student_id'] = $page_data['student_id'];
-            $data['phase_id'] = $page_data['phase_id'];
-            if (count($existe) == 0) {
-                $respuesta = $self->insert_self_appraisal($data);
-                $session->set('flash_message', 'Autoevaluación Guardada Correctamente');
+            $datos['autoevaluacion'] = (int) round($sum * 0.5);
+            if ($page_data['section_id'] >= 271) {
+                $datos['descripcion'] = $_POST['descripcion'] ?? '';
             }
-            $page_data['page_name'] = 'self_appraisal2';
+            $self->insert_self_appraisal($datos);
+            $session->set('flash_message', 'Autoevaluación Guardada Correctamente');
         }
-        //Autoevaluaciones
-        $data = [
+        $page_data['page_name'] = ($page_data['section_id'] < 271) ? 'self_appraisal1' : 'self_appraisal2';
+        $page_data['autos'] = $self->get_self_appraisal([
             "student_id" => $student_id,
-            "phase_id" => $page_data['phase_id']
-        ];
-        $self = new SelfappraisalModel();
-        $autos = $self->get_self_appraisal($data);
-        $page_data['autos'] = $autos;
-
+            "phase_id"   => $page_data['phase_id']
+        ]);
         return view('backend/index', $page_data);
-
     }
     /*****************************BOLETIN DE NOTAS*********************************/
     function report_card()

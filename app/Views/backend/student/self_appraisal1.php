@@ -2,307 +2,159 @@
     function guardar()
     {
     <?php
-        $array=['chk_ser_1','chk_ser_2','chk_ser_3','chk_ser_4','chk_ser_5','chk_decidir_1','chk_decidir_2','chk_decidir_3','chk_decidir_4','chk_decidir_5'];
-        foreach($array as $row):
+        for ($v = 1; $v <= 10; $v++):
     ?>
-            opciones<?php echo $row;?> = document.form_self.<?php echo $row;?>;
-            var seleccionado = false;
-            for(var i=0; i<opciones<?php echo $row;?>.length; i++) {
-              if(opciones<?php echo $row;?>[i].checked) {
-                seleccionado = true;
-                break;
-              }
-            }
-            //alert(seleccionado)
-            if(!seleccionado) {
-                alert("Autoevaluación Incompleta");
-                return false;
-            }
-    <?php
-        endforeach;
-    ?>
-        var falta_des = false;
-        //SER
-        var txt_ser = document.form_self.text_ser;
-        if (txt_ser.value!="") {
-        	falta_des = true;
-        }else{
-        	alert("Escribe las razones por las cuales mereces esta calificación del SER.");
-        	document.getElementById('text_ser').focus();
+        var radiosAuto<?php echo $v; ?> = document.form_self['chk_auto_<?php echo $v; ?>'];
+        var seleccionado<?php echo $v; ?> = false;
+        for (var i = 0; i < radiosAuto<?php echo $v; ?>.length; i++) {
+            if (radiosAuto<?php echo $v; ?>[i].checked) { seleccionado<?php echo $v; ?> = true; break; }
+        }
+        if (!seleccionado<?php echo $v; ?>) {
+            alert("Autoevaluación Incompleta: responde la pregunta <?php echo $v; ?>.");
             return false;
         }
-
-        //DECIDIR
-        var txt_decidir = document.form_self.text_decidir;
-        if (txt_decidir.value!="") {
-        	falta_des = true;
-        }else{
-        	alert("Escribe las razones por las cuales mereces esta calificación del DECIDIR.");
-        	document.getElementById('text_decidir').focus();
-            return false;
-        }
-
-        //Envia Form
-        if(falta_des){
-        	document.form_self.submit(); 
-        }
-        
+    <?php endfor; ?>
+        document.form_self.submit();
     }
-
     function SumarAutomatico()
     {
-
-        var resultInput2 = document.getElementById('TotalSer5');
-        var chk1 = document.form_self.chk_ser_1;
-        var chk2 = document.form_self.chk_ser_2;
-        var chk3 = document.form_self.chk_ser_3;
-        var chk4 = document.form_self.chk_ser_4;
-        var chk5 = document.form_self.chk_ser_5;
-        var suma = parseInt(chk1.value || '0', 10) + parseInt(chk2.value || '0', 10) + parseInt(chk3.value || '0', 10) + parseInt(chk4.value || '0', 10) + parseInt(chk5.value || '0', 10);
-        resultInput2.value = suma;
-    }
-    function SumarAutomatico2()
-    {
-        var rInput2 = document.getElementById('TotalDecidir5');
-        var chk1 = document.form_self.chk_decidir_1;
-        var chk2 = document.form_self.chk_decidir_2;
-        var chk3 = document.form_self.chk_decidir_3;
-        var chk4 = document.form_self.chk_decidir_4;
-        var chk5 = document.form_self.chk_decidir_5;
-        var suma = parseInt(chk1.value || '0', 10) + parseInt(chk2.value || '0', 10) + parseInt(chk3.value || '0', 10) + parseInt(chk4.value || '0', 10) + parseInt(chk5.value || '0', 10);
-        rInput2.value = suma;
+        var total = 0;
+        for (var i = 1; i <= 10; i++) {
+            var radios = document.form_self['chk_auto_' + i];
+            for (var j = 0; j < radios.length; j++) {
+                if (radios[j].checked) { total += parseFloat(radios[j].value); break; }
+            }
+        }
+        var decimal = (total * 0.5).toFixed(1);
+        document.getElementById('TotalAuto').value = decimal;
+        document.getElementById('autoevaluacion').value = Math.round(total * 0.5);
     }
 </script>
 <?php
-	$reg = false;
-	$ser = array(0, 0, 0, 0, 0);
-	$ser100 = 0;
-	$ser5 = 0;
-	$serd = "";
-	$dec = array(0, 0, 0, 0, 0);
-	$dec100 = 0;
-	$dec5 = 0;
-	$decd = "";
-	//$sql1 = "SELECT * FROM self_appraisal WHERE student_id=".$student_id." AND phase_id=2";
-    //$autos = $this->db->query($sql1)->result_array();
-    if(count($autos)>=1) {
-    	$reg = true;
-		foreach ($autos as $auto):
-			$ser = explode("-",$auto['ser']);
-			$ser5 = $auto['ser5'];
-			$serd = $auto['ser_descripcion'];
-			$dec = explode("-",$auto['dec']);
-			$dec5 = $auto['dec5'];
-			$decd = $auto['dec_descripcion'];
-			break;
-		endforeach;    	
+    $reg = false;
+    $autos_vals = [];
+    for ($i = 1; $i <= 10; $i++) $autos_vals[$i] = 0;
+    $total_display = '0.0';
+    if (count($autos) >= 1) {
+        $reg = true;
+        $a = $autos[0];
+        $sum = 0;
+        for ($i = 1; $i <= 10; $i++) {
+            $autos_vals[$i] = intval($a['auto' . $i]);
+            $sum += $autos_vals[$i];
+        }
+        $total_display = number_format($sum * 0.5, 1);
     }
-
+    $d = $reg ? "disabled" : "";
+    $questions = [
+        1  => "Cumplo de manera correcta las normas y reglas del colegio.",
+        2  => "Trabajo en todos los espacios y momentos con respeto para una convivencia sana.",
+        3  => "Practico los valores del colegio: Confiabilidad, Respeto, Responsabilidad, Justicia, Bondad, Ciudadanía.",
+        4  => "Asumo con responsabilidad el cumplimiento de mis tareas y trabajos, los mismos que entrego en fecha establecida.",
+        5  => "Soy ordenado y disciplinado durante mis clases con todo mi material necesario a mi alcance.",
+        6  => "Practico la equidad de género respetando la dignidad y los derechos de todas las personas que me rodean.",
+        7  => "Aplico conceptos y habilidades aprendidas para la solución de problemas.",
+        8  => "Soy sensible a las emociones de los demás y trato de comprender sus puntos de vista.",
+        9  => "Comprendo el propósito y la importancia de la lectura en mi vida diaria y en mi aprendizaje.",
+        10 => "Demuestro comportamientos adecuados a las reglas establecidas en el aula.",
+    ];
 ?>
-<!--begin::Entry-->
 <div class="d-flex flex-column-fluid">
-    <!--begin::Container-->
     <div class="container-fluid">
         <div class="card card-custom">
-            <div class="card-header">
-                <h3 class="card-title">
-                AUTOEVALUACIÓN (Primaria) - <?php echo $student;?>
+            <div class="card-header border-0 py-5">
+                <h3 class="card-title font-weight-bolder text-dark">
+                    <span class="card-icon"><i class="flaticon-clipboard-1 text-primary"></i></span>
+                    AUTOEVALUACIÓN <span class="text-muted font-weight-normal">(Primaria)</span>
                 </h3>
-                <p><?php echo $phase_name;?></p>
+                <div class="card-toolbar">
+                    <span class="label label-xl label-light-primary label-inline font-weight-bold mr-2">
+                        <?php echo esc($phase_name); ?>
+                    </span>
+                </div>
             </div>
-            <!--begin::Form <form name="form_assists"> -->
-                <form action="<?php echo base_url() . 'student/self_appraisal_save'; ?>" method="post" class="form" name="form_self" >
-                <div class="card-body">
-                    <div class="form-group mb-8">
-                        <div class="alert alert-custom alert-default" role="alert">
-                            <div class="alert-icon"><i class="flaticon-warning text-primary"></i></div>
-                            <div class="alert-text">
-                                Lee con mucha atención cada dimensión, analiza, reflexiona y evalúate en base a los criterios correspondientes.<br />
-                            </div>
-                        </div>
+            <form action="<?php echo base_url('student/self_appraisal_save'); ?>" method="post" class="form" name="form_self">
+            <input type="hidden" name="autoevaluacion" id="autoevaluacion" value="<?php echo $reg ? $autos[0]['autoevaluacion'] : 0; ?>">
+            <div class="card-body pt-0">
+                <div class="alert alert-custom alert-light-primary alert-dismissible mb-8" role="alert">
+                    <div class="alert-icon"><i class="flaticon-warning text-primary"></i></div>
+                    <div class="alert-text">
+                        Lee con mucha atención cada criterio, analiza, reflexiona y evalúate honestamente.
+                        <strong>Estudiante: <?php echo esc($student); ?></strong>
                     </div>
-                    <h3 class="font-size-lg text-dark font-weight-bold mb-6">DIMENSIÓN: SER</h3>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Respeto las normas y reglas institucionales.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_1" value="1" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==1){echo "checked";}?>/><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_1" value="0" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==0){echo "checked";}?>/><span></span>No
-                                </label>
-                            </div>
-                        </div>
+                </div>
+                <?php if ($reg): ?>
+                <div class="alert alert-custom alert-warning mb-6" role="alert">
+                    <div class="alert-icon"><i class="flaticon-warning-2"></i></div>
+                    <div class="alert-text font-weight-bold">Tu autoevaluación ya está registrada y no puede modificarse.</div>
+                </div>
+                <?php endif; ?>
+                <div class="separator separator-dashed separator-border-2 mb-6"></div>
+                <div class="d-flex align-items-center mb-5">
+                    <div class="symbol symbol-40 symbol-light-success mr-4">
+                        <span class="symbol-label font-weight-bolder font-size-h4">A</span>
                     </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Asumo con responsabilidad el cumplimiento de mis tareas y trabajos , los mismos que entrego en fecha establecida.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_2" value="1" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==1){echo "checked";}?>/><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_2" value="0" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==0){echo "checked";}?>/><span></span>No
-                                </label>
-                            </div>
-                        </div>
+                    <div>
+                        <h4 class="font-weight-bolder text-dark mb-0">AUTOEVALUACIÓN</h4>
+                        <span class="text-muted font-size-sm">Preguntas 1 – 10 · cada respuesta vale 0.5 pts.</span>
                     </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Aporto y participo de manera activa en el aula.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_3" value="1" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==1){echo "checked";}?>/><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_3" value="0" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==0){echo "checked";}?>/><span></span>No
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Promuevo hábitos de higiene, participando activamente en actividades ambientales como ferias y patrullas ecológicas.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_4" value="1" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==1){echo "checked";}?>/><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_4" value="0" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==0){echo "checked";}?>/><span></span>No
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Participo de manera activa en la comunidad y me comprometo con el bienestar colectivo, mostrando un alto grado de respeto y tolerancia hacia diversas opiniones y culturas.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_5" value="1" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==1){echo "checked";}?>/><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_ser_5" value="0" onchange="SumarAutomatico();" <?php if($reg){echo "disabled";}?> <?php if($ser[0]==0){echo "checked";}?>/><span></span>No
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Total del SER 5 pts.:</label>
-                        <div class="col-6 col-form-label">
-                            <input class="form-control form-control-solid" id="TotalSer5" name="TotalSer5" type="text" readonly="true" value="<?php echo $ser5;?>" />
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Escribe las razones por las cuales mereces esta calificación del SER:</label>
-                        <div class="col-6 col-form-label">
-                            <textarea class="form-control form-control-solid" rows="3" name="text_ser" id="text_ser" required <?php if($reg){echo "disabled";}?> ><?php echo $serd;?></textarea>
-                        </div>
-                    </div>
-                    <h3 class="font-size-lg text-dark font-weight-bold mb-6">DIMENSIÓN: DECIDIR</h3>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Practico la equidad  respetando la dignidad y los derechos de todas las personas que me rodean.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_1" value="1" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==1){echo "checked";}?> /><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_1" value="0" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==0){echo "checked";}?> /><span></span>No
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Me involucro y tomo decisiones en actividades para mejorar mi entorno ecológico.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_2" value="1" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==1){echo "checked";}?> /><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_2" value="0" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==0){echo "checked";}?> /><span></span>No
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Soy sensible a las emociones de los demás y trato de comprender sus puntos de vista.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_3" value="1" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==1){echo "checked";}?> /><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_3" value="0" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==0){echo "checked";}?> /><span></span>No
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Comprendo el propósito y la importancia de la lectura en mi vida diaria y en mi aprendizaje.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_4" value="1" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==1){echo "checked";}?> /><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_4" value="0" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==0){echo "checked";}?> /><span></span>No
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Demuestro un comportamiento adecuado a las reglas establecidas en el aula.</label>
-                        <div class="col-6 col-form-label">
-                            <div class="checkbox-inline">
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_5" value="1" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==1){echo "checked";}?> /><span></span>Sí
-                                </label>
-                                <label class="checkbox">
-                                    <input type="radio" name="chk_decidir_5" value="0" onchange="SumarAutomatico2();" <?php if($reg){echo "disabled";}?> <?php if($dec[0]==0){echo "checked";}?> /><span></span>No
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Total del DECIDIR 5 pts.:</label>
-                        <div class="col-6 col-form-label">
-                            <input class="form-control form-control-solid" id="TotalDecidir5" name="TotalDecidir5" type="text" value="<?php echo $dec5;?>" readonly="true" />
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label  class="col-6 col-form-label">Escribe las razones por las cuales mereces esta calificación del DECIDIR:</label>
-                        <div class="col-6 col-form-label">
-                            <textarea class="form-control form-control-solid" rows="3" name="text_decidir" id="text_decidir" required=true <?php if($reg){echo "disabled";}?> ><?php echo $decd;?></textarea>
+                </div>
+                <?php foreach ($questions as $n => $q):
+                    $val = $autos_vals[$n];
+                ?>
+                <div class="form-group row align-items-center py-3 border-bottom">
+                    <label class="col-xl-9 col-lg-8 col-form-label font-weight-bold text-dark">
+                        <span class="label label-sm label-light-success font-weight-bold mr-2"><?php echo $n; ?></span>
+                        <?php echo esc($q); ?>
+                    </label>
+                    <div class="col-xl-3 col-lg-4">
+                        <div class="radio-inline">
+                            <label class="radio radio-success">
+                                <input type="radio" name="chk_auto_<?php echo $n; ?>" value="1"
+                                    onchange="SumarAutomatico();"
+                                    <?php echo $d; ?>
+                                    <?php if ($reg && $val == 1) echo "checked"; ?>>
+                                <span></span> Sí
+                            </label>
+                            <label class="radio radio-danger ml-4">
+                                <input type="radio" name="chk_auto_<?php echo $n; ?>" value="0"
+                                    onchange="SumarAutomatico();"
+                                    <?php echo $d; ?>
+                                    <?php if ($reg && $val == 0) echo "checked"; ?>>
+                                <span></span> No
+                            </label>
                         </div>
                     </div>
                 </div>
-                <div class="card-footer">
-                    <div class="row">
-                        <div class="col-6">
-                        </div>
-                        <div class="col-6">
-                        	<?php 
-                        	if($reg){
-                        		echo "<div class='alert alert-warning' role='alert'>Tu autoevaluación ya esta registrada.</div>";
-                        	}else{
-                        		?>
-
-                            <input type="button" class="btn btn-success mr-2" onclick="guardar()" Value="Registrar">
-                            <a href="<?php echo base_url(); ?>student/dashboard" class="btn btn-secondary">Cancelar</a>
-                        	<?php 
-                        	}
-                        	?>
-                            <!--<button type="reset" class="btn btn-secondary">Cancelar</button><a href="" onclick="guardar()" class="btn btn-success mr-2">Registrar</a>-->
-
+                <?php endforeach; ?>
+                <div class="separator separator-dashed separator-border-2 mt-8 mb-6"></div>
+                <div class="form-group row align-items-center">
+                    <label class="col-xl-3 col-lg-3 col-form-label font-weight-bolder text-dark text-right font-size-h5">
+                        Total Autoevaluación:
+                    </label>
+                    <div class="col-xl-3 col-lg-4">
+                        <div class="input-group">
+                            <input class="form-control form-control-solid font-weight-bolder font-size-h5 text-center"
+                                id="TotalAuto" name="TotalAuto" type="text"
+                                value="<?php echo $total_display; ?>" readonly>
+                            <div class="input-group-append">
+                                <span class="input-group-text font-weight-bold">/ 5 pts.</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end py-6 px-9">
+                <a href="<?php echo base_url('student/dashboard'); ?>" class="btn btn-light font-weight-bold mr-3">
+                    Cancelar
+                </a>
+                <?php if (!$reg): ?>
+                <button type="button" class="btn btn-primary font-weight-bold px-9" onclick="guardar()">
+                    <i class="flaticon2-check-mark"></i> Registrar Autoevaluación
+                </button>
+                <?php endif; ?>
+            </div>
             </form>
         </div>
     </div>
-    <!--end::Container-->
 </div>
-            

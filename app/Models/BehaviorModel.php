@@ -89,9 +89,11 @@ class BehaviorModel extends Model
 
         $sql = "SELECT bl.id, bl.student_id, bl.behavior_type_id, bl.subject_id, bl.period,
                        bl.date_id, bl.created_at, bl.observation,
-                       bt.name, bt.points, bt.icon, bt.type
+                       bt.name, bt.points, bt.icon, bt.type,
+                       s.name AS subject_name
                 FROM behavior_log bl
                 INNER JOIN behavior_types bt ON bt.id = bl.behavior_type_id
+                LEFT JOIN subject s ON s.subject_id = bl.subject_id
                 WHERE bl.student_id = ?";
         $params = [$student_id];
 

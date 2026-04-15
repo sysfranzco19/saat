@@ -7,7 +7,6 @@ use App\Models\FamilyModel;
 use App\Models\StudentModel;
 use App\Models\TeacherModel;
 use App\Models\SectionModel;
-use App\Models\AssistanceModel;
 use App\Models\AssistanceobsModel;
 use App\Models\MedioModel;
 use App\Models\ParentescoModel;
@@ -553,10 +552,6 @@ class Manager extends BaseController
         if ($session->get('login_type') != 'manager')
             return redirect()->to(base_url());
 
-        //Assistancedate_idphase_id
-        $AssisMod = new AssistanceModel();
-        //$licencias = $AssisMod->studentsSection($subjects[0]['section_id'], $teacher_id);
-        //$page_data['licencias']  = $licencias;
         //Date
         $date_id = 0;
         $data = ["date_class" => $_POST['fechaRetraso']];
@@ -625,8 +620,6 @@ class Manager extends BaseController
         if ($session->get('login_type') != 'manager')
             return redirect()->to(base_url());
 
-        //Assistance
-        $AssisMod = new AssistanceModel();
         $date_id = 0;
         $data = ["date_class" => $_POST['fechaRetraso']];
         $DatesMod = new DatesModel();

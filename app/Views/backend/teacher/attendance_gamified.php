@@ -211,6 +211,17 @@
         </div>
     </div>
 
+    <!-- Banner: editando registro existente -->
+    <?php if (!empty($has_existing_data)): ?>
+    <div class="alert alert-custom alert-warning alert-shadow gutter-b fade show" role="alert">
+        <div class="alert-icon"><i class="flaticon-warning-2"></i></div>
+        <div class="alert-text font-weight-bold">
+            Estás editando una clase ya registrada — fecha <strong><?= $date_display ?></strong>, periodo <strong><?= $periodo ?></strong>.
+            Los cambios sobreescribirán los datos existentes.
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Table Card -->
     <div class="card card-custom gutter-b shadow-sm">
         <div class="card-body py-2">

@@ -943,15 +943,20 @@ class Parents extends BaseController
             }
         }
 
-        // Manejo del archivo comprobante médico
-        if ($this->request->getFile('comprobante_medico') && $this->request->getFile('comprobante_medico')->isValid()) {
-            $file = $this->request->getFile('comprobante_medico');
-            $extension = $file->getClientExtension();
-            $newName = "comprobante_" . strval($licencias_id) . '.' . $extension;
-            $file->move('uploads/comprobantes_medicos', $newName);
-        }
-
         if ($licencias_id > 0) {
+            // Manejo del archivo comprobante médico
+            $fileInput = $this->request->getFile('comprobante_medico');
+            if ($fileInput && $fileInput->isValid() && !$fileInput->hasMoved()) {
+                $extension = strtolower($fileInput->getClientExtension());
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                $maxSize = 5 * 1024 * 1024; // 5 MB
+
+                if (in_array($extension, $allowedExtensions) && $fileInput->getSize() <= $maxSize) {
+                    $newName = "comprobante_" . $licencias_id . '.' . $extension;
+                    $fileInput->move(FCPATH . 'uploads/comprobantes_medicos', $newName);
+                    $Licencia->updateLicencia(['comprobante_medico' => $newName], $licencias_id);
+                }
+            }
             $session->set('flash_message', 'Se guardó la licencia correctamente.');
         } else {
             $session->set('flash_message_error', 'Error al registrar la licencia.');

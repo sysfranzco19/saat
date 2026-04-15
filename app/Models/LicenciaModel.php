@@ -20,6 +20,7 @@ class LicenciaModel extends Model
         'detalle',
         'medio_id',
         'enviado',
+        'comprobante_medico',
     ];
 
     protected $useTimestamps = false;

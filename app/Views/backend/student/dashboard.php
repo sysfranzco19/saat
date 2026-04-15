@@ -12,7 +12,7 @@
                     <div class="card-body p-0 d-flex flex-column">
                         <!--begin::Header-->
                         <div class="bgi-no-repeat bgi-size-cover rounded-top w-100 d-flex flex-column justify-content-end align-items-center mb-8"
-                            style="background-image: url(<?= base_url() ?>assets/images/coltiqui.jpg); height: 250px;">
+                            style="background-image: url(https://tiquipaya.edu.bo/download/coltiqui.jpg); height: 250px;">
                             <div class="d-flex flex-column align-items-center mb-5">
                                 <a href="https://colegiotiquipaya.edu.bo/" target="_blank"
                                     class="text-white font-weight-bolder font-size-h3 m-0 pb-1"
@@ -30,7 +30,7 @@
 
                             <!-- Button 1: Autoevaluación -->
                             <div class="mb-6">
-                                <a href="<?= base_url('student/self_appraisal') ?>"
+                                <a href="<?= base_url('index.php/student/self_appraisal') ?>"
                                     class="btn btn-light-primary font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <!-- User-folder Icon -->
@@ -57,7 +57,7 @@
 
                             <!-- Button 2: Cartas de Contenidos -->
                             <div class="mb-6">
-                                <a href="<?= base_url('student/content_letter') ?>"
+                                <a href="<?= base_url('index.php/student/content_letter') ?>"
                                     class="btn btn-light-info font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <!-- Group Icon -->
@@ -106,7 +106,7 @@
 
                             <!-- Button 4: Historial de Comportamiento -->
                             <div class="mb-6">
-                                <a href="<?= base_url('student/gamified_behavior') ?>"
+                                <a href="<?= base_url('index.php/student/gamified_behavior') ?>"
                                     class="btn btn-light-warning font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
                                         <!-- Layout-4-blocks Icon -->
@@ -143,7 +143,7 @@
                                 <div class="mr-6">
                                     <div class="symbol shadow-sm"
                                         style="width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.8); overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff;">
-                                        <img src="<?= base_url() ?>assets/images/logodash.png" alt="Logo"
+                                        <img src="https://tiquipaya.edu.bo/ctdocs/logodash.png" alt="Logo"
                                             style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.3);">
                                     </div>
                                 </div>
@@ -202,7 +202,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('student/report_card') ?>"
+                                                    <a href="<?= base_url('index.php/student/report_card') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Boletín
                                                         de Notas</a>
                                                     <span
@@ -235,7 +235,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('student/evaluation_report') ?>"
+                                                    <a href="<?= base_url('index.php/student/evaluation_report') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Reporte
                                                         de Evaluaciones</a>
                                                     <span class="text-muted font-weight-bold d-block">Saber y
@@ -390,6 +390,45 @@
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Character
                                                         Counts</a>
                                                     <span class="text-muted font-weight-bold d-block">Valores</span>
+                                                </td>
+                                            </tr>
+
+                                            <!-- Centro Profesiográfico -->
+                                            <tr>
+                                                <td class="pl-0 py-5">
+                                                    <div class="symbol symbol-45 symbol-light-primary mr-2">
+                                                        <span class="symbol-label">
+                                                            <span class="svg-icon svg-icon-2x svg-icon-primary">
+                                                                <!-- Building Icon -->
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                                                                    width="24px" height="24px" viewBox="0 0 24 24"
+                                                                    version="1.1">
+                                                                    <g stroke="none" stroke-width="1" fill="none"
+                                                                        fill-rule="evenodd">
+                                                                        <rect x="0" y="0" width="24" height="24" />
+                                                                        <path
+                                                                            d="M13,18 L11,18 L11,15 C11,14.4477153 11.4477153,14 12,14 C12.5522847,14 13,14.4477153 13,15 L13,18 Z"
+                                                                            fill="currentColor" />
+                                                                        <path
+                                                                            d="M5,8 L5,20 L19,20 L19,8 L5,8 Z M4,6 L20,6 C20.5522847,6 21,6.44771525 21,7 L21,21 C21,21.5522847 20.5522847,22 20,22 L4,22 C3.44771525,22 3,21.5522847 3,21 L3,7 C3,6.44771525 3.44771525,6 4,6 Z"
+                                                                            fill="currentColor" fill-rule="nonzero" opacity="0.3" />
+                                                                        <path
+                                                                            d="M12,1 L20,6 L4,6 L12,1 Z"
+                                                                            fill="currentColor" fill-rule="nonzero" opacity="0.3" />
+                                                                        <rect fill="currentColor" x="8" y="10" width="3" height="3" rx="0.5" />
+                                                                        <rect fill="currentColor" x="13" y="10" width="3" height="3" rx="0.5" />
+                                                                    </g>
+                                                                </svg>
+                                                            </span>
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td class="pl-0">
+                                                    <a href="https://tiquipaya.edu.bo/centroprofesiografico/"
+                                                        target="_blank"
+                                                        class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Centro Profesiográfico</a>
+                                                    <span class="text-muted font-weight-bold d-block">Orientación Vocacional</span>
                                                 </td>
                                             </tr>
 

@@ -1,181 +1,187 @@
 <!--begin::Entry-->
 <div class="d-flex flex-column-fluid">
-    <!--begin::Container-->
     <div class="container-fluid">
-        <!--begin::Search Section-->
+
+        <!-- Header -->
         <div class="card card-custom gutter-b">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-lg-12">
-                        <div class="input-group input-group-lg input-group-solid">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">
-                                    <i class="flaticon2-search-1"></i>
-                                </span>
+            <div class="card-body py-4">
+                <h3 class="card-label font-weight-bolder text-dark mb-1">Historial de Comportamiento</h3>
+                <span class="text-muted font-weight-bold font-size-sm">Accede por estudiante o por materia</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs nav-tabs-line nav-tabs-line-primary nav-tabs-line-2x mb-5" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active font-weight-bold font-size-lg" data-toggle="tab" href="#tab_estudiante">
+                    <i class="fa fa-user mr-2"></i> Por Estudiante
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link font-weight-bold font-size-lg" data-toggle="tab" href="#tab_materia">
+                    <i class="fa fa-book mr-2"></i> Por Materia
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+
+            <!-- TAB 1: Por Estudiante -->
+            <div class="tab-pane fade show active" id="tab_estudiante">
+                <div class="card card-custom gutter-b">
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Historial General -->
+                            <div class="col-md-6 border-right">
+                                <h5 class="font-weight-bolder mb-4">Historial general acumulado de todas las materias</h5>
+                                <p class="text-muted font-size-sm mb-4">Todas las incidencias del estudiante sin filtrar por materia.</p>
+                                <div class="input-icon" style="position:relative;">
+                                    <input type="text" id="search_general" class="form-control form-control-solid"
+                                        placeholder="Buscar por nombre o apellido..." autocomplete="off">
+                                    <span><i class="flaticon2-search-1 text-muted"></i></span>
+                                </div>
+                                <div id="results_general" class="shadow"
+                                    style="display:none; position:absolute; z-index:200; width:calc(100% - 48px); background:white; border-radius:6px; max-height:280px; overflow-y:auto;"></div>
                             </div>
-                            <input type="text" class="form-control" id="global_student_search"
-                                placeholder="Buscar cualquier estudiante por apellido..." />
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-primary font-weight-bold"
-                                    id="btn_search">Buscar</button>
+                            <!-- Historial por Materia -->
+                            <div class="col-md-6 mt-6 mt-md-0">
+                                <h5 class="font-weight-bolder mb-4">Historial por Materia</h5>
+                                <p class="text-muted font-size-sm mb-4">Incidencias del estudiante filtradas por la materia que dictas.</p>
+                                <div class="form-group mb-3">
+                                    <select id="materia_select_estudiante" class="form-control form-control-solid">
+                                        <option value="">— Primero elige materia —</option>
+                                        <?php foreach ($subjects as $sub): ?>
+                                            <option value="<?= $sub['subject_id'] ?>" data-section="<?= $sub['section_id'] ?>">
+                                                <?= $sub['materia'] ?> (<?= $sub['completo'] ?>)
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div id="search_materia_wrapper" style="position:relative; opacity:0.4; pointer-events:none;">
+                                    <div class="input-icon">
+                                        <input type="text" id="search_materia" class="form-control form-control-solid"
+                                            placeholder="Buscar estudiante..." autocomplete="off">
+                                        <span><i class="flaticon2-search-1 text-muted"></i></span>
+                                    </div>
+                                </div>
+                                <div id="results_materia" class="shadow"
+                                    style="display:none; position:absolute; z-index:200; width:calc(100% - 48px); background:white; border-radius:6px; max-height:280px; overflow-y:auto;"></div>
                             </div>
-                        </div>
-                        <div id="search_results" class="mt-4 shadow-sm"
-                            style="display:none; position: absolute; z-index: 100; width: calc(100% - 30px); background: white;">
-                            <div class="list-group" id="results_list"></div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <!--end::Search Section-->
 
-        <!--begin::Notice-->
-        <div class="alert alert-custom alert-white alert-shadow fade show gutter-b" role="alert">
-            <div class="alert-icon">
-                <span class="svg-icon svg-icon-primary svg-icon-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24"
-                        version="1.1">
-                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                            <rect x="0" y="0" width="24" height="24" />
-                            <path
-                                d="M7,3 L17,3 C18.1045695,3 19,3.8954305 19,5 L19,19 C19,20.1045695 18.1045695,21 17,21 L7,21 C5.8954305,21 5,20.1045695 5,19 L5,5 C5,3.8954305 5.8954305,3 7,3 Z"
-                                fill="#000000" />
-                            <rect fill="#000000" opacity="0.3" x="7" y="7" width="10" height="2" rx="1" />
-                            <rect fill="#000000" opacity="0.3" x="7" y="11" width="10" height="2" rx="1" />
-                            <rect fill="#000000" opacity="0.3" x="7" y="15" width="7" height="2" rx="1" />
-                        </g>
-                    </svg>
-                </span>
-            </div>
-            <div class="alert-text">Seleccione un curso para ver el Historial Conductual general de sus estudiantes.
-            </div>
-        </div>
-        <!--end::Notice-->
-
-        <!--begin::Accordion-->
-        <div class="accordion accordion-toggle-arrow" id="historyAccordion">
-
-            <?php
-            $levels = [
-                ['id' => 'prim12', 'title' => 'Primaria 1ro - 2do', 'data' => $sub_prim12],
-                ['id' => 'prim36', 'title' => 'Primaria 3ro - 6to', 'data' => $sub_prim36],
-                ['id' => 'sec13', 'title' => 'Secundaria 1ro - 3ro', 'data' => $sub_sec13],
-                ['id' => 'sec46', 'title' => 'Secundaria 4to - 6to', 'data' => $sub_sec46]
-            ];
-
-            $first = true;
-            foreach ($levels as $level):
-                if (count($level['data']) > 0):
-                    ?>
-                    <div class="card mb-2">
-                        <div class="card-header">
-                            <div class="card-title <?= $first ? '' : 'collapsed' ?>" data-toggle="collapse"
-                                data-target="#collapse_<?= $level['id'] ?>">
-                                <?= $level['title'] ?>
-                            </div>
-                        </div>
-                        <div id="collapse_<?= $level['id'] ?>" class="collapse <?= $first ? 'show' : '' ?>"
-                            data-parent="#historyAccordion">
-                            <div class="card-body">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Curso / Sección</th>
-                                            <th>Materia</th>
-                                            <th class="text-right">Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($level['data'] as $section): ?>
-                                            <?php
-                                            $hasSubjects = false;
-                                            foreach ($subjects as $subj):
-                                                if ($subj['section_id'] == $section['section_id']):
-                                                    $hasSubjects = true;
-                                                    ?>
-                                                    <tr>
-                                                        <td>
-                                                            <span class="font-weight-bolder text-dark-75"><?= $section['completo'] ?></span>
-                                                            <span class="text-muted d-block"><?= $section['nick_name'] ?></span>
-                                                        </td>
-                                                        <td class="align-middle">
-                                                            <span class="font-weight-bold text-primary"><?= $subj['materia'] ?></span>
-                                                        </td>
-                                                        <td class="text-right align-middle">
-                                                            <a href="<?= base_url('teacher/history_students/' . $section['section_id'] . '/' . $subj['subject_id']) ?>"
-                                                                class="btn btn-light-primary font-weight-bold btn-sm">Ver Estudiantes</a>
-                                                        </td>
-                                                    </tr>
-                                                <?php
-                                                endif;
-                                            endforeach;
-                                            if (!$hasSubjects):
-                                                ?>
-                                                <tr>
-                                                    <td>
-                                                        <span class="font-weight-bolder text-dark-75"><?= $section['completo'] ?></span>
-                                                        <span class="text-muted d-block"><?= $section['nick_name'] ?></span>
-                                                    </td>
-                                                    <td class="text-muted align-middle">General</td>
-                                                    <td class="text-right align-middle">
-                                                        <a href="<?= base_url('teacher/history_students/' . $section['section_id'] . '/0') ?>"
-                                                            class="btn btn-light-primary font-weight-bold btn-sm">Ver Estudiantes</a>
-                                                    </td>
-                                                </tr>
-                                            <?php endif; ?>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
+            <!-- TAB 2: Por Materia -->
+            <div class="tab-pane fade" id="tab_materia">
+                <div class="card card-custom gutter-b">
+                    <div class="card-header border-0 pt-5">
+                        <h3 class="card-title font-weight-bolder">Historial por Materia</h3>
+                    </div>
+                    <div class="card-body pt-2">
+                        <p class="text-muted font-size-sm mb-4">Incidencias del estudiante filtradas por la materia que dictas.</p>
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <select id="materia_tab_select" class="form-control form-control-solid form-control-lg">
+                                    <option value="">— Selecciona una materia —</option>
+                                    <?php foreach ($subjects as $sub): ?>
+                                        <option value="<?= base_url('index.php/teacher/history_students/' . $sub['section_id'] . '/' . $sub['subject_id']) ?>">
+                                            <?= $sub['materia'] ?> (<?= $sub['completo'] ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
                     </div>
-                    <?php
-                    $first = false;
-                endif;
-            endforeach;
-            ?>
-        </div>
-        <!--end::Accordion-->
+                </div>
+            </div>
+
+        </div><!-- end tab-content -->
+
     </div>
 </div>
 
 <script>
-    $(document).ready(function () {
-        var searchTimer;
+(function () {
+    var searchTimer = null;
 
-        $('#global_student_search').on('keyup', function () {
-            var query = $(this).val();
+    function makeSearchBox(inputId, resultsId, buildUrl) {
+        var input   = document.getElementById(inputId);
+        var results = document.getElementById(resultsId);
+        if (!input) return;
+
+        input.addEventListener('input', function () {
             clearTimeout(searchTimer);
-
-            if (query.length < 3) {
-                $('#search_results').hide();
-                return;
-            }
-
+            var q = this.value.trim();
+            if (q.length < 2) { results.style.display = 'none'; results.innerHTML = ''; return; }
             searchTimer = setTimeout(function () {
-                $.ajax({
-                    url: '<?= base_url('teacher/student_search/adviser') ?>/' + encodeURIComponent(query),
-                    type: 'GET',
-                    success: function (response) {
-                        // This app uses full page reloads for search usually, but we want an autocomplete feel.
-                        // For now, let's redirect to the standard search result page if they press enter or click search.
+                $.getJSON('<?= base_url('index.php/teacher/search_students_incidence') ?>', { q: q }, function (data) {
+                    if (!data.length) {
+                        results.innerHTML = '<div class="p-4 text-muted text-center">Sin resultados</div>';
+                        results.style.display = 'block';
+                        return;
                     }
+                    var html = '';
+                    data.forEach(function (s) {
+                        var url = buildUrl(s);
+                        if (!url) return;
+                        html += '<div class="d-flex align-items-center px-5 py-3 border-bottom search-item" style="cursor:pointer;" data-url="' + url + '">' +
+                            '<div class="symbol symbol-35 symbol-light-primary mr-4 flex-shrink-0">' +
+                            '<span class="symbol-label font-weight-bold">' + s.nombre.charAt(0) + '</span></div>' +
+                            '<div><div class="font-weight-bold text-dark">' + s.nombre + '</div>' +
+                            '<div class="text-muted font-size-sm">' + s.completo + '</div></div>' +
+                            '</div>';
+                    });
+                    results.innerHTML = html;
+                    results.style.display = 'block';
+                    results.querySelectorAll('.search-item').forEach(function (el) {
+                        el.addEventListener('mouseenter', function () { this.style.background = '#f3f6f9'; });
+                        el.addEventListener('mouseleave', function () { this.style.background = ''; });
+                        el.addEventListener('click', function () { window.location.href = this.dataset.url; });
+                    });
                 });
-            }, 500);
+            }, 300);
         });
 
-        $('#btn_search').on('click', function () {
-            var query = $('#global_student_search').val();
-            if (query.length >= 2) {
-                window.location.href = '<?= base_url('teacher/student_search/manager') ?>/' + encodeURIComponent(query);
-            }
+        document.addEventListener('click', function (e) {
+            if (!input.contains(e.target) && !results.contains(e.target)) results.style.display = 'none';
         });
+    }
 
-        $('#global_student_search').on('keypress', function (e) {
-            if (e.which == 13) {
-                $('#btn_search').click();
-            }
-        });
+    // Historial general → subject_id = 0
+    makeSearchBox('search_general', 'results_general', function (s) {
+        return '<?= base_url('index.php/teacher/student_profile/') ?>' + s.student_id + '/0';
     });
+
+    // Habilitar buscador por materia solo al elegir materia
+    var materiaSelect = document.getElementById('materia_select_estudiante');
+    var searchWrapper = document.getElementById('search_materia_wrapper');
+    materiaSelect.addEventListener('change', function () {
+        if (this.value) {
+            searchWrapper.style.opacity = '1';
+            searchWrapper.style.pointerEvents = 'auto';
+        } else {
+            searchWrapper.style.opacity = '0.4';
+            searchWrapper.style.pointerEvents = 'none';
+            document.getElementById('results_materia').style.display = 'none';
+        }
+    });
+
+    // Historial por materia → filtra por section_id de la materia elegida
+    makeSearchBox('search_materia', 'results_materia', function (s) {
+        var subjectId = materiaSelect.value;
+        var sectionId = materiaSelect.options[materiaSelect.selectedIndex].dataset.section;
+        if (!subjectId || String(s.section_id) !== String(sectionId)) return null;
+        return '<?= base_url('index.php/teacher/student_profile/') ?>' + s.student_id + '/' + subjectId;
+    });
+
+    // TAB 2: navegar al seleccionar materia
+    var materiaTabSelect = document.getElementById('materia_tab_select');
+    if (materiaTabSelect) {
+        materiaTabSelect.addEventListener('change', function () {
+            if (this.value) window.location.href = this.value;
+        });
+    }
+
+})();
 </script>

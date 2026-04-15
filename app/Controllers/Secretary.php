@@ -28,6 +28,8 @@ use App\Models\IinfractionModel;
 use App\Models\DatesModel;
 use App\Models\SecretaryModel;
 use App\Models\EhcModel;
+use App\Models\SuspensionsModel;
+use App\Models\PeriodoModel;
 
 //Libreria Plantillas
 use App\Libraries\Libreria_pdf;
@@ -48,7 +50,6 @@ class Secretary extends BaseController
         $Setting = new SettingModel();
         $StudentMod = new StudentModel();
         $SecretaryMod = new SecretaryModel();
-        $DatesMod = new DatesModel();
         $LicenciaMod = new LicenciaModel();
 
         $today = date('Y-m-d');
@@ -57,20 +58,15 @@ class Secretary extends BaseController
         $students = $StudentMod->student_secretary($secretary_id);
         $page_data['total_students'] = count($students);
 
-        // Fetch Attendance Today (Present or Late)
-        $date_info = $DatesMod->get_attendance_dates(['date_class' => $today]);
+        // Fetch Attendance Today from assistance table (Present=1 or Late=3)
         $page_data['attendance_today'] = 0;
-        if (!empty($date_info) && !empty($students)) {
-            $date_id = $date_info[0]['date_id'];
+        if (!empty($students)) {
             $student_ids = array_column($students, 'student_id');
-
             $db_asistencia = \Config\Database::connect('asistencia');
-            $builder = $db_asistencia->table('assistance_subject');
-            $builder->select('student_id');
-            $builder->where('date_id', $date_id);
+            $builder = $db_asistencia->table('assistance');
+            $builder->where('date', $today);
             $builder->whereIn('student_id', $student_ids);
-            $builder->whereIn('status', [1, 3]); // 1=Presente, 3=Retraso
-            $builder->distinct();
+            $builder->whereIn('status', [1, 3]); // 1=Present, 3=Late
             $page_data['attendance_today'] = $builder->countAllResults();
         }
 
@@ -681,6 +677,78 @@ class Secretary extends BaseController
     }
     /****************************************ASSISTENCE ***************************************/
     function assistance()
+    {
+        $session = session();
+        $secretary_id = $session->get('secretary_id');
+        if ($session->get('login_type') != 'secretary')
+            return redirect()->to(base_url());
+
+        $Setting = new SettingModel();
+        $StudentMod = new StudentModel();
+
+        $students_raw = $StudentMod->student_secretary($secretary_id);
+
+        // Agrupar estudiantes por sección (nick_name)
+        $sections = [];
+        foreach ($students_raw as $s) {
+            $key = $s['nick_name'];
+            if (!isset($sections[$key])) {
+                $sections[$key] = [
+                    'nick_name'  => $s['nick_name'],
+                    'section_id' => $s['section_id'],
+                    'students'   => [],
+                ];
+            }
+            $sections[$key]['students'][] = [
+                'student_id' => $s['student_id'],
+                'name'       => trim($s['lastname'] . ' ' . $s['lastname2'] . ' ' . $s['name']),
+            ];
+        }
+        ksort($sections);
+
+        $page_data['sections']     = array_values($sections);
+        $page_data['phase_id']     = $Setting->get_phase_id();
+        $page_data['phase_name']   = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name']  = $Setting->get_system_name();
+        $page_data['page_name']    = 'assistance';
+        $page_data['page_title']   = 'Asistencias';
+        return view('backend/index', $page_data);
+    }
+    public function assistance_by_date()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+
+        $date = $this->request->getPost('date');
+        if (!$date)
+            return $this->response->setJSON((object)[]);
+
+        $secretary_id = $session->get('secretary_id');
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->student_secretary($secretary_id);
+        $student_ids = array_column($students, 'student_id');
+
+        if (empty($student_ids))
+            return $this->response->setJSON((object)[]);
+
+        $AssisMod = new AssistanceModel();
+        $rows = $AssisMod->get_assistance_by_date($date, $student_ids);
+
+        // Claves string para que json_encode produzca objeto {}, no array []
+        $result = new \stdClass();
+        foreach ($rows as $r) {
+            $sid = (string)$r['student_id'];
+            $result->$sid = [
+                'status'       => (int)$r['status'],
+                'observation'  => $r['observation'] ?? '',
+                'arrival_time' => $r['arrival_time'] ?? '',
+            ];
+        }
+        return $this->response->setJSON($result);
+    }
+        function assistance_center()
     {
         $session = session();
         $secretary_id = $session->get('secretary_id');
@@ -2327,10 +2395,6 @@ class Secretary extends BaseController
         if ($session->get('login_type') != 'secretary')
             return redirect()->to(base_url());
 
-        //Assistancedate_idphase_id
-        $AssisMod = new AssistanceModel();
-        //$licencias = $AssisMod->studentsSection($subjects[0]['section_id'], $teacher_id);
-        //$page_data['licencias']  = $licencias;
         //Date
         $date_id = 0;
         $data = ["date_class" => $_POST['fechaRetraso']];
@@ -2399,8 +2463,6 @@ class Secretary extends BaseController
         if ($session->get('login_type') != 'secretary')
             return redirect()->to(base_url());
 
-        //Assistance
-        $AssisMod = new AssistanceModel();
         $date_id = 0;
         $data = ["date_class" => $_POST['fechaRetraso']];
         $DatesMod = new DatesModel();
@@ -2791,6 +2853,143 @@ class Secretary extends BaseController
         $page_data['page_name'] = 'interviews';
         $page_data['page_title'] = 'Horario Entrevistas';
         return view('backend/index', $page_data);
+    }
+    /****************************************SUSPENSIONES********************* */
+    public function suspensions()
+    {
+        $session = session();
+        $secretary_id = $session->get('secretary_id');
+        if ($session->get('login_type') != 'secretary')
+            return redirect()->to(base_url());
+        $SuspensionMod = new SuspensionsModel();
+        $Setting = new SettingModel();
+        $page_data['datos'] = $SuspensionMod->listarSuspensiones();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_title'] = 'Suspensiones';
+        $page_data['page_name'] = 'suspensions';
+        return view('backend/index', $page_data);
+    }
+    public function suspension_get($suspension_id)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+        $SuspensionMod = new SuspensionsModel();
+        $suspension = $SuspensionMod->getSuspension((int)$suspension_id);
+        return $this->response->setJSON($suspension);
+    }
+    public function suspension_get_students()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+        $secretary_id = $session->get('secretary_id');
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->student_secretary($secretary_id);
+        $result = array_map(function ($s) {
+            return [
+                'student_id' => $s['student_id'],
+                'student'    => trim($s['lastname'] . ' ' . $s['lastname2'] . ' ' . $s['name']),
+                'section_id' => $s['section_id'],
+            ];
+        }, $students);
+        return $this->response->setJSON($result);
+    }
+    public function suspension_get_periods()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+        $PeriodoMod = new PeriodoModel();
+        $periodos = $PeriodoMod->listar_periodos();
+        return $this->response->setJSON($periodos);
+    }
+    public function suspension_get_periods_section($section_id)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+        $PeriodoMod = new PeriodoModel();
+        $periodos = $PeriodoMod->listar_periodos_section($section_id);
+        return $this->response->setJSON($periodos);
+    }
+    public function suspension_create()
+    {
+        $session = session();
+        $secretary_id = $session->get('secretary_id');
+        if ($session->get('login_type') != 'secretary')
+            return redirect()->to(base_url());
+        $type = (int)$_POST['type'];
+        $datos = [
+            'student_id' => (int)$_POST['student_id'],
+            'type'       => $type,
+            'reason'     => trim($_POST['reason']),
+            'created_by' => $secretary_id,
+        ];
+        if ($type === 1) {
+            $datos['date_start'] = $_POST['date_start'];
+            $datos['date_end']   = $_POST['date_end'];
+        } else {
+            $datos['date']      = $_POST['date'];
+            $datos['period_id'] = (int)$_POST['period_id'];
+        }
+        $SuspensionMod = new SuspensionsModel();
+        $id = $SuspensionMod->insertSuspension($datos);
+        if ($id > 0) {
+            $session->set('flash_message', 'Suspensión registrada correctamente.');
+        } else {
+            $session->set('flash_message_error', 'Error al registrar la suspensión.');
+        }
+        return redirect()->to(base_url() . 'secretary/suspensions');
+    }
+    public function suspension_update()
+    {
+        $session = session();
+        $secretary_id = $session->get('secretary_id');
+        if ($session->get('login_type') != 'secretary')
+            return redirect()->to(base_url());
+        $suspension_id = (int)$_POST['suspension_id'];
+        $type = (int)$_POST['type'];
+        $datos = [
+            'student_id' => (int)$_POST['student_id'],
+            'type'       => $type,
+            'reason'     => trim($_POST['reason']),
+            'date_start' => null,
+            'date_end'   => null,
+            'date'       => null,
+            'period_id'  => null,
+        ];
+        if ($type === 1) {
+            $datos['date_start'] = $_POST['date_start'];
+            $datos['date_end']   = $_POST['date_end'];
+        } else {
+            $datos['date']      = $_POST['date'];
+            $datos['period_id'] = (int)$_POST['period_id'];
+        }
+        $SuspensionMod = new SuspensionsModel();
+        $ok = $SuspensionMod->updateSuspension($datos, $suspension_id);
+        if ($ok) {
+            $session->set('flash_message', 'Suspensión actualizada correctamente.');
+        } else {
+            $session->set('flash_message_error', 'Error al actualizar la suspensión.');
+        }
+        return redirect()->to(base_url() . 'secretary/suspensions');
+    }
+    public function suspension_delete()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return redirect()->to(base_url());
+        $suspension_id = (int)$_POST['suspension_id'];
+        $SuspensionMod = new SuspensionsModel();
+        $ok = $SuspensionMod->deleteSuspension($suspension_id);
+        if ($ok) {
+            $session->set('flash_message', 'Suspensión eliminada correctamente.');
+        } else {
+            $session->set('flash_message_error', 'Error al eliminar la suspensión.');
+        }
+        return redirect()->to(base_url() . 'secretary/suspensions');
     }
 }
 
