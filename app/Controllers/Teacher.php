@@ -2649,7 +2649,6 @@ class Teacher extends BaseController
         //Parametros
         $student_id = $_POST['student_id'];
         $auto_ser = $_POST['auto_ser2'];
-        $auto_decidir = $_POST['auto_decidir2'];
 
         //Settings
         $Setting = new SettingModel();

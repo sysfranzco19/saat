@@ -52,13 +52,19 @@ class SelfappraisalModel extends Model
     }
     public function self_director($director_id, $phase_id)
     {
-        $sql = 'SELECT t1.student_id, CONCAT(t1.lastname, " ", t1.lastname2, " ", t1.name) AS student, t2.completo
+        $sql = 'SELECT t1.student_id,
+                CONCAT(t1.lastname, " ", t1.lastname2, " ", t1.name) AS student,
+                t1.retirement_date,
+                t2.completo,
+                t2.section_id,
+                CASE WHEN sa.self_id IS NOT NULL THEN 1 ELSE 0 END AS tiene_auto,
+                sa.autoevaluacion
         FROM t_student AS t1
         INNER JOIN section AS t2 ON (t1.section_id = t2.section_id)
-        WHERE t1.activo = 1 AND t1.section_id > 200 AND t1.matricula <> 0
+        LEFT JOIN self_appraisal AS sa ON (sa.student_id = t1.student_id AND sa.phase_id = ' . $phase_id . ')
+        WHERE t1.activo = 1 AND t1.matricula <> 0
         AND t2.director_id = ' . $director_id . '
-        AND t1.student_id NOT IN (SELECT student_id FROM self_appraisal WHERE phase_id = ' . $phase_id . ')
-        ORDER BY t2.completo';
+        ORDER BY t2.section_id, t1.lastname, t1.lastname2, t1.name';
         return $this->db->query($sql)->getResultArray();
     }
 }

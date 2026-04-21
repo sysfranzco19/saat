@@ -72,14 +72,14 @@ class SectionModel extends Model
     {
         $sql = "SELECT s.section_id, t.email as emailDocente, d.email as emailDirector FROM section s 
         INNER JOIN teacher t ON(s.teacher_id=t.teacher_id) 
-        INNER JOIN teacher d ON(s.director_id=d.teacher_id) 
+        INNER JOIN manager d ON(s.director_id=d.manager_id) 
         WHERE s.section_id=" . $section_id;
         $section = $this->db->query($sql);
         return $section->getResultArray();
     }
     public function sections_all_by_grade()
     {
-        $sql = "SELECT DISTINCT class_id, grade FROM section WHERE active=1 ORDER BY class_id";
+        $sql = "SELECT class_id, grade FROM section WHERE active=1 GROUP BY class_id, grade ORDER BY MIN(section_id)";
         return $this->db->query($sql)->getResultArray();
     }
     public function sections_dir($director_id)

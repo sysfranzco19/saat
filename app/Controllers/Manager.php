@@ -2168,6 +2168,7 @@ class Manager extends BaseController
     public function self_director()
     {
         $session = session();
+        $manager_id = $session->get('manager_id');
         if ($session->get('login_type') != 'manager')
             return redirect()->to(base_url());
 
@@ -2178,16 +2179,28 @@ class Manager extends BaseController
         $page_data['system_name'] = $Setting->get_system_name();
 
         $Self = new SelfappraisalModel();
-        $rows = $Self->pending_all($page_data['phase_id']);
+        $rows = $Self->self_director($manager_id, $page_data['phase_id']);
 
-        // Group by section
+        // Agrupar por curso manteniendo orden de section_id
         $por_curso = [];
         foreach ($rows as $row) {
-            $por_curso[$row['completo']][] = $row;
+            $key = $row['section_id'];
+            if (!isset($por_curso[$key])) {
+                $por_curso[$key] = [
+                    'completo'   => $row['completo'],
+                    'section_id' => $row['section_id'],
+                    'total'      => 0,
+                    'con_auto'   => 0,
+                    'estudiantes'=> []
+                ];
+            }
+            $por_curso[$key]['total']++;
+            if ($row['tiene_auto']) $por_curso[$key]['con_auto']++;
+            $por_curso[$key]['estudiantes'][] = $row;
         }
         $page_data['por_curso'] = $por_curso;
         $page_data['page_name'] = 'self_director';
-        $page_data['page_title'] = 'Autoevaluaciones Pendientes';
+        $page_data['page_title'] = 'Autoevaluaciones';
         return view('backend/index', $page_data);
     }
 

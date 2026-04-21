@@ -12,7 +12,7 @@ $session = session();
         <!--[html-partial:begin:{"id":"demo1/dist/inc/view/partials/content/widgets/stats/widget-13","page":"index"}]/-->
 
         <!--begin::Stats Widget 13-->
-        <a href="index.php" class="card card-custom bg-danger bg-hover-state-danger card-shadowless gutter-b">
+        <a href="<?php echo base_url(); ?>student/dashboard" class="card card-custom bg-danger bg-hover-state-danger card-shadowless gutter-b">
 
             <!--begin::Body-->
             <div class="card-body">
@@ -87,7 +87,7 @@ $session = session();
 
                     <!--begin::Text-->
                     <div class="d-flex flex-column font-weight-bold">
-                        <a href="<?php echo base_url(); ?>index.php/student/self_appraisal"
+                        <a href="<?php echo base_url(); ?>student/self_appraisal"
                             class="text-dark-75 text-hover-primary mb-1 font-size-lg">Autoevaluación</a>
                         <span class="text-muted">Registra tu autoevaluación</span>
                     </div>

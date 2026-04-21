@@ -400,7 +400,7 @@
                                             </a>
                                         </li>
                                         <li class="menu-item" aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?>teacher/self_director" class="menu-link">
+                                            <a href="<?php echo base_url(); ?>manager/self_director" class="menu-link">
                                                 <span class="svg-icon menu-icon">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
                                                         <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -517,7 +517,7 @@
                                         </li>
                                         <li class="menu-item menu-item-submenu" data-menu-toggle="hover"
                                             aria-haspopup="true">
-                                            <a href="<?php echo base_url(); ?>teacher/self_director" class="menu-link">
+                                            <a href="<?php echo base_url(); ?>manager/self_director" class="menu-link">
                                                 <span class="svg-icon menu-icon">
 
                                                     <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Box2.svg-->
