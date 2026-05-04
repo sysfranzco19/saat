@@ -91,20 +91,7 @@ class ApigoogleModel extends Model
         endforeach;
 
         //Curso, Materia
-        /*
-        $data1 = [];
-        $range1 = "General!B1:B2";
-        $value1 = [[$curso, $materia, ]];
-        $data1[] = new \Google_Service_Sheets_ValueRange([ 'range' => $range1,'majorDimension' => 'COLUMNS', 'values' => $value1]);
-        $requestBody1 = new \Google_Service_Sheets_BatchUpdateValuesRequest(["valueInputOption" => "USER_ENTERED", "data" => $data1]);
-        $response1 = $service->spreadsheets_values->batchUpdate($spreadsheetId, $requestBody1);
-        $data2 = [];
-        $range2 = "General!K1";
-        $value2 = [[$docente]];
-        $data2[] = new \Google_Service_Sheets_ValueRange([ 'range' => $range2,'majorDimension' => 'ROWS', 'values' => $value2]);
-        $requestBody2 = new \Google_Service_Sheets_BatchUpdateValuesRequest(["valueInputOption" => "USER_ENTERED", "data" => $data2]);
-        $response2 = $service->spreadsheets_values->batchUpdate($spreadsheetId, $requestBody2);
-        */
+
         //ACTUALIZAMOS LA TABLA
         $datos = [ "hours" => '1' ];
         $subject = $this->db->table('subject');
@@ -539,74 +526,173 @@ class ApigoogleModel extends Model
     }
     function recoverSelf($sheet_id, $subject_id, $phase_id, $teacher_id, $abreviado)
     {
+        $client = new \Google_Client();
+        $client->setApplicationName('Google Sheets and PHP');
+        $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
+        $client->setAccessType('offline');
+        $client->setAuthConfig(APPPATH.'/ThirdParty/api-sheet/Saat-Sheets-f0cf6437dbb7.json');
+        $service = new \Google_Service_Sheets($client);
+        $spreadsheetId = $sheet_id;
 
-            //****************NOS CONECTAMOS A GOOGLE SHEETs*******************************************************
-            $client = new \Google_Client();
-            $client->setApplicationName('Google Sheets and PHP');
-            $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
-            $client->setAccessType('offline');
-            $client->setAuthConfig(APPPATH.'/ThirdParty/api-sheet/Saat-Sheets-f0cf6437dbb7.json');
-            $service = new \Google_Service_Sheets($client);
-            $spreadsheetId = $sheet_id;
-            $range = $abreviado."!A8:A37";
-            $response = $service->spreadsheets_values->get($spreadsheetId,$range);
-            $values = $response->getValues();
-            $nro = 1;
-            foreach ($values as $row) {
-                $fila = 7 + $nro;
-                if (is_numeric($row[0])) {
-                    $student_id = $row[0];
-                    $sql2 = 'SELECT csamarks_id FROM csamarks WHERE  phase_id='.$phase_id.' AND subject_id = '.$subject_id;
-                    $csamarks = $this->db->query($sql2)->getResultArray();
-                    if (count($csamarks)!=0) {
-                            $consulta2 = 'SELECT ser100 FROM self_appraisal WHERE student_id='.$student_id.' AND phase_id='.$phase_id;
-                            $autos = $this->db->query($consulta2)->getResultArray();
-                            foreach($autos as $auto):
-                                $csamarks = $this->db->table('csamarks');
-                                //ACTUALIZAMOS MYSQL
-                                $dataMysql['autoevaluacion']=$auto['ser100'];
-                                //$dataMysql['auto_decidir']=$auto['dec5'];
-                                $csamarks->set($dataMysql);
-                                $csamarks->where('subject_id', $subject_id);
-                                $csamarks->where('student_id', $student_id);
-                                $csamarks->where('phase_id', $phase_id);
-                                $csamarks->update();
-                                //ACTUALIZAMOS GOOGLE SHEET
-                                $data = [];
-                                $range = $abreviado."!AS".$fila;
-                                $values= [[$auto['ser100'], ]];
-                                $data[] = new \Google_Service_Sheets_ValueRange([
-                                    'range' => $range,
-                                    'majorDimension' => 'ROWS',
-                                    'values' => $values
-                                ]);
-                                $requestBody = new \Google_Service_Sheets_BatchUpdateValuesRequest([
-                                    "valueInputOption" => "USER_ENTERED",
-                                    "data" => $data
-                                ]);
-                                $response = $service->spreadsheets_values->batchUpdate($spreadsheetId, $requestBody);
-                            endforeach;
-                    }
-                }
-                $nro += 1;
+        // 1. Leer solo la columna A con los student_ids (filas 8 a 37, máx 30 estudiantes)
+        $rangeA = $abreviado . '!A8:A37';
+        $respA = $service->spreadsheets_values->get($spreadsheetId, $rangeA);
+        $colA  = $respA->getValues() ?? [];
+
+        // Extraer student_ids válidos y su fila en el sheet
+        $studentRows = []; // [student_id => numero_fila]
+        foreach ($colA as $i => $row) {
+            if (!empty($row[0]) && is_numeric($row[0])) {
+                $studentRows[(int)$row[0]] = 8 + $i; // fila real en el sheet
             }
-            /*
-            SOLO ACTUALIZA EL NOMBRE DE LA NOTA FINAL
-            //ACTUALIZAMOS TRIM
-            $data = [];
-            $range = $abreviado."!AP3";
-            $values= [["NOTA ".$abreviado ]];
-            $data[] = new \Google_Service_Sheets_ValueRange([
-                'range' => $range,
+        }
+
+        if (empty($studentRows)) {
+            return;
+        }
+
+        // 2. Una sola consulta MySQL para todas las autoevaluaciones
+        $ids = implode(',', array_keys($studentRows));
+        $autos = $this->db->query(
+            'SELECT student_id, autoevaluacion
+             FROM self_appraisal
+             WHERE phase_id = ' . (int)$phase_id . '
+               AND student_id IN (' . $ids . ')'
+        )->getResultArray();
+
+        if (empty($autos)) {
+            return;
+        }
+
+        // Indexar por student_id para acceso rápido
+        $autoMap = [];
+        foreach ($autos as $a) {
+            $autoMap[(int)$a['student_id']] = $a['autoevaluacion'];
+        }
+
+        // 3. Actualizar MySQL en batch y construir rangos para Google Sheets
+        $sheetData = [];
+        foreach ($autoMap as $student_id => $valor) {
+            if (!isset($studentRows[$student_id])) continue;
+
+            // Actualizar csamarks en MySQL
+            $this->db->table('csamarks')
+                ->set(['autoevaluacion' => $valor])
+                ->where('subject_id', $subject_id)
+                ->where('student_id', $student_id)
+                ->where('phase_id', $phase_id)
+                ->update();
+
+            // Agregar rango para batchUpdate de Sheets
+            $fila = $studentRows[$student_id];
+            $sheetData[] = new \Google_Service_Sheets_ValueRange([
+                'range'          => $abreviado . '!AM' . $fila,
                 'majorDimension' => 'ROWS',
-                'values' => $values
+                'values'         => [[$valor]],
             ]);
+        }
+
+        // 4. Un solo batchUpdate para todas las celdas AM
+        if (!empty($sheetData)) {
             $requestBody = new \Google_Service_Sheets_BatchUpdateValuesRequest([
-                "valueInputOption" => "USER_ENTERED",
-                "data" => $data
+                'valueInputOption' => 'USER_ENTERED',
+                'data'             => $sheetData,
             ]);
-            $response = $service->spreadsheets_values->batchUpdate($spreadsheetId, $requestBody);
-            */
+            $service->spreadsheets_values->batchUpdate($spreadsheetId, $requestBody);
+        }
+    }
+    function recoverScore($sheet_id, $subject_id, $abreviado, $section_id, $teacher_id)
+    {
+        $client = new \Google_Client();
+        $client->setApplicationName('Google Sheets and PHP');
+        $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
+        $client->setAccessType('offline');
+        $client->setAuthConfig(APPPATH.'/ThirdParty/api-sheet/Saat-Sheets-f0cf6437dbb7.json');
+        $service   = new \Google_Service_Sheets($client);
+        $spreadsheetId = $sheet_id;
+
+        // 1. Leer columna A (filas 8-37, máx 30 estudiantes) para obtener student_ids y su fila
+        $respA      = $service->spreadsheets_values->get($spreadsheetId, $abreviado . '!A8:A37');
+        $colA       = $respA->getValues() ?? [];
+        $studentRows = [];
+        foreach ($colA as $i => $row) {
+            if (!empty($row[0]) && is_numeric($row[0])) {
+                $studentRows[(int)$row[0]] = 8 + $i;
+            }
+        }
+
+        if (empty($studentRows)) {
+            return;
+        }
+
+        // 2. Query según nivel: Primaria (section_id < 271) usa behavior_log, Secundaria usa daily_scores
+        $ids = implode(',', array_keys($studentRows));
+        if ((int)$section_id < 271) {
+            // Primaria: score = 100 - puntos negativos de comportamiento, ponderado a 10
+            $scores = $this->db->query(
+                'SELECT bl.student_id,
+                        GREATEST(1, ROUND(LEAST(100, 100 - COALESCE(SUM(bt.points), 0)) / 10)) AS score
+                 FROM tiqui0_tiquiweb26.behavior_log bl
+                 INNER JOIN tiqui0_tiquiweb26.behavior_types bt ON bl.behavior_type_id = bt.id
+                 INNER JOIN subject s ON bl.subject_id = s.subject_id
+                 WHERE s.teacher_id = ' . (int)$teacher_id . '
+                   AND bl.student_id IN (' . $ids . ')
+                 GROUP BY bl.student_id, s.teacher_id'
+            )->getResultArray();
+        } else {
+            // Secundaria: último score de daily_scores (mayor date_id), ponderado a 10
+            $scores = $this->db->query(
+                'SELECT ds.student_id, GREATEST(1, ROUND(LEAST(100, ds.score) * 10 / 100)) AS score
+                 FROM tiqui0_tiquiweb26.daily_scores ds
+                 INNER JOIN (
+                     SELECT student_id, MAX(date_id) AS max_date_id
+                     FROM tiqui0_tiquiweb26.daily_scores
+                     WHERE subject_id = ' . (int)$subject_id . '
+                       AND student_id IN (' . $ids . ')
+                     GROUP BY student_id
+                 ) latest ON ds.student_id = latest.student_id
+                          AND ds.date_id   = latest.max_date_id
+                 WHERE ds.subject_id = ' . (int)$subject_id
+            )->getResultArray();
+        }
+
+        // 3. Construir mapa de scores reales por student_id
+        $scoreMap = [];
+        foreach ($scores as $s) {
+            $scoreMap[(int)$s['student_id']] = $s['score'];
+        }
+
+        // 4. Un solo batchUpdate: cabeceras + score por estudiante (real o default 10)
+        $today = date('d/m/Y');
+        $sheetData = [
+            new \Google_Service_Sheets_ValueRange([
+                'range'          => $abreviado . '!F4',
+                'majorDimension' => 'ROWS',
+                'values'         => [['RÚBRICA DEL SER']],
+            ]),
+            new \Google_Service_Sheets_ValueRange([
+                'range'          => $abreviado . '!F5',
+                'majorDimension' => 'ROWS',
+                'values'         => [['RÚBRICA']],
+            ]),
+            new \Google_Service_Sheets_ValueRange([
+                'range'          => $abreviado . '!F6',
+                'majorDimension' => 'ROWS',
+                'values'         => [[$today]],
+            ]),
+        ];
+        foreach ($studentRows as $student_id => $fila) {
+            $sheetData[] = new \Google_Service_Sheets_ValueRange([
+                'range'          => $abreviado . '!F' . $fila,
+                'majorDimension' => 'ROWS',
+                'values'         => [[isset($scoreMap[$student_id]) ? $scoreMap[$student_id] : 10]],
+            ]);
+        }
+        $requestBody = new \Google_Service_Sheets_BatchUpdateValuesRequest([
+            'valueInputOption' => 'USER_ENTERED',
+            'data'             => $sheetData,
+        ]);
+        $service->spreadsheets_values->batchUpdate($spreadsheetId, $requestBody);
     }
     function lockedSheet($sheet_id = ''){
         //***************NOS CONECTAMOS A GOOGLE SHEETS*************

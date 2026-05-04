@@ -94,4 +94,22 @@ class SectionModel extends Model
         $section = $this->db->query($sql);
         return $section->getResultArray();
     }
+        public function updateTSection()
+    {
+        // Conectar a la primera base de datos Y LEEMOS section
+        $db1 = $this->db;
+        $query = $db1->table('section')->get()->getResultArray();
+        // Copiar y reemplazar la tabla section a TIQUIPAYA
+        $db2 = \Config\Database::connect('tiquipaya');
+        $db2->table('section')->truncate(); 
+        foreach ($query as $row) {
+            $db2->table('section')->insert($row); 
+        }
+        // Copiar y reemplazar la tabla t_student a ASISTENCIA
+        $db3 = \Config\Database::connect('asistencia');
+        $db3->table('section')->truncate(); 
+        foreach ($query as $row) {
+            $db3->table('section')->insert($row);
+        }
+    }
 }

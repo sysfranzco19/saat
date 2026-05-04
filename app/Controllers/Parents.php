@@ -760,19 +760,34 @@ class Parents extends BaseController
         $licencias_id = $Licencia->insert($datosLicencia);
 
         if ($licencias_id) {
-
             $datosDia = [
                 "licencias_id" => $licencias_id,
                 "fecha_inicio" => $inicio,
-                "fecha_fin" => $fin,
+                "fecha_fin"    => $fin,
                 "cantidad_dias" => 0
             ];
-
             db_connect('asistencia')->table('t_licencias_dia')->insert($datosDia);
+
+            // Guardar comprobante médico
+            $fileInput = $this->request->getFile('comprobante_medico');
+            if ($fileInput && $fileInput->isValid() && !$fileInput->hasMoved()) {
+                $extension         = strtolower($fileInput->getClientExtension());
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                $uploadDir         = FCPATH . 'uploads/comprobantes_medicos';
+
+                if (in_array($extension, $allowedExtensions) && $fileInput->getSize() <= 5 * 1024 * 1024) {
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+                    $newName = 'comprobante_' . $licencias_id . '.' . $extension;
+                    if ($fileInput->move($uploadDir, $newName)) {
+                        $Licencia->updateLicencia(['comprobante_medico' => $newName], $licencias_id);
+                    }
+                }
+            }
         }
 
         $session->set('flash_message', 'Se guardó la licencia correctamente.');
-
         return redirect()->to(base_url() . 'parents/licenses/');
     }
     public function license_save_periodo()
@@ -815,21 +830,35 @@ class Parents extends BaseController
         $licencias_id = $Licencia->insert($datosLicencia);
 
         if ($licencias_id) {
-
             foreach ($periodos as $periodo_id) {
-
                 $datosPeriodo = [
                     "licencias_id" => $licencias_id,
-                    "fecha" => $fecha,
-                    "periodo_id" => $periodo_id
+                    "fecha"        => $fecha,
+                    "periodo_id"   => $periodo_id
                 ];
-
                 db_connect('asistencia')->table('t_licencias_periodo')->insert($datosPeriodo);
+            }
+
+            // Guardar comprobante médico
+            $fileInput = $this->request->getFile('comprobante_medico');
+            if ($fileInput && $fileInput->isValid() && !$fileInput->hasMoved()) {
+                $extension         = strtolower($fileInput->getClientExtension());
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                $uploadDir         = FCPATH . 'uploads/comprobantes_medicos';
+
+                if (in_array($extension, $allowedExtensions) && $fileInput->getSize() <= 5 * 1024 * 1024) {
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+                    $newName = 'comprobante_' . $licencias_id . '.' . $extension;
+                    if ($fileInput->move($uploadDir, $newName)) {
+                        $Licencia->updateLicencia(['comprobante_medico' => $newName], $licencias_id);
+                    }
+                }
             }
         }
 
         $session->set('flash_message', 'Se guardó la licencia por periodo correctamente.');
-
         return redirect()->to(base_url() . 'parents/licenses/');
     }
     public function license_save()
@@ -947,17 +976,33 @@ class Parents extends BaseController
             // Manejo del archivo comprobante médico
             $fileInput = $this->request->getFile('comprobante_medico');
             if ($fileInput && $fileInput->isValid() && !$fileInput->hasMoved()) {
-                $extension = strtolower($fileInput->getClientExtension());
+                $extension        = strtolower($fileInput->getClientExtension());
                 $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-                $maxSize = 5 * 1024 * 1024; // 5 MB
+                $maxSize          = 5 * 1024 * 1024; // 5 MB
+                $uploadDir        = FCPATH . 'uploads/comprobantes_medicos';
 
-                if (in_array($extension, $allowedExtensions) && $fileInput->getSize() <= $maxSize) {
-                    $newName = "comprobante_" . $licencias_id . '.' . $extension;
-                    $fileInput->move(FCPATH . 'uploads/comprobantes_medicos', $newName);
-                    $Licencia->updateLicencia(['comprobante_medico' => $newName], $licencias_id);
+                if (!in_array($extension, $allowedExtensions)) {
+                    $session->set('flash_message_error', 'Formato de comprobante no permitido. Use PDF, JPG o PNG.');
+                } elseif ($fileInput->getSize() > $maxSize) {
+                    $session->set('flash_message_error', 'El comprobante supera el tamaño máximo de 5 MB.');
+                } else {
+                    // Crear directorio si no existe
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+
+                    $newName = 'comprobante_' . $licencias_id . '.' . $extension;
+
+                    if ($fileInput->move($uploadDir, $newName)) {
+                        $Licencia->updateLicencia(['comprobante_medico' => $newName], $licencias_id);
+                        $session->set('flash_message', 'Se guardó la licencia con comprobante correctamente.');
+                    } else {
+                        $session->set('flash_message_error', 'La licencia se guardó pero no se pudo subir el comprobante.');
+                    }
                 }
+            } else {
+                $session->set('flash_message', 'Se guardó la licencia correctamente.');
             }
-            $session->set('flash_message', 'Se guardó la licencia correctamente.');
         } else {
             $session->set('flash_message_error', 'Error al registrar la licencia.');
         }

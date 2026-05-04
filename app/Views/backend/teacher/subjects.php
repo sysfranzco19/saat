@@ -1,15 +1,58 @@
 <script type="text/javascript">
+    function recover_score(section_id, subject_id) {
+        var btn      = document.getElementById('btn_ser_' + subject_id);
+        var progress = document.getElementById('progress_ser_' + subject_id);
+        var status   = document.getElementById('status_ser_' + subject_id);
+
+        btn.setAttribute('disabled', true);
+        btn.classList.add('disabled');
+        progress.style.display = 'block';
+        status.innerHTML = '';
+
+        $.ajax({
+            url: "<?php echo base_url(); ?>teacher/recover_score/" + section_id + "/" + subject_id,
+            type: "get",
+            success: function (response) {
+                progress.style.display = 'none';
+                btn.removeAttribute('disabled');
+                btn.classList.remove('disabled');
+                status.innerHTML = '<span class="label label-inline label-light-primary font-weight-bold">Puntos SER recuperados</span>';
+                document.getElementById('mostrar_tabla').innerHTML = response;
+            },
+            error: function () {
+                progress.style.display = 'none';
+                btn.removeAttribute('disabled');
+                btn.classList.remove('disabled');
+                status.innerHTML = '<span class="label label-inline label-light-danger font-weight-bold">Error al recuperar</span>';
+            }
+        });
+    }
     function recover_self(section_id, subject_id) {
+        var btn      = document.getElementById('btn_auto_' + subject_id);
+        var progress = document.getElementById('progress_' + subject_id);
+        var status   = document.getElementById('status_' + subject_id);
+
+        btn.setAttribute('disabled', true);
+        btn.classList.add('disabled');
+        progress.style.display = 'block';
+        status.innerHTML = '';
+
         $.ajax({
             url: "<?php echo base_url(); ?>teacher/recover_self/" + section_id + "/" + subject_id,
             type: "get",
-            beforeSend: function () {
-                document.getElementById('mostrar_loading').style.display = "block"
-            },
             success: function (response) {
-                document.getElementById('mostrar_loading').style.display = "none"
+                progress.style.display = 'none';
+                btn.removeAttribute('disabled');
+                btn.classList.remove('disabled');
+                status.innerHTML = '<span class="label label-inline label-light-success font-weight-bold">Autoevaluaciones recuperadas</span>';
                 document.getElementById('mostrar_tabla').innerHTML = response;
             },
+            error: function () {
+                progress.style.display = 'none';
+                btn.removeAttribute('disabled');
+                btn.classList.remove('disabled');
+                status.innerHTML = '<span class="label label-inline label-light-danger font-weight-bold">Error al recuperar</span>';
+            }
         });
     }
 </script>
@@ -38,15 +81,32 @@ function link_autoevaluacion($self_appraisal, $section_id, $subject_id, $locked)
 {
     $link_auto = '';
     if ($self_appraisal == 'si' && $locked == 0) {
-        $link_auto = "<a onclick='recover_self(" . $section_id . "," . $subject_id . ");' class='btn btn-light-warning font-weight-bold mr-2'></i>Recuperar Autoevaluaciones</a>";
+        $link_auto  = "<a id='btn_auto_{$subject_id}' onclick='recover_self({$section_id},{$subject_id});' class='btn btn-light-warning font-weight-bold mr-2'>Recuperar Autoevaluaciones</a>";
+        $link_auto .= "<div id='progress_{$subject_id}' class='progress progress-xs mt-2' style='display:none;'>";
+        $link_auto .= "  <div class='progress-bar progress-bar-striped progress-bar-animated bg-warning' role='progressbar' style='width:100%'></div>";
+        $link_auto .= "</div>";
+        $link_auto .= "<div id='status_{$subject_id}' class='mt-1'></div>";
     }
     echo $link_auto;
+}
+//Recuperar Puntos SER desde daily_scores
+function link_ser($section_id, $subject_id, $locked, $sheet_id)
+{
+    $link = '';
+    if ($locked == 0 && $sheet_id != '0') {
+        $link  = "<a id='btn_ser_{$subject_id}' onclick='recover_score({$section_id},{$subject_id});' class='btn btn-light-primary font-weight-bold mr-2'>Recuperar SER</a>";
+        $link .= "<div id='progress_ser_{$subject_id}' class='progress progress-xs mt-2' style='display:none;'>";
+        $link .= "  <div class='progress-bar progress-bar-striped progress-bar-animated bg-primary' role='progressbar' style='width:100%'></div>";
+        $link .= "</div>";
+        $link .= "<div id='status_ser_{$subject_id}' class='mt-1'></div>";
+    }
+    echo $link;
 }
 //Habilitar consolidar Notas
 function link_consolidate_sheet($subject_id, $official_id, $locked)
 {
     $link_consolidate = "";
-    if ($official_id == 1 && $locked = 0) {
+    if ($official_id == 1 && $locked == 0) {
         $link_consolidate = "<a href='" . base_url() . "teacher/deliver_notes/" . $subject_id . "' target='_blank' class='btn btn-primary btn-sm' >Consolidar Notas</a>";
     }
     echo $link_consolidate;
@@ -137,9 +197,10 @@ function link_update($subject_id, $partial_locked, $locked, $official_id, $hours
                                             <td>
                                                 <?php link_sheet($subject['partial_locked'], $subject['sheet_id']); ?>
                                                 <?php link_half_phase($subject['subject_id'], $subject['partial_locked']); ?>
-                                                <?php link_autoevaluacion($self_appraisal, $subject['section_id'], $subject['subject_id'], $subject['locked']); ?>
                                                 <?php link_consolidate_sheet($subject['subject_id'], $subject['official_id'], $subject['locked']); ?>
                                                 <?php link_update($subject['subject_id'], $subject['partial_locked'], $subject['locked'], $subject['official_id'], $subject['hours']);?>
+                                                <?php link_autoevaluacion($self_appraisal, $subject['section_id'], $subject['subject_id'], $subject['locked']); ?>
+                                                <?php link_ser($subject['section_id'], $subject['subject_id'], $subject['locked'], $subject['sheet_id']); ?>
                                             </td>
                                         </tr>
                                         <?php
@@ -202,9 +263,10 @@ function link_update($subject_id, $partial_locked, $locked, $official_id, $hours
                                             <td>
                                                 <?php link_sheet($subject['partial_locked'], $subject['sheet_id']); ?>
                                                 <?php link_half_phase($subject['subject_id'], $subject['partial_locked']); ?>
-                                                <?php link_autoevaluacion($self_appraisal, $subject['section_id'], $subject['subject_id'], $subject['locked']); ?>
                                                 <?php link_consolidate_sheet($subject['subject_id'], $subject['official_id'], $subject['locked']); ?>
                                                 <?php link_update($subject['subject_id'], $subject['partial_locked'], $subject['locked'], $subject['official_id'], $subject['hours']);?>
+                                                <?php link_autoevaluacion($self_appraisal, $subject['section_id'], $subject['subject_id'], $subject['locked']); ?>
+                                                <?php link_ser($subject['section_id'], $subject['subject_id'], $subject['locked'], $subject['sheet_id']); ?>
                                             </td>
                                         </tr>
                                         <?php
@@ -267,9 +329,10 @@ function link_update($subject_id, $partial_locked, $locked, $official_id, $hours
                                             <td>
                                                 <?php link_sheet($subject['partial_locked'], $subject['sheet_id']); ?>
                                                 <?php link_half_phase($subject['subject_id'], $subject['partial_locked']); ?>
-                                                <?php link_autoevaluacion($self_appraisal, $subject['section_id'], $subject['subject_id'], $subject['locked']); ?>
                                                 <?php link_consolidate_sheet($subject['subject_id'], $subject['official_id'], $subject['locked']); ?>
                                                 <?php link_update($subject['subject_id'], $subject['partial_locked'], $subject['locked'], $subject['official_id'], $subject['hours']);?>
+                                                <?php link_autoevaluacion($self_appraisal, $subject['section_id'], $subject['subject_id'], $subject['locked']); ?>
+                                                <?php link_ser($subject['section_id'], $subject['subject_id'], $subject['locked'], $subject['sheet_id']); ?>
                                             </td>
                                         </tr>
                                         <?php
@@ -332,9 +395,10 @@ function link_update($subject_id, $partial_locked, $locked, $official_id, $hours
                                             <td>
                                                 <?php link_sheet($subject['partial_locked'], $subject['sheet_id']); ?>
                                                 <?php link_half_phase($subject['subject_id'], $subject['partial_locked']); ?>
-                                                <?php link_autoevaluacion($self_appraisal, $subject['section_id'], $subject['subject_id'], $subject['locked']); ?>
                                                 <?php link_consolidate_sheet($subject['subject_id'], $subject['official_id'], $subject['locked']); ?>
                                                 <?php link_update($subject['subject_id'], $subject['partial_locked'], $subject['locked'], $subject['official_id'], $subject['hours']);?>
+                                                <?php link_autoevaluacion($self_appraisal, $subject['section_id'], $subject['subject_id'], $subject['locked']); ?>
+                                                <?php link_ser($subject['section_id'], $subject['subject_id'], $subject['locked'], $subject['sheet_id']); ?>
                                             </td>
                                         </tr>
                                         <?php
@@ -351,8 +415,6 @@ function link_update($subject_id, $partial_locked, $locked, $official_id, $hours
             ?>
         </div>
         <!--end::Accordion-->
-        <div id="mostrar_loading" class="spinner spinner-primary spinner-lg mr-15 spinner-center" style="display:none;">
-        </div>
         <div class="card-body" id="mostrar_tabla"></div>
     </div>
     <!--end::Container-->

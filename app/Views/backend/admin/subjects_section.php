@@ -17,7 +17,7 @@
                             <thead>
                                 <tr>
                                     <th scope="col" >Materias</th>
-                                    <th scope="col" >Dcoente</th>
+                                    <th scope="col" >Docente</th>
                                     <th scope="col" >Acción</th>
                                 </tr>
                             </thead>
@@ -30,6 +30,7 @@
                                 <td><?php echo $subject['docente'];?></td>
                                 <td>
                                 <a href="https://docs.google.com/spreadsheets/d/<?php echo $subject['sheet_id']; ?>/edit" target="_blank" class="btn btn-success btn-sm" >Ir a la Planilla</a>
+                                <a href="<?php echo base_url(); ?>admin/update_notes/<?php echo $subject['subject_id']; ?>" target="_blank" class="btn btn-secondary btn-sm" >Actualizar Notas</a>
                                 </td>
                             </tr>
                         <?php

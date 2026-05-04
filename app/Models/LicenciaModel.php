@@ -394,7 +394,8 @@ class LicenciaModel extends Model
             DATE_FORMAT(ld.fecha_inicio,'%d-%m-%Y') AS inicio,
             DATE_FORMAT(ld.fecha_fin,'%d-%m-%Y') AS fin,
             l.enviado,
-            DATE_FORMAT(l.fecha_solicitud,'%d-%m-%Y') AS fecha
+            DATE_FORMAT(l.fecha_solicitud,'%d-%m-%Y') AS fecha,
+            l.comprobante_medico
         FROM t_licencias l
         INNER JOIN t_licencias_dia ld ON ld.licencias_id = l.licencias_id
         INNER JOIN t_student e ON e.student_id = l.student_id
@@ -413,7 +414,8 @@ class LicenciaModel extends Model
             DATE_FORMAT(lp.fecha,'%d-%m-%Y') AS inicio,
             p.periodo AS fin,
             l.enviado,
-            DATE_FORMAT(l.fecha_solicitud,'%d-%m-%Y') AS fecha
+            DATE_FORMAT(l.fecha_solicitud,'%d-%m-%Y') AS fecha,
+            l.comprobante_medico
         FROM t_licencias l
         INNER JOIN t_licencias_periodo lp ON lp.licencias_id = l.licencias_id
         INNER JOIN periodo p ON p.periodo_id = lp.periodo_id

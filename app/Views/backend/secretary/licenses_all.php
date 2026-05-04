@@ -101,10 +101,12 @@ $(document).ready(function() {
             },
             { data: 'licencias_id', orderable: false, searchable: false,
               render: function(data, type, row) {
-                  var html = '<a href="<?php echo base_url('secretary/licenses_edit/'); ?>' + data + '" class="btn btn-xs btn-icon btn-light-primary" title="Editar"><i class="flaticon2-edit icon-sm"></i></a> ' +
-                             '<a href="<?php echo base_url('secretary/license_report/'); ?>' + data + '" target="_blank" class="btn btn-xs btn-icon btn-light-info" title="Reporte PDF"><i class="flaticon2-file icon-sm"></i></a>';
+                  var baseUrl = '<?php echo base_url(); ?>';
+                  var html = '<a href="' + baseUrl + 'secretary/licenses_edit/' + data + '" class="btn btn-xs btn-icon btn-light-primary" title="Editar"><i class="flaticon2-edit icon-sm"></i></a> ' +
+                             '<a href="' + baseUrl + 'secretary/license_report/' + data + '" target="_blank" class="btn btn-xs btn-icon btn-light-info" title="Reporte PDF"><i class="flaticon2-file icon-sm"></i></a> ' +
+                             '<button type="button" class="btn btn-xs btn-icon btn-light-success" onclick="showAjaxModal(\'' + baseUrl + 'modal/popup/licenses_modal_auth/' + data + '/0/0/0/0\');" title="Autorizar"><i class="flaticon2-check-mark icon-sm"></i></button>';
                   if (row.documento) {
-                      html += ' <a href="<?php echo base_url('uploads/comprobantes_medicos/'); ?>' + row.documento + '" target="_blank" class="btn btn-xs btn-icon btn-light-warning" title="Ver documento"><i class="fas fa-paperclip"></i></a>';
+                      html += ' <a href="' + baseUrl + 'uploads/comprobantes_medicos/' + row.documento + '" target="_blank" class="btn btn-xs btn-icon btn-light-warning" title="Ver documento"><i class="fas fa-paperclip"></i></a>';
                   }
                   return html;
               }

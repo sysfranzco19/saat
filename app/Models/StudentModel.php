@@ -24,6 +24,20 @@ class StudentModel extends Model
         $student->where($data);
         return $student->get()->getResultArray();
     }
+    public function students_by_section()
+    {
+        $rows = $this->db->query(
+            'SELECT student_id, lastname, lastname2, name, section_id, family_id
+             FROM t_student
+             WHERE activo = 1 AND matricula <> 0
+             ORDER BY section_id, lastname, lastname2, name'
+        )->getResultArray();
+        $grouped = [];
+        foreach ($rows as $r) {
+            $grouped[$r['section_id']][] = $r;
+        }
+        return $grouped;
+    }
     public function activesStudent()
     {
         $Student = $this->db->query("SELECT student_id, CONCAT(lastname,' ', lastname2, ' ', name) as nombre FROM t_student WHERE activo=1 ORDER BY lastname, lastname2, name");

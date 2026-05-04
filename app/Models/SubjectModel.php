@@ -39,8 +39,8 @@ class SubjectModel extends Model
     public function subjects_docente($teacher_id)
     {
         $sql = "SELECT t1.subject_id, t2.completo as curso, t1.name as materia, t1.section_id, t3.link FROM subject AS t1
-INNER JOIN section AS t2 ON(t1.section_id=t2.section_id)
-LEFT JOIN document as t3 ON(t1.section_id=t3.code) WHERE t1.teacher_id=" . $teacher_id;
+                INNER JOIN section AS t2 ON(t1.section_id=t2.section_id)
+                LEFT JOIN document as t3 ON(t1.section_id=t3.code) WHERE t1.teacher_id=" . $teacher_id;
         $subject = $this->db->query($sql);
         //return $student->get()->getResultArray();
         return $subject->getResult();
@@ -208,6 +208,13 @@ t4.link
                     INNER JOIN section c ON(m.section_id=c.section_id)
                     INNER JOIN teacher t ON(m.teacher_id=t.teacher_id)
                     WHERE c.director_id=" . $director_id . " AND m.locked=0;";
+        $subject = $this->db->query($sql);
+        return $subject->getResultArray();
+    }
+        public function subjects_especialidad()
+    {
+        $sql = "SELECT s.subject_id, s.name as materia, t.name as docente, s.sheet_id 
+        FROM subject s INNER JOIN teacher t ON(s.teacher_id=t.teacher_id) WHERE s.section_id<100";
         $subject = $this->db->query($sql);
         return $subject->getResultArray();
     }

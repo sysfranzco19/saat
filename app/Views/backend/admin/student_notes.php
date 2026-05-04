@@ -19,7 +19,6 @@
                             <th>ser</th>
                             <th>saber</th>
                             <th>hacer</th>
-                            <th>decidir</th>
                             <th>autoevaluacion</th>
                             <th>total</th>
                             <th>total_vc</th>
@@ -35,7 +34,6 @@
                             <td><?php echo $row['ser_average']; ?></td>
                             <td><?php echo $row['saber_average']; ?></td>
                             <td><?php echo $row['hacer_average']; ?></td>
-                            <td><?php echo $row['decidir_average']; ?></td>
                             <td><?php echo $row['autoevaluacion']; ?></td>
                             <td><?php echo $row['total_average']; ?></td>
                             <td><?php echo $row['total_vc']; ?></td>

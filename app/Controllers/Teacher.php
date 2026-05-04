@@ -2311,6 +2311,26 @@ class Teacher extends BaseController
         $datos['rev'] = $rev;
         return view('sheet_check', $datos);
     }
+    function recover_score($section_id, $subject_id)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return redirect()->to(base_url());
+        $rev = array();
+        $teacher_id = $session->get('teacher_id');
+        $Setting     = new SettingModel();
+        $phase_name  = $Setting->get_phase_name();
+        $phase_abrev = $Setting->get_phase();
+        $SubjectMod  = new SubjectModel();
+        $subject     = $SubjectMod->subject_section($subject_id);
+        $rev['Periodo Planilla'] = $phase_name;
+        $section_id = $subject[0]['section_id'];
+        $ApigoogleMod = new ApigoogleModel();
+        $ApigoogleMod->recoverScore($subject[0]['sheet_id'], $subject_id, $phase_abrev, $section_id, $teacher_id);
+        $rev['Puntos SER'] = 'Recuperados';
+        $datos['rev'] = $rev;
+        return view('sheet_check', $datos);
+    }
     function deliver_notes($subject_id = '')
     {
         $session = session();

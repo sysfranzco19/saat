@@ -66,6 +66,7 @@
                                 <th>Inicio</th>
                                 <th>Fin</th>
                                 <th>Estado</th>
+                                <th class="text-center">Comprobante</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -77,27 +78,30 @@
                                         <td><?php echo $key->tipo; ?></td>
                                         <td><?php echo $key->inicio; ?></td>
                                         <td><?php echo $key->fin; ?></td>
-                                        <td><?php
-                                        if ($key->enviado == 1) {
-                                            ?>
-                                                <span class="label label-inline label-light-success font-weight-bold">
-                                                    Autorizado
-                                                </span>
-                                                <?php
-                                        } else {
-                                            ?>
-                                                <span class="label label-inline label-light-danger font-weight-bold">
-                                                    Pendiente
-                                                </span>
-                                                <?php
-                                        }
-                                        ?>
+                                        <td>
+                                            <?php if ($key->enviado == 1): ?>
+                                                <span class="label label-inline label-light-success font-weight-bold">Autorizado</span>
+                                            <?php else: ?>
+                                                <span class="label label-inline label-light-danger font-weight-bold">Pendiente</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <?php if (!empty($key->comprobante_medico)): ?>
+                                                <a href="<?php echo base_url('uploads/comprobantes_medicos/' . $key->comprobante_medico); ?>"
+                                                   target="_blank"
+                                                   class="btn btn-sm btn-light-primary"
+                                                   title="Ver comprobante">
+                                                    <i class="flaticon2-file-1"></i> Ver
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="text-muted">—</span>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="6" class="text-center">No hay licencias registradas</td>
+                                    <td colspan="7" class="text-center">No hay licencias registradas</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
