@@ -166,8 +166,6 @@ class Admin extends BaseController
                     $CsamarksMod = new CsamarksModel();
                     $notas_bth = $CsamarksMod->csamarks_centralize_bth($stu['student_id'], $phase_id);
                     foreach ($notas_bth as $bth):
-                        //$update_csamarks['autoevaluacion'] = $bth['ser5'];
-                        //$update_csamarks['auto_decidir'] = $bth['dec5'];
                         $update_csamarks['total_average'] = $bth['nota_bth'];
                         $update_csamarks['saved_on'] = date("Y-m-d");
                         $CsamarksMod = new CsamarksModel();
@@ -195,6 +193,7 @@ class Admin extends BaseController
         $Setting = new SettingModel();
         $phase_id = $Setting->get_phase_id();
         $phase_name = $Setting->get_phase_name();
+        $phase = $Setting->get_phase();
         //Materias
         $SubjectMod = new SubjectModel();
         $subjects = $SubjectMod->subjects_section_bth($section_id);
@@ -269,7 +268,7 @@ class Admin extends BaseController
         $SectionMod = new SectionModel();
         $section = $SectionMod->get_section($data);
         $fileName = 'BTH_' . $section[0]['completo'] . '.xlsx';
-        $obj_PHPExcel->getActiveSheet()->SetCellValue('B4', "GESTIÓN 2025 NOTAS OFICIALES " . strtoupper($phase_name));
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('B4', "GESTIÓN 2026 NOTAS OFICIALES " . strtoupper($phase_name));
         $obj_PHPExcel->getActiveSheet()->SetCellValue('B5', strtoupper($section[0]['completo']));
         $fecha_actual = date("d/m/Y");
         $obj_PHPExcel->getActiveSheet()->SetCellValue('A43', 'Generado el : ' . $fecha_actual);

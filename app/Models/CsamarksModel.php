@@ -70,11 +70,11 @@ class CsamarksModel extends Model
         $csamarks = $this->db->query($sql);
         return $csamarks->getResultArray();
     }
-    public function csamarks_cantralize_bth($student_id, $phase_id){
-        $sql ="SELECT c.student_id, a.ser5, a.dec5, SUM(ROUND(c.total_average*(s.hours/100)+0.0000000001)) as nota_bth 
+    public function csamarks_centralize_bth($student_id, $phase_id){
+        $sql ="SELECT c.student_id, a.autoevaluacion, SUM(ROUND(c.total_average*(s.hours/100)+0.0000000001)) as nota_bth 
         FROM csamarks c INNER JOIN subject s ON(c.subject_id=s.subject_id) 
         INNER JOIN self_appraisal a ON(c.student_id=a.student_id)
-        WHERE s.hours>1 AND a.phase_id=".$phase_id." AND c.phase_id=".$phase_id." AND c.student_id=".$student_id." AND s.name LIKE 'BTH%' GROUP BY c.student_id, a.ser5, a.dec5";
+        WHERE s.hours>1 AND a.phase_id=".$phase_id." AND c.phase_id=".$phase_id." AND c.student_id=".$student_id." AND s.name LIKE 'BTH%' GROUP BY c.student_id, a.autoevaluacion";
         $csamarks = $this->db->query($sql);
         return $csamarks->getResultArray();
     }

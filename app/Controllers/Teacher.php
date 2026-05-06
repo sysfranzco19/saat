@@ -2228,21 +2228,28 @@ class Teacher extends BaseController
             $StudentMod = new StudentModel();
             $students = $StudentMod->studentsSection($subject[0]['section_id'], $teacher_id);
             foreach ($students as $stu):
-                //Preguntamos si ya Tiene Notas
-                $data_csamarks['student_id'] = $stu['student_id'];
-                $data_csamarks['locked'] = 0;
-                $data_csamarks['phase_id'] = $page_data['phase_id'];
-                $data_csamarks['subject_id'] = $subject_id;
+                $check = [
+                    "phase_id"   => $page_data['phase_id'],
+                    "subject_id" => $subject_id,
+                    "student_id" => $stu['student_id'],
+                ];
                 $CsamarksMod = new CsamarksModel();
-                $respuesta = $CsamarksMod->insert_csamarks($data_csamarks);
+                $existe = $CsamarksMod->get_csamarks($check);
+                if (count($existe) == 0) {
+                    $data_csamarks['student_id'] = $stu['student_id'];
+                    $data_csamarks['locked'] = 0;
+                    $data_csamarks['phase_id'] = $page_data['phase_id'];
+                    $data_csamarks['subject_id'] = $subject_id;
+                    $CsamarksMod = new CsamarksModel();
+                    $respuesta = $CsamarksMod->insert_csamarks($data_csamarks);
+                }
             endforeach;
-        } else {
-            //Actualizamos CSAMARKC desde planilla GOOGLE
-            //if ($official_id==0) {
-            $ApigoogleMod = new ApigoogleModel();
-            $apigoogle = $ApigoogleMod->importNotes($subject[0]['sheet_id'], $subject_id, $phase_id, $phase);
-            //}
-        }
+        } 
+        //Actualizamos CSAMARKC desde planilla GOOGLE
+        //if ($official_id==0) {
+        $ApigoogleMod = new ApigoogleModel();
+        $apigoogle = $ApigoogleMod->importNotes($subject[0]['sheet_id'], $subject_id, $phase_id, $phase);
+        //}
         $CsamarksMod = new CsamarksModel();
         $csamarks = $CsamarksMod->csamarks_subject($subject_id, $page_data['phase_id']);
         $page_data['csamarks'] = $csamarks;

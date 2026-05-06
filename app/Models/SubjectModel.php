@@ -214,7 +214,7 @@ t4.link
         public function subjects_especialidad()
     {
         $sql = "SELECT s.subject_id, s.name as materia, t.name as docente, s.sheet_id 
-        FROM subject s INNER JOIN teacher t ON(s.teacher_id=t.teacher_id) WHERE s.section_id<100";
+        FROM subject s INNER JOIN teacher t ON(s.teacher_id=t.teacher_id) WHERE s.section_id>343";
         $subject = $this->db->query($sql);
         return $subject->getResultArray();
     }
