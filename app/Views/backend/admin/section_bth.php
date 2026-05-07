@@ -107,7 +107,7 @@
                     <a href="<?php echo base_url(); ?>admin/centralize_notes_bth/<?php echo $row['section_id']; ?>/<?php echo $row['subject_id']; ?>" class='btn btn-secondary font-weight-bold mr-2' >Centralizar Notas</a>
                     </td>
                     <td>
-                        <a href="<?php echo base_url(); ?>index.php/admin/centralizador_bth/<?php echo $row['section_id']; ?>/<?php echo $row['subject_id']; ?>" class='btn btn-light-primary font-weight-bold mr-2' target="_blank" >Descargar</a>
+                        <a href="<?php echo base_url(); ?>admin/centralizador_bth/<?php echo $row['section_id']; ?>/<?php echo $row['subject_id']; ?>" class='btn btn-light-primary font-weight-bold mr-2' target="_blank" >Descargar</a>
                     </td>
                 </tr>
                 <?php endforeach;?>

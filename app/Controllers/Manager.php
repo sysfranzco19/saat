@@ -2805,7 +2805,7 @@ class Manager extends BaseController
                                 break;
                             case 'TEC. TECNOLÓGICA':
                                 $prom += round($nota['obtained_mark']);
-                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, $nota['obtained_mark']);
+                                $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(30 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'BIOLOGÍA':
                                 $prom += round($nota['obtained_mark']);
