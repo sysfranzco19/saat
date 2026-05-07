@@ -41,7 +41,7 @@
 
         $.ajax({
             data: parametros,
-            url: "<?php echo base_url(); ?>index.php/admin/centralize_notes_bth/" + section_id,
+            url: "<?php echo base_url(); ?>admin/centralize_notes_bth/" + section_id,
             type: "post",
             beforeSend: function(){
                 document.getElementById('mostrar_loading').style.display="block"

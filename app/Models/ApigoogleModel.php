@@ -1200,4 +1200,53 @@ class ApigoogleModel extends Model
         $response = $service->spreadsheets_values->batchUpdate($spreadsheetId, $requestBody);
 
     }
+    function centralize_especialidad($sheet_id, $subject_id, $phase_id, $abreviado, $esp)
+    {
+        //****************NOS CONECTAMOS A GOOGLE SHEETs*******************************************************
+        $client = new \Google_Client();
+        $client->setApplicationName('Google Sheets and PHP');
+        $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
+        $client->setAccessType('offline');
+        $client->setAuthConfig(APPPATH.'/ThirdParty/api-sheet/Saat-Sheets-f0cf6437dbb7.json');
+        $service = new \Google_Service_Sheets($client);
+        $spreadsheetId = $sheet_id;
+        $range = $abreviado."!A8:AN37";
+        $response = $service->spreadsheets_values->get($spreadsheetId,$range);
+        $values = $response->getValues();
+        $nro = 1;
+        foreach ($values as $row) {
+            $fila = 7 + $nro;
+            if (is_numeric($row[0])) {
+                $student_id = $row[0];
+                if (is_numeric($row[39])) {
+                    $nota = $row[39];
+                    //Verificamos que el estudiante no tenga notas
+                    $sql1 = 'SELECT total_average FROM csamarks WHERE student_id='.$student_id.' AND subject_id='.$subject_id.' AND phase_id='.$phase_id;
+                    $filas = $this->db->query($sql1)->getResultArray();
+                    $csamarks = $this->db->table('csamarks');
+                    if (count($filas)==0) {
+                        //Insertamos nueva nota
+                        
+                        $data1['student_id'] = $student_id;
+                        $data1['total_average'] = $nota;
+                        $data1['total_vc'] = $esp;
+                        $data1['subject_id'] = $subject_id;
+                        $data1['locked'] = 0;
+                        $data1['phase_id'] = $phase_id;
+                        $csamarks->insert($data1);
+                    }else{
+                        //Actualiuzamos nota
+                        $data2['total_average'] = $nota;
+                        $csamarks->set($data2);
+                        $csamarks->where('student_id', $student_id);
+                        $csamarks->where('subject_id', $subject_id);
+                        $csamarks->where('phase_id', $phase_id);
+                        $csamarks->update();
+                    }
+
+                }
+            }
+            $nro += 1;
+        }
+    }
 }
