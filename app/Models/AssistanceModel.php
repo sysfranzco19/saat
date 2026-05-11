@@ -15,6 +15,15 @@ class AssistanceModel extends Model
     {
         return $this->db->table('assistance')->where($data)->get()->getResultArray();
     }
+    public function get_by_students_date(array $student_ids, string $date): array
+    {
+        if (empty($student_ids)) return [];
+        $rows = $this->db->table('assistance')
+            ->whereIn('student_id', $student_ids)
+            ->where('date', $date)
+            ->get()->getResultArray();
+        return array_column($rows, null, 'student_id');
+    }
     public function insert_assistance($datos)
     {
         $this->db->table('assistance')->insert($datos);

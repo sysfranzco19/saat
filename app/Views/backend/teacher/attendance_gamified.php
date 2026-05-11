@@ -270,9 +270,9 @@
                             <?php foreach ($students as $student): ?>
                                 <?php
                                 $scoreClass = 'high';
-                                if ($student['daily_score'] < 50)
+                                if ($student['daily_score'] < 5)
                                     $scoreClass = 'low';
-                                elseif ($student['daily_score'] < 80)
+                                elseif ($student['daily_score'] < 8)
                                     $scoreClass = 'mid';
 
                                 $statusLabel = 'Presente';
@@ -405,59 +405,42 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="d-flex align-items-center">
-                                            <?php if (isset($behaviors['negative'])): ?>
-                                                <?php foreach ($behaviors['negative'] as $b): ?>
-                                                    <?php if (stripos($b['name'], 'Otro') !== false || stripos($b['name'], 'Other') !== false || stripos($b['icon'], 'Otro') !== false): ?>
-                                                        <button type="button" class="quick-action-btn" title="<?= $b['name'] ?>"
-                                                            onclick="openRegisterModal(<?= $student['student_id'] ?>, '<?= addslashes($student['student']) ?>')">
-                                                            <?= $b['icon'] ?>
-                                                        </button>
-                                                    <?php else: ?>
-                                                        <button type="button" class="quick-action-btn"
-                                                            id="btn-behavior-<?= $student['student_id'] ?>-<?= $b['id'] ?>"
-                                                            title="<?= $b['name'] ?> (<?= $b['points'] ?>)"
-                                                            onclick="registerBehavior(<?= $student['student_id'] ?>, <?= $b['id'] ?>, <?= $b['points'] ?>)">
-                                                            <?= $b['icon'] ?>
-                                                        </button>
-                                                    <?php endif; ?>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
+                                        <div class="d-flex align-items-center flex-wrap">
+                                            <?php foreach ($tipos_negativa as $t): ?>
+                                                <button type="button" class="quick-action-btn"
+                                                    id="btn-behavior-<?= $student['student_id'] ?>-<?= $t['id'] ?>"
+                                                    data-tipo="negativa"
+                                                    title="<?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?>"
+                                                    onclick="registerBehavior(<?= $student['student_id'] ?>, <?= $t['id'] ?>, -0.5)">
+                                                    <?= $t['icono'] ?>
+                                                </button>
+                                            <?php endforeach; ?>
 
-                                            <div style="border-left: 2px solid #eee; height: 30px; margin: 0 10px;">
-                                            </div>
-
-                                            <?php if (isset($behaviors['positive'])): ?>
-                                                <?php foreach ($behaviors['positive'] as $b): ?>
-                                                    <?php if (stripos($b['name'], 'Otro') !== false || stripos($b['name'], 'Other') !== false || stripos($b['icon'], 'Otro') !== false): ?>
-                                                        <button type="button" class="quick-action-btn" title="<?= $b['name'] ?>"
-                                                            onclick="openRegisterModal(<?= $student['student_id'] ?>, '<?= addslashes($student['student']) ?>')">
-                                                            <?= $b['icon'] ?>
-                                                        </button>
-                                                    <?php else: ?>
-                                                        <button type="button" class="quick-action-btn"
-                                                            id="btn-behavior-<?= $student['student_id'] ?>-<?= $b['id'] ?>"
-                                                            title="<?= $b['name'] ?> (+<?= $b['points'] ?>)"
-                                                            onclick="registerBehavior(<?= $student['student_id'] ?>, <?= $b['id'] ?>, <?= $b['points'] ?>)">
-                                                            <?= $b['icon'] ?>
-                                                        </button>
-                                                    <?php endif; ?>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
-
-                                            <!-- Neutral Behaviors (Nurse/Bathroom) -->
-                                            <div style="border-left: 2px solid #eee; height: 30px; margin: 0 10px;"></div>
-                                            <?php if (isset($behaviors['neutral'])): ?>
-                                                <?php foreach ($behaviors['neutral'] as $b): ?>
+                                            <?php if (!empty($tipos_positiva)): ?>
+                                                <div style="border-left:2px solid #eee;height:30px;margin:0 8px;"></div>
+                                                <?php foreach ($tipos_positiva as $t): ?>
                                                     <button type="button" class="quick-action-btn"
-                                                        id="btn-behavior-<?= $student['student_id'] ?>-<?= $b['id'] ?>"
-                                                        title="<?= $b['name'] ?>"
-                                                        onclick="registerBehavior(<?= $student['student_id'] ?>, <?= $b['id'] ?>, <?= $b['points'] ?>)">
-                                                        <?= $b['icon'] ?>
+                                                        id="btn-behavior-<?= $student['student_id'] ?>-<?= $t['id'] ?>"
+                                                        data-tipo="positiva"
+                                                        title="<?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?>"
+                                                        onclick="registerBehavior(<?= $student['student_id'] ?>, <?= $t['id'] ?>, 0.5)">
+                                                        <?= $t['icono'] ?>
                                                     </button>
                                                 <?php endforeach; ?>
                                             <?php endif; ?>
 
+                                            <?php if (!empty($tipos_neutral)): ?>
+                                                <div style="border-left:2px solid #eee;height:30px;margin:0 8px;"></div>
+                                                <?php foreach ($tipos_neutral as $t): ?>
+                                                    <button type="button" class="quick-action-btn"
+                                                        id="btn-behavior-<?= $student['student_id'] ?>-<?= $t['id'] ?>"
+                                                        data-tipo="neutral"
+                                                        title="<?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?>"
+                                                        onclick="registerBehavior(<?= $student['student_id'] ?>, <?= $t['id'] ?>, 0)">
+                                                        <?= $t['icono'] ?>
+                                                    </button>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td class="text-right pr-4">
@@ -522,37 +505,52 @@
                 <input type="hidden" id="reg-behavior-id">
                 <input type="hidden" id="reg-points">
 
-                <h6 class="font-weight-bold text-dark mb-3">Comportamiento Negativo</h6>
-                <div class="row mb-5">
-                    <?php if (isset($behaviors['negative'])): ?>
-                        <?php foreach ($behaviors['negative'] as $b): ?>
-                            <div class="col-6 col-md-4 mb-3">
-                                <button type="button"
-                                    class="btn btn-outline-secondary btn-block p-4 text-left d-flex align-items-center behavior-select-btn"
-                                    onclick="selectBehaviorType(this, <?= $b['id'] ?>, <?= $b['points'] ?>)">
-                                    <span class="font-size-h2 mr-3"><?= $b['icon'] ?></span>
-                                    <span class="font-weight-bold"><?= $b['name'] ?></span>
-                                </button>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                <h6 class="font-weight-bold text-dark mb-3">Incidencia</h6>
+                <div class="row mb-3">
+                    <?php foreach ($tipos_negativa as $t): ?>
+                        <div class="col-6 col-md-4 mb-2">
+                            <button type="button"
+                                class="btn btn-outline-danger btn-block p-3 text-left d-flex align-items-center behavior-select-btn"
+                                data-tipo="negativa"
+                                onclick="selectBehaviorType(this, <?= $t['id'] ?>, -0.5)">
+                                <span class="font-size-h2 mr-3"><?= $t['icono'] ?></span>
+                                <span class="font-weight-bold"><?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?></span>
+                            </button>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
-
-                <h6 class="font-weight-bold text-dark mb-3">Comportamiento Positivo</h6>
-                <div class="row mb-5">
-                    <?php if (isset($behaviors['positive'])): ?>
-                        <?php foreach ($behaviors['positive'] as $b): ?>
-                            <div class="col-6 col-md-4 mb-3">
-                                <button type="button"
-                                    class="btn btn-outline-secondary btn-block p-4 text-left d-flex align-items-center behavior-select-btn"
-                                    onclick="selectBehaviorType(this, <?= $b['id'] ?>, <?= $b['points'] ?>)">
-                                    <span class="font-size-h2 mr-3"><?= $b['icon'] ?></span>
-                                    <span class="font-weight-bold"><?= $b['name'] ?></span>
-                                </button>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                <?php if (!empty($tipos_positiva)): ?>
+                <h6 class="font-weight-bold text-success mb-3">Reconocimiento</h6>
+                <div class="row mb-3">
+                    <?php foreach ($tipos_positiva as $t): ?>
+                        <div class="col-6 col-md-4 mb-2">
+                            <button type="button"
+                                class="btn btn-outline-success btn-block p-3 text-left d-flex align-items-center behavior-select-btn"
+                                data-tipo="positiva"
+                                onclick="selectBehaviorType(this, <?= $t['id'] ?>, 0.5)">
+                                <span class="font-size-h2 mr-3"><?= $t['icono'] ?></span>
+                                <span class="font-weight-bold"><?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?></span>
+                            </button>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
+                <?php endif; ?>
+                <?php if (!empty($tipos_neutral)): ?>
+                <h6 class="font-weight-bold text-info mb-3">Salidas</h6>
+                <div class="row mb-3">
+                    <?php foreach ($tipos_neutral as $t): ?>
+                        <div class="col-6 col-md-4 mb-2">
+                            <button type="button"
+                                class="btn btn-outline-info btn-block p-3 text-left d-flex align-items-center behavior-select-btn"
+                                data-tipo="neutral"
+                                onclick="selectBehaviorType(this, <?= $t['id'] ?>, 0)">
+                                <span class="font-size-h2 mr-3"><?= $t['icono'] ?></span>
+                                <span class="font-weight-bold"><?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?></span>
+                            </button>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
 
                 <div class="form-group">
                     <label class="font-weight-bold">Observaciones (Opcional)</label>
@@ -650,8 +648,11 @@
             return;
         }
 
-        // --- Star (behavior_id=2): Show Attribute Selection ---
-        if (behaviorId === 2) {
+        // --- Star: detect by data-tipo="positiva" ---
+        const btnEl = document.getElementById('btn-behavior-' + studentId + '-' + behaviorId);
+        const tipoAttr = btnEl ? btnEl.getAttribute('data-tipo') : 'negativa';
+
+        if (tipoAttr === 'positiva') {
             const starAttributes = [
                 { name: 'Razonamiento', desc: 'Deberes escolares cumplidos de forma sobresaliente.', icon: '🧠', color: '#6993FF' },
                 { name: 'Indagación', desc: 'Esfuerzo notable en mejorar el rendimiento o autonomía al aprender.', icon: '🔍', color: '#1BC5BD' },
@@ -793,8 +794,8 @@
         }
 
         const badge = document.getElementById('badge-' + studentId);
-        let currentScore = parseInt(badge.innerText) || 100;
-        let predictedScore = Math.max(0, currentScore + points);
+        let currentScore = parseFloat(badge.innerText) || 10;
+        let predictedScore = Math.max(0, Math.min(10, Math.round((currentScore + points) * 10) / 10));
 
         updateBadgeUI(badge, predictedScore);
         badge.classList.add('pop');
@@ -835,8 +836,8 @@
     function updateBadgeUI(badgeElement, score) {
         badgeElement.innerText = score;
         badgeElement.className = 'score-avatar-badge';
-        if (score < 50) badgeElement.classList.add('low');
-        else if (score < 80) badgeElement.classList.add('mid');
+        if (score < 5) badgeElement.classList.add('low');
+        else if (score < 8) badgeElement.classList.add('mid');
         else badgeElement.classList.add('high');
     }
 
@@ -880,8 +881,6 @@
             } else {
                 let html = '<div class="table-responsive"><table class="table table-borderless table-vertical-center">';
                 data.forEach(log => {
-                    let color = log.points >= 0 ? 'text-success' : 'text-danger';
-                    let sign = log.points >= 0 ? '+' : '';
                     let time = '-';
                     try {
                         if (log.created_at) {
@@ -892,12 +891,12 @@
                     html += `<tr id="modal-log-row-${log.id}">
                         <td>
                             <span class="text-dark-75 font-weight-bold d-block">
-                                <span class="symbol-label font-size-h4 mr-2">${log.icon || ''}</span> ${log.name || 'Sin nombre'}
+                                <span class="symbol-label font-size-h4 mr-2">${log.icono || ''}</span> ${log.nombre || 'Sin nombre'}
                             </span>
                             <span class="text-muted font-size-sm">${time}</span>
                         </td>
                         <td class="text-right">
-                            <span class="font-weight-bolder font-size-lg ${color}">${sign}${log.points || 0} pts</span>
+                            <span class="font-weight-bolder font-size-lg text-danger">-0.5 pts</span>
                         </td>
                         <td class="text-right">
                             <button type="button" class="btn btn-sm btn-light-danger font-weight-bold" onclick="deleteBehavior(${log.id})">

@@ -41,12 +41,11 @@
                     <table class="table table-head-custom table-vertical-center" id="kt_adviser_behavior_table">
                         <thead>
                             <tr class="text-left">
-                                <th style="min-width: 150px">Fecha</th>
+                                <th style="min-width: 150px">Fecha / Hora</th>
                                 <th style="min-width: 200px">Estudiante</th>
                                 <th style="min-width: 150px">Materia</th>
                                 <th style="min-width: 200px">Incidencia</th>
-                                <th style="min-width: 100px">Tipo</th>
-                                <th style="min-width: 100px" class="text-right">Puntos</th>
+                                <th style="min-width: 100px" class="text-right">Descuento</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -80,31 +79,24 @@
                                             <div class="d-flex align-items-center">
                                                 <div class="symbol symbol-30 symbol-light mr-3">
                                                     <span class="symbol-label font-size-h5">
-                                                        <?= $log['icon'] ?>
+                                                        <?= $log['icono'] ?>
                                                     </span>
                                                 </div>
                                                 <div class="d-flex flex-column">
                                                     <span class="text-dark-75 font-weight-bolder">
-                                                        <?= $log['behavior_name'] ?>
+                                                        <?= $log['nombre'] ?>
                                                     </span>
-                                                    <?php if (!empty($log['observation'])): ?>
+                                                    <?php if (!empty($log['observacion'])): ?>
                                                         <span class="text-muted font-size-xs italic">
-                                                            <?= $log['observation'] ?>
+                                                            <?= $log['observacion'] ?>
                                                         </span>
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
-                                            <span
-                                                class="label label-lg label-inline <?= $log['type'] == 'positive' ? 'label-light-success' : ($log['type'] == 'negative' ? 'label-light-danger' : 'label-light-primary') ?> font-weight-bold">
-                                                <?= ucfirst($log['type']) ?>
-                                            </span>
-                                        </td>
                                         <td class="text-right">
-                                            <span
-                                                class="font-weight-bolder font-size-h5 <?= $log['points'] >= 0 ? 'text-success' : 'text-danger' ?>">
-                                                <?= $log['points'] > 0 ? '+' . $log['points'] : $log['points'] ?> pts
+                                            <span class="font-weight-bolder font-size-h5 text-danger">
+                                                -0.5 pts
                                             </span>
                                         </td>
                                     </tr>

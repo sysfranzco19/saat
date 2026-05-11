@@ -144,22 +144,14 @@
                     </div>
                     <div class="card-body pt-2">
                         <div class="d-flex flex-wrap" id="behavior_grid">
-                            <?php
-                            $allBehaviors = array_merge(
-                                $behaviors['negative'] ?? [],
-                                $behaviors['positive'] ?? [],
-                                $behaviors['neutral']  ?? []
-                            );
-                            foreach ($allBehaviors as $b):
-                                $colorClass = $b['type'] === 'positive' ? 'btn-light-success' : ($b['type'] === 'negative' ? 'btn-light-danger' : 'btn-light-info');
-                            ?>
+                            <?php foreach ($tipos as $t): ?>
                                 <button type="button"
-                                    class="btn <?= $colorClass ?> font-weight-bold mr-2 mb-2 behavior-btn"
-                                    data-id="<?= $b['id'] ?>"
-                                    data-name="<?= htmlspecialchars($b['name'], ENT_QUOTES) ?>"
-                                    title="<?= htmlspecialchars($b['name'], ENT_QUOTES) ?>"
+                                    class="btn btn-light-danger font-weight-bold mr-2 mb-2 behavior-btn"
+                                    data-id="<?= $t['id'] ?>"
+                                    data-name="<?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?>"
+                                    title="<?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?>"
                                     style="font-size: 1.6rem; padding: 8px 12px; line-height: 1;">
-                                    <?= $b['icon'] ?>
+                                    <?= $t['icono'] ?>
                                 </button>
                             <?php endforeach; ?>
                         </div>

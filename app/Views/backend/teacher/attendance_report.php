@@ -127,7 +127,7 @@
                         </span>Imprimir PDF (Carta)
                     </button>
 
-                    <a href="<?php echo base_url(); ?>index.php/teacher/attendance/<?php echo $subject_id; ?>"
+                    <a href="<?php echo base_url('teacher/assistance'); ?>"
                         class="btn btn-primary font-weight-bolder">
                         <span class="svg-icon svg-icon-md">
                             <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"

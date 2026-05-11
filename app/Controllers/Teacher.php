@@ -40,6 +40,7 @@ use App\Models\ParentModel;
 use App\Models\DelayModel;
 use App\Models\ScoreModel;
 use App\Models\BehaviorModel;
+use App\Models\IncidenciaModel;
 use App\Models\InterviewModel;
 use App\Models\EvaluationModel;
 use App\Models\EhcModel;
@@ -582,67 +583,38 @@ class Teacher extends BaseController
             $page_data['curso'] = $student['lastname'] . ' ' . $student['name']; // Fallback label
         }
 
-        $BehaviorMod = new BehaviorModel();
-        // Filter logs by the current subject to show only this teacher's materia
-        $logs = $BehaviorMod->getStudentLog($student_id, null, $subject_id > 0 ? $subject_id : null, $page_data['phase_id']);
+        $IncidenciaMod = new IncidenciaModel();
+        $logs = $IncidenciaMod->getRegistroEstudiante($student_id, $page_data['phase_id'], $subject_id > 0 ? $subject_id : null);
         $page_data['logs'] = $logs;
 
-        // Daily Logistics (Nurse/Bathroom from all subjects)
+        // Daily Logistics (Neutral type: Enfermería/Baño)
         $currentDate = $this->request->getGet('date') ?: date('Y-m-d');
-        $page_data['logistics'] = $BehaviorMod->getDailyLogistics($student_id, $currentDate);
+        $page_data['logistics'] = $IncidenciaMod->getLogisticasHoy($student_id, $currentDate, $page_data['phase_id']);
 
-        // --- Puntos del Ser Logic ---
-        $ScoreMod = new ScoreModel();
-        $puntosDelSer = 10; // Default
-        if ($subject_id > 0) {
-            // Get CUMULATIVE score until "now" (passing no date_id? or the latest date?)
-            // Actually, we want the score for the current state of the phase.
-            // Let's use getDailyScore with the "current" date or the most recent record.
+        // Puntos del Ser
+        $page_data['puntos_del_ser'] = $subject_id > 0
+            ? $IncidenciaMod->calcularNota($student_id, $subject_id, $page_data['phase_id'])
+            : 10;
 
-            // To get the absolute current score in the phase:
-            $currentDateId = $this->request->getGet('date_id'); // If coming from attendance
-            if (!$currentDateId) {
-                // If not provided, find the most recent attendance date in this phase
-                $DatesMod = new DatesModel();
-                $recentDate = \Config\Database::connect('asistencia')->table('attendance_dates')
-                    ->where('phase_id', $page_data['phase_id'])
-                    ->orderBy('date_class', 'DESC')
-                    ->limit(1)
-                    ->get()
-                    ->getRowArray();
-                $currentDateId = $recentDate ? $recentDate['date_id'] : null;
-            }
-
-            if ($currentDateId) {
-                $cumulativeScore = $ScoreMod->getDailyScore($student_id, $currentDateId, $subject_id);
-                $scaled = ($cumulativeScore / 100) * 10;
-                $puntosDelSer = round($scaled, 1); // Maybe keep one decimal or round? User said "1-10"
-                if ($puntosDelSer > 10)
-                    $puntosDelSer = 10;
-            }
-        }
-        $page_data['puntos_del_ser'] = $puntosDelSer;
-
-        // --- Chart Data Logic (built directly from logs) ---
+        // Chart Data
         $behaviorCounts = [];
         $positiveCount = 0;
         $negativeCount = 0;
         $neutralCount = 0;
         foreach ($logs as $log) {
-            $bid = $log['behavior_type_id'];
+            $bid = $log['incidencia_tipo_id'];
             if (!isset($behaviorCounts[$bid])) {
                 $behaviorCounts[$bid] = [
-                    'name'   => $log['name'],
-                    'icon'   => $log['icon'],
+                    'nombre' => $log['nombre'],
+                    'icono'  => $log['icono'],
                     'count'  => 0,
-                    'points' => $log['points'],
-                    'type'   => $log['type']
+                    'tipo'   => $log['tipo']
                 ];
             }
             $behaviorCounts[$bid]['count']++;
-            if ($log['type'] == 'positive') {
+            if ($log['tipo'] === 'positiva') {
                 $positiveCount++;
-            } elseif ($log['type'] == 'negative') {
+            } elseif ($log['tipo'] === 'negativa') {
                 $negativeCount++;
             } else {
                 $neutralCount++;
@@ -673,8 +645,7 @@ class Teacher extends BaseController
         $SubjectMod = new SubjectModel();
         $subjects   = $SubjectMod->subjects_teacher($teacher_id);
 
-        $BehaviorMod = new BehaviorModel();
-        $behaviors   = $BehaviorMod->getBehaviors();
+        $IncidenciaMod = new IncidenciaModel();
 
         $Setting = new SettingModel();
         $page_data['phase_id']    = $Setting->get_phase_id();
@@ -682,7 +653,11 @@ class Teacher extends BaseController
         $page_data['system_title'] = $Setting->get_system_title();
         $page_data['system_name']  = $Setting->get_system_name();
         $page_data['subjects']    = $subjects;
-        $page_data['behaviors']   = $behaviors;
+        $page_data['tipos']       = $IncidenciaMod->getTipos();
+        $tiposGrouped = $IncidenciaMod->getTiposGrouped();
+        $page_data['tipos_negativa'] = $tiposGrouped['negativa'];
+        $page_data['tipos_positiva'] = $tiposGrouped['positiva'];
+        $page_data['tipos_neutral']  = $tiposGrouped['neutral'];
         $page_data['page_name']   = 'incidence_register';
         $page_data['page_title']  = 'Registrar Incidencia';
 
@@ -736,32 +711,17 @@ class Teacher extends BaseController
         $subject_id = $this->request->getPost('subject_id');
         $date       = $this->request->getPost('date');
 
-        if (!$subject_id || !$date)
+        if (!$date)
             return $this->response->setJSON(['status' => 'error', 'message' => 'Faltan datos']);
 
-        try {
-            $Setting  = new SettingModel();
-            $phase_id = $Setting->get_phase_id();
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
 
-            $asistDb  = \Config\Database::connect('asistencia');
-
-            // Solo busca — nunca crea
-            $existing = $asistDb->table('attendance_dates')
-                ->where('date_class', $date)
-                ->where('phase_id', $phase_id)
-                ->get()->getRowArray();
-
-            return $this->response->setJSON([
-                'status'  => 'success',
-                'date_id' => $existing ? $existing['date_id'] : 0,
-                'found'   => (bool) $existing,
-            ]);
-        } catch (\Throwable $e) {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => $e->getMessage()
-            ]);
-        }
+        return $this->response->setJSON([
+            'status'   => 'success',
+            'date_id'  => 0,
+            'phase_id' => $phase_id,
+        ]);
     }
 
     function behavior_analysis_student($student_id, $subject_id = 0)
@@ -796,35 +756,36 @@ class Teacher extends BaseController
             $page_data['curso'] = ($student['lastname'] ?? '') . ' ' . ($student['name'] ?? '');
         }
 
-        $BehaviorMod = new BehaviorModel();
-        $logs = $BehaviorMod->getStudentLog($student_id, null, $subject_id > 0 ? $subject_id : null);
+        $IncidenciaMod = new IncidenciaModel();
+        $logs = $IncidenciaMod->getRegistroEstudiante($student_id, $page_data['phase_id'], $subject_id > 0 ? $subject_id : null);
 
         // Logística del día
-        $page_data['logistics'] = $BehaviorMod->getDailyLogistics($student_id, date('Y-m-d'));
+        $page_data['logistics'] = $IncidenciaMod->getLogisticasHoy($student_id, date('Y-m-d'), $page_data['phase_id']);
 
         // Puntos del Ser
-        $page_data['puntos_del_ser'] = 10;
+        $page_data['puntos_del_ser'] = $subject_id > 0
+            ? $IncidenciaMod->calcularNota($student_id, $subject_id, $page_data['phase_id'])
+            : 10;
 
-        // --- Chart Data Logic (built directly from logs, no getBehaviors() needed) ---
+        // Chart Data
         $behaviorCounts = [];
         $positiveCount = 0;
         $negativeCount = 0;
         $neutralCount = 0;
         foreach ($logs as $log) {
-            $bid = $log['behavior_type_id'];
+            $bid = $log['incidencia_tipo_id'];
             if (!isset($behaviorCounts[$bid])) {
                 $behaviorCounts[$bid] = [
-                    'name'   => $log['name'],
-                    'icon'   => $log['icon'],
+                    'nombre' => $log['nombre'],
+                    'icono'  => $log['icono'],
                     'count'  => 0,
-                    'points' => $log['points'],
-                    'type'   => $log['type']
+                    'tipo'   => $log['tipo']
                 ];
             }
             $behaviorCounts[$bid]['count']++;
-            if ($log['type'] == 'positive') {
+            if ($log['tipo'] === 'positiva') {
                 $positiveCount++;
-            } elseif ($log['type'] == 'negative') {
+            } elseif ($log['tipo'] === 'negativa') {
                 $negativeCount++;
             } else {
                 $neutralCount++;
@@ -848,106 +809,79 @@ class Teacher extends BaseController
 
     function register_behavior()
     {
-        /*try {*/
-            $studentId = $this->request->getPost('student_id');
-            $behaviorId = $this->request->getPost('behavior_id');
-            $points = $this->request->getPost('points');
-            $subjectId = $this->request->getPost('subject_id');
-            $dateId = $this->request->getPost('date_id');
-            $period = $this->request->getPost('period') ?: 1;
-            $observation = $this->request->getPost('observation');
+        $studentId   = $this->request->getPost('student_id');
+        $tipoId      = $this->request->getPost('behavior_id');
+        $subjectId   = $this->request->getPost('subject_id');
+        $observation = $this->request->getPost('observation');
 
-            if (!$studentId || !$behaviorId || !$dateId || !$subjectId) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Faltan parámetros requeridos (Estudiante, Comportamiento, Fecha o Materia)'
-                ]);
-            }
+        $fecha = $this->request->getPost('custom_date');
+        if (!$fecha) {
+            $dateId   = $this->request->getPost('date_id');
+            $asistDb  = \Config\Database::connect('asistencia');
+            $dateInfo = $dateId ? $asistDb->table('attendance_dates')->where('date_id', $dateId)->get()->getRowArray() : null;
+            $fecha    = $dateInfo['date_class'] ?? date('Y-m-d');
+        }
 
-            // 1. Log the behavior first
-            $BehaviorMod = new BehaviorModel();
-            $logResult = $BehaviorMod->logBehavior($studentId, $behaviorId, $subjectId, $dateId, $observation, $period);
-
-            /*if ($logResult) {*/
-                // 2. Now calculate the new score
-                $ScoreMod = new ScoreModel();
-                $newScore = $ScoreMod->getDailyScore($studentId, $dateId, $subjectId, $period);
-
-                $logs = $BehaviorMod->getStudentLog($studentId, null, $subjectId);
-                $newNegativeCount = count(array_filter($logs, function ($log) {
-                    return $log['type'] == 'negative';
-                }));
-                $newPositiveCount = count(array_filter($logs, function ($log) {
-                    return $log['type'] == 'positive';
-                }));
-
-                return $this->response->setJSON([
-                    'status' => 'success',
-                    'new_score' => $newScore,
-                    'new_negative_count' => $newNegativeCount,
-                    'new_positive_count' => $newPositiveCount
-                ]);
-                /*
-            } else {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'No se pudo guardar el registro en la base de datos.'
-                ]);
-            }
-            
-        } catch (\Throwable $e) {
+        if (!$studentId || !$tipoId || !$subjectId) {
             return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Error al procesar el registro.'
+                'status'  => 'error',
+                'message' => 'Faltan parámetros requeridos (Estudiante, Tipo o Materia)'
             ]);
-        }*/
+        }
+
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+
+        $session    = session();
+        $teacher_id = $session->get('teacher_id');
+
+        $IncidenciaMod = new IncidenciaModel();
+        $IncidenciaMod->registrar([
+            'student_id'        => $studentId,
+            'subject_id'        => $subjectId,
+            'incidencia_tipo_id'=> $tipoId,
+            'phase_id'          => $phase_id,
+            'fecha'             => $fecha,
+            'observacion'       => $observation,
+            'registrado_por'    => $teacher_id,
+        ]);
+
+        $conteos = $IncidenciaMod->getConteos($studentId, $subjectId, $phase_id);
+
+        return $this->response->setJSON([
+            'status'             => 'success',
+            'nota_ser'           => $conteos['nota'],
+            'new_score'          => $conteos['nota'],
+            'new_negative_count' => $conteos['negativa'],
+            'new_positive_count' => $conteos['positiva'],
+        ]);
     }
 
     function delete_behavior_ajax()
     {
         $logId = $this->request->getPost('log_id');
-        $db = \Config\Database::connect();
 
-        // Fetch log with behavior details
-        $builder = $db->table('behavior_log');
-        $builder->select('behavior_log.*, behavior_types.points');
-        $builder->join('behavior_types', 'behavior_types.id = behavior_log.behavior_type_id');
-        $builder->where('behavior_log.id', $logId);
-        $log = $builder->get()->getRowArray();
+        $IncidenciaMod = new IncidenciaModel();
+        $registro = $IncidenciaMod->eliminar($logId);
 
-        if ($log) {
-            $points = (int) $log['points'];
-            $studentId = $log['student_id'];
-            $dateId = $log['date_id'];
-            $subjectId = $log['subject_id'];
-            $period = isset($log['period']) ? $log['period'] : 1;
-
-            // 1. Delete the log first
-            $BehaviorMod = new BehaviorModel();
-            $BehaviorMod->deleteLog($logId);
-
-            // 2. Now calculate the new score (cumulative sum from ScoreModel)
-            $ScoreMod = new ScoreModel();
-            $newScore = $ScoreMod->getDailyScore($studentId, $dateId, $subjectId, $period);
-
-            $logs = $BehaviorMod->getStudentLog($studentId, null, $subjectId);
-            $newNegativeCount = count(array_filter($logs, function ($log) {
-                return $log['type'] == 'negative';
-            }));
-            $newPositiveCount = count(array_filter($logs, function ($log) {
-                return $log['type'] == 'positive';
-            }));
-
-            return $this->response->setJSON([
-                'status' => 'success',
-                'new_score' => $newScore,
-                'student_id' => $studentId,
-                'new_negative_count' => $newNegativeCount,
-                'new_positive_count' => $newPositiveCount
-            ]);
+        if (!$registro) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Registro no encontrado']);
         }
 
-        return $this->response->setJSON(['status' => 'error', 'message' => 'Log not found']);
+        $conteos = $IncidenciaMod->getConteos(
+            $registro['student_id'],
+            $registro['subject_id'],
+            $registro['phase_id']
+        );
+
+        return $this->response->setJSON([
+            'status'             => 'success',
+            'nota_ser'           => $conteos['nota'],
+            'new_score'          => $conteos['nota'],
+            'new_negative_count' => $conteos['negativa'],
+            'new_positive_count' => $conteos['positiva'],
+            'student_id'         => $registro['student_id'],
+        ]);
     }
 
     function update_attendance_ajax()
@@ -985,11 +919,13 @@ class Teacher extends BaseController
     function get_daily_log_ajax()
     {
         $student_id = (int) $this->request->getPost('student_id');
-        $date_id = (int) $this->request->getPost('date_id');
         $subject_id = (int) $this->request->getPost('subject_id');
 
-        $BehaviorMod = new BehaviorModel();
-        $logs = $BehaviorMod->getStudentLog($student_id, $date_id, $subject_id);
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+
+        $IncidenciaMod = new IncidenciaModel();
+        $logs = $IncidenciaMod->getRegistroEstudiante($student_id, $phase_id, $subject_id ?: null);
 
         return $this->response->setJSON($logs);
     }
@@ -1031,16 +967,19 @@ class Teacher extends BaseController
         $page_data['date_display'] = $page_data['date'];
         $page_data['periodo'] = $periodo;
 
-        //Assistance Date Logic
+        //Assistance Date Logic — filter by phase_id to avoid picking up dates from other trimesters
         $DatesMod = new DatesModel();
-        $respuesta = $DatesMod->get_attendance_dates(["date_class" => $page_data['date']]);
+        $respuesta = $DatesMod->get_attendance_dates([
+            "date_class" => $page_data['date'],
+            "phase_id"   => $page_data['phase_id'],
+        ]);
 
         if (count($respuesta) >= 1) {
             $page_data['date_id'] = $respuesta[0]['date_id'];
         } else {
             $datos = [
                 "date_class" => $page_data['date'],
-                "phase_id" => $page_data['phase_id'],
+                "phase_id"   => $page_data['phase_id'],
             ];
             $respuesta = $DatesMod->insert_attendance_dates($datos);
             $page_data['date_id'] = $respuesta;
@@ -1050,44 +989,41 @@ class Teacher extends BaseController
         $StudentMod = new StudentModel();
         $students = $StudentMod->studentsSection($page_data['section_id'], $teacher_id);
 
-        // Gamification Logic
-        $BehaviorMod = new BehaviorModel();
-        $page_data['behaviors'] = $BehaviorMod->getBehaviors();
+        $IncidenciaMod = new IncidenciaModel();
+        $tiposGrouped = $IncidenciaMod->getTiposGrouped();
+        $page_data['tipos']          = $tiposGrouped;
+        $page_data['tipos_negativa'] = $tiposGrouped['negativa'];
+        $page_data['tipos_positiva'] = $tiposGrouped['positiva'];
+        $page_data['tipos_neutral']  = $tiposGrouped['neutral'];
 
-        $ScoreMod = new ScoreModel();
         $AssistanceMod = new AssistancesubjectModel();
+
+        // Fetch all per-student data in 2 bulk queries instead of 2×N individual ones
+        $student_ids   = array_column($students, 'student_id');
+        $conteosBulk   = $IncidenciaMod->getConteosBulk($student_ids, $subject_id, $page_data['phase_id']);
+        $attendanceBulk = $AssistanceMod->get_assistance_subject_bulk(
+            $page_data['date_id'], $subject_id, $student_ids, $periodo
+        );
 
         $has_existing = false;
         foreach ($students as &$student) {
-            // Get Daily Score
-            $student['daily_score'] = $ScoreMod->getDailyScore($student['student_id'], $page_data['date_id'], $subject_id, $page_data['periodo']);
+            $sid = $student['student_id'];
 
-            // Get Attendance Status — filtrar también por periodo para cargar el registro correcto
-            $statusData = $AssistanceMod->get_assistance_subject([
-                "date_id"    => $page_data['date_id'],
-                "subject_id" => $subject_id,
-                "student_id" => $student['student_id'],
-                "periodos"   => $periodo,
-            ]);
+            $conteos = $conteosBulk[$sid] ?? ['nota' => 10, 'negativa' => 0, 'positiva' => 0];
+            $student['daily_score']    = $conteos['nota'];
+            $student['negative_count'] = $conteos['negativa'];
+            $student['positive_count'] = $conteos['positiva'];
 
             // Status codes: 0=Ausente, 1=Presente, 2=Licencia, 3=Retraso, 4=M.Virtual
-            if (!empty($statusData)) {
-                $student['attendance_status'] = $statusData[0]['status'];
-                $student['assistance_subject_id'] = $statusData[0]['assistance_subject_id'];
+            $statusData = $attendanceBulk[$sid] ?? null;
+            if ($statusData) {
+                $student['attendance_status'] = $statusData['status'];
+                $student['assistance_subject_id'] = $statusData['assistance_subject_id'];
                 $has_existing = true;
             } else {
                 $student['attendance_status'] = 1;
                 $student['assistance_subject_id'] = 0;
             }
-
-            // Incident count filtered by subject
-            $logs = $BehaviorMod->getStudentLog($student['student_id'], null, $subject_id);
-            $student['negative_count'] = count(array_filter($logs, function ($log) {
-                return $log['type'] == 'negative';
-            }));
-            $student['positive_count'] = count(array_filter($logs, function ($log) {
-                return $log['type'] == 'positive';
-            }));
         }
         $page_data['students'] = $students;
 
@@ -1144,17 +1080,17 @@ class Teacher extends BaseController
         $page_data['section_id'] = $subjects[0]['section_id'];
         $page_data['subject_id'] = $subject_id;
 
-        //Assistance
-        $AssisMod = new AssistanceModel();
-        $data = ["date_class" => $page_data['date']];
         $DatesMod = new DatesModel();
-        $respuesta = $DatesMod->get_attendance_dates($data);
+        $respuesta = $DatesMod->get_attendance_dates([
+            "date_class" => $page_data['date'],
+            "phase_id"   => $page_data['phase_id'],
+        ]);
         if (count($respuesta) >= 1) {
             $page_data['date_id'] = $respuesta[0]['date_id'];
         } else {
             $datos = [
                 "date_class" => $page_data['date'],
-                "phase_id" => $page_data['phase_id'],
+                "phase_id"   => $page_data['phase_id'],
             ];
             $respuesta = $DatesMod->insert_attendance_dates($datos);
             $page_data['date_id'] = $respuesta;
@@ -1209,68 +1145,66 @@ class Teacher extends BaseController
         $DatesMod = new DatesModel();
         $dateRow = $DatesMod->get_attendance_dates(['date_id' => $page_data['date_id']]);
         $dateClass = isset($dateRow[0]['date_class']) ? $dateRow[0]['date_class'] : date('Y-m-d');
-        $AssisMod = new AssistanceModel();
+        $AssisMod   = new AssistanceModel();
+        $AssistanceMod = new AssistancesubjectModel();
+
+        // Bulk fetch: registros existentes de ambas tablas en 2 queries
+        $student_ids = array_column($students, 'student_id');
+
+        $existingSubject = $AssistanceMod->get_assistance_subject_bulk(
+            $page_data['date_id'], $page_data['subject_id'], $student_ids, $periodo
+        );
+
+        $existingGeneralMap = $AssisMod->get_by_students_date($student_ids, $dateClass);
+
+        $toUpdate = [];
+        $toInsert = [];
+        $toInsertGeneral = [];
 
         foreach ($students as $row):
-            // Safe POST retrieval
-            $checkKey = 'check_' . $row['student_id'];
-            $textKey = 'text_' . $row['student_id'];
+            $sid       = $row['student_id'];
+            $statusVal = isset($_POST['check_' . $sid]) ? $_POST['check_' . $sid] : 1;
+            $textVal   = isset($_POST['text_' . $sid])  ? $_POST['text_' . $sid]  : '';
 
-            $statusVal = isset($_POST[$checkKey]) ? $_POST[$checkKey] : 1;
-            $textVal = isset($_POST[$textKey]) ? $_POST[$textKey] : '';
-
-            //Consultamos si existe Asistencia por materia + periodo
-            $AssistanceMod = new AssistancesubjectModel();
-            $existing = $AssistanceMod->get_assistance_subject([
-                "date_id"    => $page_data['date_id'],
-                "subject_id" => $page_data['subject_id'],
-                "student_id" => $row['student_id'],
-                "periodos"   => $periodo,
-            ]);
-            if (!empty($existing)) {
-                $AssistanceMod->update_assistance_subject([
-                    "status"      => $statusVal,
-                    "indiscipline" => $textVal,
-                ], $existing[0]['assistance_subject_id']);
+            if (isset($existingSubject[$sid])) {
+                $toUpdate[] = [
+                    'assistance_subject_id' => $existingSubject[$sid]['assistance_subject_id'],
+                    'status'                => $statusVal,
+                    'indiscipline'          => $textVal,
+                ];
             } else {
-                $AssistanceMod->insert_assistance_subject([
-                    "status"      => $statusVal,
-                    "indiscipline" => $textVal,
-                    "date_id"     => $page_data['date_id'],
-                    "subject_id"  => $page_data['subject_id'],
-                    "student_id"  => $row['student_id'],
-                    "periodos"    => $periodo,
-                ]);
+                $toInsert[] = [
+                    'status'      => $statusVal,
+                    'indiscipline' => $textVal,
+                    'date_id'     => $page_data['date_id'],
+                    'subject_id'  => $page_data['subject_id'],
+                    'student_id'  => $sid,
+                    'periodos'    => $periodo,
+                ];
             }
 
-            // Registrar asistencia general solo si aún no existe para ese día
-            $existeAssis = $AssisMod->get_assistance([
-                'student_id' => $row['student_id'],
-                'date'       => $dateClass,
-            ]);
-            if (empty($existeAssis)) {
-                $AssisMod->insert_assistance([
-                    'student_id'   => $row['student_id'],
-                    'date'         => $dateClass,
-                    'status'       => $statusVal,
-                    'observation'  => $textVal ?: null,
+            if (!isset($existingGeneralMap[$sid])) {
+                $toInsertGeneral[] = [
+                    'student_id'    => $sid,
+                    'date'          => $dateClass,
+                    'status'        => $statusVal,
+                    'observation'   => $textVal ?: null,
                     'registered_by' => $teacher_id,
-                ]);
+                ];
             }
         endforeach;
-        //DIAS
-        $DatesMod = new DatesModel();
-        $dias = $DatesMod->dias_subject($page_data['subject_id'], $page_data['phase_id']);
-        $page_data['dias'] = $dias;
-        //Asistencias
-        $AssistanceMod = new AssistancesubjectModel();
-        $asis = $AssistanceMod->assis_subject($page_data['subject_id'], $page_data['phase_id']);
-        $page_data['asis'] = $asis;
-        //Vista
-        $page_data['page_name'] = 'attendance_report';
-        $page_data['page_title'] = 'Asistencia';
-        //$session->set('flash_message', var_dump($periods));
-        return view('backend/index', $page_data);
+
+        if (!empty($toUpdate)) {
+            $AssistanceMod->update_assistance_subject_batch($toUpdate);
+        }
+        if (!empty($toInsert)) {
+            $AssistanceMod->insert_assistance_subject_batch($toInsert);
+        }
+        if (!empty($toInsertGeneral)) {
+            $AssisMod->db->table('assistance')->insertBatch($toInsertGeneral);
+        }
+
+        return redirect()->to(base_url('teacher/attendance_report/' . $page_data['subject_id']));
 
     }
 
@@ -1445,51 +1379,41 @@ class Teacher extends BaseController
         $activeWorksheet->setCellValue('A5', $subjects[0]['completo']);
         $StudentMod = new StudentModel();
         $students = $StudentMod->studentsSection($subjects[0]['section_id'], $teacher_id);
+
+        // Bulk fetch: fechas y asistencias en 2 queries en lugar de N×D
+        $AssistanceMod = new AssistancesubjectModel();
+        $dias     = $AssistanceMod->assis_dates($subject_id, $phase_id);
+        $date_ids = array_column($dias, 'date_id');
+
+        $allAsistencias = [];
+        if (!empty($date_ids)) {
+            $student_ids    = array_column($students, 'student_id');
+            $rows_bulk      = $this->db->table('assistance_subject')
+                ->whereIn('student_id', $student_ids)
+                ->whereIn('date_id', $date_ids)
+                ->where('subject_id', $subject_id)
+                ->get()->getResultArray();
+            foreach ($rows_bulk as $r) {
+                $allAsistencias[$r['student_id']][$r['date_id']] = $r['status'];
+            }
+        }
+
+        $statusLabel = [0 => 'A', 1 => 'P', 2 => 'L', 3 => 'R'];
         $conter = 8;
         foreach ($students as $row):
-            //Rellenamos estudiantes
-            //$est=$row['student'].' '.$row['lastname2'].' '.$row['name'];
             $activeWorksheet->SetCellValue('B' . $conter, $row['student']);
-            //$activeWorksheet->getColumnDimension('A')->setAutoSize(true);
-            //Rellenamos FECHAS
-            $AssistanceMod = new AssistancesubjectModel();
-            $dias = $AssistanceMod->assis_dates($subject_id, $phase_id);
             $i = 0;
             foreach ($dias as $dia):
                 if ($conter == 8) {
                     $newDate = date("d/m/Y", strtotime($dia['date_class']));
                     $activeWorksheet->setCellValueByColumnAndRow(3 + $i, 7, $newDate);
                 }
-                $data = [
-                    "date_id" => $dia['date_id'],
-                    "subject_id" => $subject_id,
-                    "student_id" => $row['student_id']
-                ];
-                $asis = new AssistancesubjectModel();
-                $asistencias = $asis->get_assistance_subject($data);
-                foreach ($asistencias as $asi):
-
-                    $valor = "";
-                    switch ($asi['status']) {
-                        case 0:
-                            $valor = "A";
-                            break;
-                        case 1:
-                            $valor = "P";
-                            break;
-                        case 2:
-                            $valor = "L";
-                            break;
-                        case 3:
-                            $valor = "R";
-                            break;
-                    }
-
-                    $activeWorksheet->setCellValueByColumnAndRow(3 + $i, $conter, $valor);
-                endforeach;
+                $status = $allAsistencias[$row['student_id']][$dia['date_id']] ?? null;
+                if ($status !== null && isset($statusLabel[$status])) {
+                    $activeWorksheet->setCellValueByColumnAndRow(3 + $i, $conter, $statusLabel[$status]);
+                }
                 $i++;
             endforeach;
-
             $conter++;
         endforeach;
         //$writer = new Xlsx($spreadsheet);
@@ -2623,9 +2547,8 @@ class Teacher extends BaseController
         $section_info = $Section->find($section_id);
         $page_data['section_name'] = $section_info ? $section_info['completo'] : 'Curso';
 
-        // Behavior Logs for the whole section
-        $BehaviorMod = new BehaviorModel();
-        $page_data['logs'] = $BehaviorMod->getSectionBehaviorLog($section_id, $page_data['phase_id']);
+        $IncidenciaMod = new IncidenciaModel();
+        $page_data['logs'] = $IncidenciaMod->getRegistroSeccion($section_id, $page_data['phase_id']);
 
         $page_data['section_id'] = $section_id;
         $page_data['page_name'] = 'adviser_behavior_log';
@@ -3924,8 +3847,8 @@ class Teacher extends BaseController
         $logId = $request->getPost('log_id');
         $observation = $request->getPost('observation');
 
-        $BehaviorMod = new BehaviorModel();
-        $BehaviorMod->updateObservation($logId, $observation);
+        $IncidenciaMod = new IncidenciaModel();
+        $IncidenciaMod->updateObservacion($logId, $observation);
 
         return $this->response->setJSON(['status' => 'success']);
     }

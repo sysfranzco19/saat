@@ -67,10 +67,10 @@
                             ?>
                             <div class="d-flex align-items-center <?= $bgColor ?> border <?= $borderColor ?> rounded p-4 mr-4 mb-4"
                                 style="min-width: 200px; border-width: 2px !important;">
-                                <span class="font-size-h2 mr-3"><?= $log['icon'] ?></span>
+                                <span class="font-size-h2 mr-3"><?= $log['icono'] ?></span>
                                 <div class="d-flex flex-column">
                                     <span
-                                        class="text-dark-75 font-weight-bolder font-size-lg"><?= $log['behavior_name'] ?></span>
+                                        class="text-dark-75 font-weight-bolder font-size-lg"><?= $log['nombre'] ?></span>
                                     <span class="text-muted font-weight-bold font-size-sm"><?= $subName ?> | <?= $time ?></span>
                                 </div>
                             </div>
@@ -125,7 +125,7 @@
                                         <a href="#" class="h4 text-dark text-hover-primary mb-1">Puntos del Ser</a>
                                         <span class="text-muted font-weight-bold">Puntaje Actual (1-10)</span>
                                     </div>
-                                    <span
+                                    <span id="puntos-del-ser-badge"
                                         class="label label-xl label-light-success label-inline font-weight-bold py-4 font-size-h3">
                                         <?= $puntos_del_ser ?>
                                     </span>
@@ -155,12 +155,12 @@
                                 <?php foreach ($behavior_counts as $b): ?>
                                     <?php if ($b['count'] > 0): ?>
                                         <div class="d-flex align-items-center mb-2 p-2 rounded bg-light-secondary">
-                                            <span class="symbol-label font-size-h2 mr-3"><?= $b['icon'] ?></span>
+                                            <span class="symbol-label font-size-h2 mr-3"><?= $b['icono'] ?></span>
                                             <div class="d-flex flex-column flex-grow-1">
                                                 <span
-                                                    class="text-dark-75 font-weight-bolder font-size-lg"><?= $b['name'] ?></span>
+                                                    class="text-dark-75 font-weight-bolder font-size-lg"><?= $b['nombre'] ?></span>
                                                 <span
-                                                    class="text-muted font-size-xs"><?= $b['type'] == 'positive' ? 'Positivo' : 'Negativo' ?></span>
+                                                    class="text-muted font-size-xs"><?= $b['tipo'] === 'positiva' ? 'Positivo' : ($b['tipo'] === 'neutral' ? 'Logística' : 'Negativo') ?></span>
                                             </div>
                                             <span class="font-weight-bolder font-size-h4 text-primary"><?= $b['count'] ?></span>
                                         </div>
@@ -182,7 +182,7 @@
             $chartCategories = [];
             foreach ($behavior_counts as $b) {
                 $chartData[] = (int) $b['count'];
-                $chartCategories[] = html_entity_decode($b['name'], ENT_QUOTES, 'UTF-8');
+                $chartCategories[] = html_entity_decode($b['nombre'], ENT_QUOTES, 'UTF-8');
             }
             ?>
 
@@ -280,17 +280,16 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="symbol symbol-30 symbol-light mr-3">
-                                                    <!-- Simple icon mapping if needed, or generic -->
-                                                    <span class="symbol-label font-size-h5"><?= $log['icon'] ?></span>
+                                                    <span class="symbol-label font-size-h5"><?= $log['icono'] ?></span>
                                                 </div>
                                                 <span class="text-dark-75 font-weight-bolder font-size-lg">
-                                                    <?= $log['name'] ?>
+                                                    <?= $log['nombre'] ?>
                                                 </span>
-                                                <?php if (!empty($log['observation'])): ?>
+                                                <?php if (!empty($log['observacion'])): ?>
                                                     <div class="text-muted font-size-sm mt-1 d-block w-100"
                                                         style="margin-left: 46px;">
                                                         <i class="flaticon2-information small mr-1"></i>
-                                                        <?= $log['observation'] ?>
+                                                        <?= $log['observacion'] ?>
                                                     </div>
                                                 <?php endif; ?>
                                             </div>
@@ -303,23 +302,20 @@
                                         </td>
                                         <?php endif; ?>
                                         <td>
-                                            <?php
-                                            $logisticIds = [10, 11];
-                                            $isLogistic  = in_array($log['behavior_type_id'], $logisticIds) || $log['type'] === 'logistica';
-                                            ?>
-                                            <span class="label label-lg label-inline <?= $isLogistic ? 'label-light-info' : ($log['points'] >= 0 ? 'label-light-success' : 'label-light-danger') ?> font-weight-bold py-4">
-                                                <?= $isLogistic ? 'Logística' : ($log['points'] >= 0 ? 'Positivo' : 'Negativo') ?>
+                                            <?php $isLogistic = $log['tipo'] === 'neutral'; ?>
+                                            <span class="label label-lg label-inline <?= $isLogistic ? 'label-light-info' : ($log['tipo'] === 'positiva' ? 'label-light-success' : 'label-light-danger') ?> font-weight-bold py-4">
+                                                <?= $isLogistic ? 'Logística' : ($log['tipo'] === 'positiva' ? 'Positivo' : 'Negativo') ?>
                                             </span>
                                         </td>
                                         <td class="text-right">
-                                            <span
-                                                class="font-weight-bolder font-size-h5 <?= $log['points'] >= 0 ? 'text-success' : 'text-danger' ?>">
-                                                <?= $log['points'] > 0 ? '+' . $log['points'] : $log['points'] ?> pts
+                                            <?php $pts = $log['tipo'] === 'negativa' ? -0.5 : ($log['tipo'] === 'positiva' ? 0.5 : 0); ?>
+                                            <span class="font-weight-bolder font-size-h5 <?= $log['tipo'] === 'negativa' ? 'text-danger' : 'text-success' ?>">
+                                                <?= $pts > 0 ? '+' . $pts : $pts ?> pts
                                             </span>
                                         </td>
                                         <td class="text-right">
                                             <button type="button" class="btn btn-sm btn-light-primary font-weight-bold mr-2"
-                                                onclick="editObservation(<?= $log['id'] ?>, '<?= htmlspecialchars($log['observation'] ?? '', ENT_QUOTES) ?>')">
+                                                onclick="editObservation(<?= $log['id'] ?>, '<?= htmlspecialchars($log['observacion'] ?? '', ENT_QUOTES) ?>')">
                                                 <i class="fa fa-edit"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-light-danger font-weight-bold"
@@ -374,12 +370,11 @@
             log_id: logId
         }, function (response) {
             if (response.status === 'success') {
-                // Remove row
-                $('#log-row-' + logId).fadeOut(300, function () {
-                    $(this).remove();
-                });
-                // Ideally reload to update stats, or update DOM manually. 
-                // For simplicity, we just remove the row.
+                $('#log-row-' + logId).fadeOut(300, function () { $(this).remove(); });
+
+                if (response.new_score !== undefined) {
+                    $('#puntos-del-ser-badge').text(response.new_score);
+                }
             } else {
                 alert('Error al eliminar');
             }
