@@ -30,6 +30,8 @@ use App\Models\SecretaryModel;
 use App\Models\EhcModel;
 use App\Models\SuspensionsModel;
 use App\Models\PeriodoModel;
+use App\Models\SubjectModel;
+use App\Models\BoletaModel;
 
 //Libreria Plantillas
 use App\Libraries\Libreria_pdf;
@@ -936,6 +938,56 @@ class Secretary extends BaseController
         $page_data['page_name'] = 'licenses_all';
         $page_data['page_title'] = 'Todas las Licencias';
         return view('backend/index', $page_data);
+    }
+
+    function licenses_all_export()
+    {
+        $session = session();
+        $secretary_id = $session->get('secretary_id');
+        if ($session->get('login_type') != 'secretary')
+            return redirect()->to(base_url());
+
+        $SecretaryMod = new SecretaryModel();
+        $sections = $SecretaryMod->get_sections_by_secretary_id($secretary_id);
+
+        $LicenciaMod = new LicenciaModel();
+        if ($sections) {
+            $result = $LicenciaMod->licencias_todas_data(
+                $sections['section_ini'], $sections['section_fin'], null,
+                '', 0, 99999, 4, 'desc'
+            );
+        } else {
+            $result = $LicenciaMod->licencias_todas_data(
+                null, null, $secretary_id,
+                '', 0, 99999, 4, 'desc'
+            );
+        }
+
+        ob_start();
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel
+        fputcsv($out, ['Estudiante', 'Curso', 'Tipo', 'Detalle', 'Fecha Solicitud', 'Inicio', 'Fin / Período(s)', 'Días', 'Estado'], ';');
+        foreach ($result['data'] as $row) {
+            $estado = $row->enviado == 1 ? 'Enviado' : ($row->enviado == 2 ? 'Rechazado' : 'Pendiente');
+            fputcsv($out, [
+                $row->student,
+                $row->nick_name,
+                $row->tipo,
+                $row->detalle,
+                $row->fecha_solicitud,
+                $row->inicio ?? '-',
+                $row->fin ?? '-',
+                $row->cantidad_dias ?? '-',
+                $estado,
+            ], ';');
+        }
+        fclose($out);
+        $csv = ob_get_clean();
+
+        return $this->response
+            ->setHeader('Content-Type', 'text/csv; charset=utf-8')
+            ->setHeader('Content-Disposition', 'attachment; filename=licencias_' . date('Y-m-d') . '.csv')
+            ->setBody($csv);
     }
 
     function licenses_all_data()
@@ -2990,6 +3042,132 @@ class Secretary extends BaseController
             $session->set('flash_message_error', 'Error al eliminar la suspensión.');
         }
         return redirect()->to(base_url() . 'secretary/suspensions');
+    }
+
+    // ─── BOLETAS ──────────────────────────────────────────────────────────────
+
+    public function boletas()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return redirect()->to(base_url());
+
+        $Setting   = new SettingModel();
+        $Section   = new SectionModel();
+        $page_data['cursos']       = $Section->sections_range(271, 343);
+        $page_data['phase_id']     = $Setting->get_phase_id();
+        $page_data['phase_name']   = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name']  = $Setting->get_system_name();
+        $page_data['page_title']   = 'Boletas Verde – Faltas Graves';
+        $page_data['page_name']    = 'boletas';
+        return view('backend/index', $page_data);
+    }
+
+    public function boletas_seccion($section_id = 0)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return redirect()->to(base_url());
+
+        $section_id = (int)$section_id;
+        $Setting    = new SettingModel();
+        $Section    = new SectionModel();
+        $StudentMod = new StudentModel();
+
+        $curso = $Section->get_section(['section_id' => $section_id]);
+        if (empty($curso)) return redirect()->to(base_url('secretary/boletas'));
+
+        $page_data['section']      = $curso[0];
+        $page_data['section_id']   = $section_id;
+        $page_data['students']     = $StudentMod->studentsSection($section_id, 0);
+        $page_data['phase_id']     = $Setting->get_phase_id();
+        $page_data['phase_name']   = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name']  = $Setting->get_system_name();
+        $page_data['page_title']   = 'Boletas – ' . $curso[0]['completo'];
+        $page_data['page_name']    = 'boletas_seccion';
+        return view('backend/index', $page_data);
+    }
+
+    public function boletas_get_data()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+
+        $section_id = (int)($this->request->getGet('section_id') ?? 0);
+        $phase_id   = (int)($this->request->getGet('phase_id')   ?? 0);
+
+        $BoletaMod  = new BoletaModel();
+        $SubjectMod = new SubjectModel();
+
+        $boletas  = $BoletaMod->getBoletasSeccion($section_id, $phase_id);
+        $subjects = $SubjectMod->subjects_section($section_id);
+
+        return $this->response->setJSON([
+            'boletas'  => $boletas,
+            'subjects' => $subjects,
+        ]);
+    }
+
+    public function boletas_guardar()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+
+        $secretary_id = (int)$session->get('secretary_id');
+        $tipo         = $this->request->getPost('tipo');
+        $student_id   = (int)$this->request->getPost('student_id');
+        $phase_id     = (int)$this->request->getPost('phase_id');
+        $fecha        = $this->request->getPost('fecha');
+        $descripcion  = trim($this->request->getPost('descripcion') ?? '');
+        $dias         = (int)$this->request->getPost('dias_suspension');
+        $medidas      = trim($this->request->getPost('medidas_restaurativas') ?? '');
+        $subject_id   = $tipo === 'aula' ? (int)$this->request->getPost('subject_id') : null;
+
+        if (!$student_id || !$phase_id || !$fecha || !in_array($tipo, ['aula', 'recreo'])) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Datos incompletos.']);
+        }
+        if ($tipo === 'aula' && !$subject_id) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Selecciona la materia.']);
+        }
+
+        $BoletaMod = new BoletaModel();
+        $datos = [
+            'student_id'           => $student_id,
+            'subject_id'           => $subject_id,
+            'phase_id'             => $phase_id,
+            'tipo'                 => $tipo,
+            'descripcion'          => $descripcion ?: null,
+            'fecha'                => $fecha,
+            'dias_suspension'      => $dias,
+            'medidas_restaurativas' => $medidas ?: null,
+            'secretary_id'         => $secretary_id,
+        ];
+        $id = $BoletaMod->registrar($datos);
+
+        if ($id > 0) {
+            return $this->response->setJSON(['status' => 'ok', 'id' => $id]);
+        }
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Error al guardar la boleta.']);
+    }
+
+    public function boletas_eliminar()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+
+        $id        = (int)$this->request->getPost('id');
+        $BoletaMod = new BoletaModel();
+        $row       = $BoletaMod->eliminar($id);
+
+        if ($row) {
+            return $this->response->setJSON(['status' => 'ok']);
+        }
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Boleta no encontrada.']);
     }
 }
 

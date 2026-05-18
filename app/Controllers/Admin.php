@@ -591,7 +591,6 @@ class Admin extends BaseController
             'ser_average' => $_POST['ser_average'],
             'saber_average' => $_POST['saber_average'],
             'hacer_average' => $_POST['hacer_average'],
-            'decidir_average' => $_POST['decidir_average'],
             'autoevaluacion' => $_POST['autoevaluacion'],
             'total_average' => $_POST['total_average'],
             'total_vc' => $_POST['total_vc'],

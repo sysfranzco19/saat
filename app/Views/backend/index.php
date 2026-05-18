@@ -50,7 +50,7 @@ function get_image_url($type = '', $id = '')
     <link rel="canonical" href="https://keenthemes.com/metronic" />
 
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.3/css/all.css"
-        integrity="sha384-K1SblyS5jiM7DpK1CcUAXm6U4P6U4V7KnX5y0eWoOJb5ep5NxV+y5BkO5uXd7vaU" crossorigin="anonymous">
+        integrity="sha384-SZXxX4whJ79/gErwcOYf+zWLeJdY/qpuqC4cAa9rOGUstPomtqpuNWT9wdPEn2fk" crossorigin="anonymous">
 
     <title><?php echo $page_title; ?> | <?php echo $system_title; ?></title>
 

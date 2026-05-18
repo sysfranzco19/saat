@@ -242,9 +242,15 @@ $routes->get('secretary/suspension_get_periods_section/(:num)', 'Secretary::susp
 $routes->post('secretary/suspension_create', 'Secretary::suspension_create');
 $routes->post('secretary/suspension_update', 'Secretary::suspension_update');
 $routes->post('secretary/suspension_delete', 'Secretary::suspension_delete');
+$routes->get('secretary/boletas', 'Secretary::boletas');
+$routes->get('secretary/boletas_seccion/(:num)', 'Secretary::boletas_seccion/$1');
+$routes->get('secretary/boletas_get_data', 'Secretary::boletas_get_data');
+$routes->post('secretary/boletas_guardar', 'Secretary::boletas_guardar');
+$routes->post('secretary/boletas_eliminar', 'Secretary::boletas_eliminar');
 $routes->get('secretary/licenses', 'Secretary::licenses');
 $routes->get('secretary/licenses_all', 'Secretary::licenses_all');
 $routes->get('secretary/licenses_all_data', 'Secretary::licenses_all_data');
+$routes->get('secretary/licenses_all_export', 'Secretary::licenses_all_export');
 $routes->get('secretary/licenses_received', 'Secretary::licenses_received');
 $routes->post('secretary/licenses_auth', 'Secretary::licenses_auth');
 $routes->post('secretary/licenses_noauth', 'Secretary::licenses_noauth');
@@ -379,6 +385,8 @@ $routes->post('teacher/attendance_date_inicial', 'Teacher::attendance_date_inici
 $routes->post('teacher/attendance_save', 'Teacher::attendance_save');
 $routes->post('teacher/attendance_save_inicial', 'Teacher::attendance_save_inicial');
 $routes->post('teacher/register_behavior', 'Teacher::register_behavior'); // New
+$routes->get('teacher/get_student_score', 'Teacher::get_student_score');
+$routes->post('teacher/upload_acta', 'Teacher::upload_acta');
 $routes->post('teacher/update_behavior_observation_ajax', 'Teacher::update_behavior_observation_ajax'); // New
 $routes->post('teacher/delete_behavior_ajax', 'Teacher::delete_behavior_ajax'); // New
 $routes->post('teacher/update_attendance_ajax', 'Teacher::update_attendance_ajax'); // New

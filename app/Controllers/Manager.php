@@ -227,36 +227,40 @@ class Manager extends BaseController
 
         foreach ($rows as $row) {
             $grade = $row['grado'];
-            $key = $row['materia'] . '||' . $row['teacher_id'];
+            $key   = $row['materia'] . '||' . $row['teacher_id'];
             if (!isset($by_grade[$grade][$key])) {
                 $by_grade[$grade][$key] = [
-                    'materia' => $row['materia'],
-                    'docente' => $row['docente'],
-                    'teacher_id' => $row['teacher_id'],
+                    'materia'        => $row['materia'],
+                    'docente'        => $row['docente'],
+                    'teacher_id'     => $row['teacher_id'],
                     'personal_email' => $row['personal_email'],
-                    'grado' => $row['grado'],
-                    'class_id' => $row['class_id'],
-                    'secciones' => [],
-                    'has_any_pdf' => false,
+                    'grado'          => $row['grado'],
+                    'class_id'       => $row['class_id'],
+                    'secciones'      => [],
+                    'trims'          => [1 => null, 2 => null, 3 => null],
+                    'has_any_pdf'    => false,
                 ];
             }
-            $filename = 'CC_' . $row['subject_id'] . '_' . $phase_id . '.pdf';
-            $has_pdf = file_exists($upload_path . $filename);
-            $by_grade[$grade][$key]['secciones'][] = [
-                'seccion' => $row['seccion'],
-                'subject_id' => $row['subject_id'],
-                'has_pdf' => $has_pdf,
-                'pdf_file' => $filename,
-            ];
-            if ($has_pdf) {
-                $by_grade[$grade][$key]['has_any_pdf'] = true;
+            // Check T1, T2, T3 for this section's subject
+            for ($t = 1; $t <= 3; $t++) {
+                $filename = 'CC_' . $row['subject_id'] . '_T' . $t . '.pdf';
+                if (file_exists($upload_path . $filename)) {
+                    if (!$by_grade[$grade][$key]['trims'][$t]) {
+                        $by_grade[$grade][$key]['trims'][$t] = $filename;
+                    }
+                    $by_grade[$grade][$key]['has_any_pdf'] = true;
+                }
             }
+            $by_grade[$grade][$key]['secciones'][] = [
+                'seccion'    => $row['seccion'],
+                'subject_id' => $row['subject_id'],
+            ];
         }
 
-        $total_uploaded = 0;
-        $total_pending = 0;
+        $total_uploaded    = 0;
+        $total_pending     = 0;
         $teachers_uploaded = [];
-        $teachers_pending = [];
+        $teachers_pending  = [];
 
         foreach ($by_grade as $subjects) {
             foreach ($subjects as $sub) {
@@ -270,11 +274,11 @@ class Manager extends BaseController
             }
         }
 
-        $page_data['by_grade'] = $by_grade;
-        $page_data['total_uploaded'] = $total_uploaded;
-        $page_data['total_pending'] = $total_pending;
-        $page_data['teachers_uploaded'] = $teachers_uploaded;
-        $page_data['teachers_pending'] = $teachers_pending;
+        $page_data['by_grade']          = $by_grade;
+        $page_data['total_uploaded']     = $total_uploaded;
+        $page_data['total_pending']      = $total_pending;
+        $page_data['teachers_uploaded']  = $teachers_uploaded;
+        $page_data['teachers_pending']   = $teachers_pending;
 
         return view('backend/index', $page_data);
     }
@@ -2375,7 +2379,6 @@ class Manager extends BaseController
             $obj_PHPExcel = $obj_Reader->load('templates/cp12.xlsx');
             $obj_PHPExcel->setActiveSheetIndex(0);
             //******************RELLENAMOS LOS NOMBREs
-            //******************RELLENAMOS LOS NOMBREs
             foreach ($students as $row):
                 $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'];
                 $obj_PHPExcel->getActiveSheet()->SetCellValue('B' . $conter, $est);
@@ -2573,7 +2576,7 @@ class Manager extends BaseController
                         }
                         switch ($nota['name']) {
                             case 'LENGUAJE':
-                                $lenque += $nota['obtained_mark'];
+                                $prom += round($nota['obtained_mark']);
                                 $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(2 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'LITERATURE':
@@ -2628,11 +2631,12 @@ class Manager extends BaseController
                     }
                     if ($ing != 0) {
                         $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(60 + $b, $conter, round($ing / 2));
+                        $prom += round($ing / 2);
                     }
                     if ($fisqui != 0) {
                         $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(76 + $b, $conter, $fisqui);
+                        $prom += $fisqui;
                     }
-                    $prom += round($lenque / 2) + round($ing / 2) + $fisqui;
                     if ($prom != 0) {
                         $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, round($prom / 11));
                     }
@@ -2709,24 +2713,20 @@ class Manager extends BaseController
                                 $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(34 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'FÍSICA':
-                                $fisqui += round($nota['obtained_mark']);
                                 $prom += round($nota['obtained_mark']);
                                 $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(38 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'QUÍMICA':
-                                $fisqui += round($nota['obtained_mark']);
                                 $prom += round($nota['obtained_mark']);
                                 $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(42 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'PSICOLOGÍA':
                                 $prom += round($nota['obtained_mark']);
-                                //$obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(62, 6, 'Psicología');
                                 $obj_PHPExcel->getActiveSheet()->SetCellValue('BK6', 'Psicología');
                                 $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, $nota['obtained_mark']);
                                 break;
                             case 'FILOSOFÍA':
                                 $prom += round($nota['obtained_mark']);
-                                //$obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(62, 6, 'Filosofía');
                                 $obj_PHPExcel->getActiveSheet()->SetCellValue('BK6', 'Filosofía');
                                 $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(46 + $b, $conter, $nota['obtained_mark']);
                                 break;
@@ -2738,10 +2738,11 @@ class Manager extends BaseController
                     }
                     if ($ing != 0) {
                         $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, round($ing / 2));
+                        $prom += round($ing / 2);
                     }
-                    $prom += round($ing / 2) + $fisqui;
+                    
                     if ($prom != 0) {
-                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54 + $b, $conter, round($prom / 11));
+                        $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54 + $b, $conter, round($prom / 13));
                     }
                 }
                 $conter++;
@@ -2830,9 +2831,10 @@ class Manager extends BaseController
                         }
                     }
                     if ($ing != 0) {
+                        $prom += round($ing / 2);
                         $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(68 + $b, $conter, round($ing / 2));
                     }
-                    $prom += round($ing / 2);
+                    
                     if ($prom != 0) {
                         $obj_PHPExcel->getActiveSheet()->setCellValueByColumnAndRow(54 + $b, $conter, round($prom / 13));
                     }

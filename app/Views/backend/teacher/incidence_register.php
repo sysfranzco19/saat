@@ -148,8 +148,9 @@
                                 <button type="button"
                                     class="btn btn-light-danger font-weight-bold mr-2 mb-2 behavior-btn"
                                     data-id="<?= $t['id'] ?>"
-                                    data-name="<?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?>"
-                                    title="<?= htmlspecialchars($t['nombre'], ENT_QUOTES) ?>"
+                                    data-name="<?= $t['nombre'] ?>"
+                                    data-tipo="<?= $t['tipo'] ?>"
+                                    title="<?= $t['nombre'] ?>"
                                     style="font-size: 1.6rem; padding: 8px 12px; line-height: 1;">
                                     <?= $t['icono'] ?>
                                 </button>
@@ -179,12 +180,64 @@
     </div>
 </div>
 
+<!-- Modal: Acta de Reunión con el Padre/Tutor -->
+<div class="modal fade" id="modalActa" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f64e60;">
+                <h5 class="modal-title text-white font-weight-bolder">
+                    <i class="fa fa-exclamation-triangle mr-2 text-white"></i>
+                    Acta de Reunión Requerida
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning d-flex align-items-start mb-5">
+                    <i class="fa fa-info-circle mr-3 mt-1 fa-lg text-warning"></i>
+                    <div>
+                        El estudiante <strong id="modal_student_name">—</strong> tiene
+                        <strong id="modal_score">—</strong>/10 pts en esta materia.<br>
+                        Para registrar más incidencias negativas debes acreditar la reunión
+                        con el padre o tutor.
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Fecha de reunión <span class="text-danger">*</span></label>
+                    <input type="date" id="acta_fecha_reunion" class="form-control form-control-solid"
+                        max="<?= date('Y-m-d') ?>">
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Acuerdos / Observaciones</label>
+                    <textarea id="acta_observacion" class="form-control form-control-solid" rows="3"
+                        placeholder="Compromisos establecidos con el padre o tutor..."></textarea>
+                </div>
+                <div class="form-group mb-0">
+                    <label class="font-weight-bold">Acta / Constancia <span class="text-danger">*</span></label>
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="acta_file" accept=".pdf,.jpg,.jpeg,.png">
+                        <label class="custom-file-label" for="acta_file">Seleccionar archivo (PDF o imagen)</label>
+                    </div>
+                    <small class="text-muted">Formatos aceptados: PDF, JPG, PNG. Máx. 5 MB.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light font-weight-bold" data-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn_subir_acta" class="btn btn-danger font-weight-bolder">
+                    <i class="fa fa-upload mr-2"></i> Subir Acta y Continuar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
     // selectedStudents = array de {id, name, curso, section}
-    var selectedStudents   = [];
-    var selectedBehaviorId = null;
-    var searchTimeout      = null;
+    var selectedStudents    = [];
+    var selectedBehaviorId  = null;
+    var searchTimeout       = null;
+    var currentStudentScore = null;
+    var estaBloqueado       = false;
+    var pendingBehaviorData = null;
 
     // ── Helpers ────────────────────────────────────────────────────
     function enableCard(id) {
@@ -248,7 +301,10 @@
     }
 
     window.clearStudent = function () {
-        selectedStudents = [];
+        selectedStudents    = [];
+        currentStudentScore = null;
+        estaBloqueado       = false;
+        pendingBehaviorData = null;
         var select = document.getElementById('subject_select');
         select.value = '';
         Array.from(select.options).forEach(function (opt) { opt.hidden = false; });
@@ -258,6 +314,25 @@
         disableCard('card_step2');
         disableCard('card_step3');
     };
+
+    function fetchScore() {
+        if (selectedStudents.length !== 1) {
+            currentStudentScore = null;
+            estaBloqueado = false;
+            return;
+        }
+        var studentId = selectedStudents[0].id;
+        var subjectId = document.getElementById('subject_select').value;
+        if (!studentId || !subjectId) { estaBloqueado = false; return; }
+        $.getJSON('<?= base_url('index.php/teacher/get_student_score') ?>', {
+            student_id: studentId, subject_id: subjectId
+        }, function(data) {
+            if (data.status === 'success') {
+                currentStudentScore = data.nota;
+                estaBloqueado       = data.bloqueado;
+            }
+        });
+    }
 
     // ── Tab Nombre: selección individual ──────────────────────────
     document.getElementById('student_search_input').addEventListener('input', function () {
@@ -358,27 +433,46 @@
         var date      = document.getElementById('date_select').value;
         if (subjectId && date && selectedStudents.length) {
             enableCard('card_step3');
+            fetchScore();
         } else {
             disableCard('card_step3');
+            currentStudentScore = null;
+            estaBloqueado = false;
         }
     }
-    document.getElementById('subject_select').addEventListener('change', checkStep2);
+    document.getElementById('subject_select').addEventListener('change', function () {
+        currentStudentScore = null;
+        estaBloqueado = false;
+        checkStep2();
+    });
     document.getElementById('date_select').addEventListener('change', checkStep2);
 
     // ── Selección de comportamiento ────────────────────────────────
+    function seleccionarComportamiento(id, name) {
+        document.querySelectorAll('.behavior-btn').forEach(function (b) { b.style.outline = ''; });
+        var btn = document.querySelector('.behavior-btn[data-id="' + id + '"]');
+        if (btn) btn.style.outline = '3px solid #663259';
+        selectedBehaviorId = id;
+        document.getElementById('selected_behavior_id').value = id;
+        document.getElementById('selected_behavior_name').textContent = name;
+        document.getElementById('selected_behavior_display').classList.remove('d-none');
+        document.getElementById('btn_registrar').classList.remove('d-none');
+        var n = selectedStudents.length;
+        document.getElementById('btn_registrar').innerHTML =
+            '<i class="fa fa-check mr-2"></i> Registrar Incidencia' + (n > 1 ? ' (' + n + ' estudiantes)' : '');
+    }
+
     document.querySelectorAll('.behavior-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            document.querySelectorAll('.behavior-btn').forEach(function (b) { b.style.outline = ''; });
-            this.style.outline = '3px solid #663259';
-            selectedBehaviorId = this.dataset.id;
-            document.getElementById('selected_behavior_id').value = selectedBehaviorId;
-            document.getElementById('selected_behavior_name').textContent = this.dataset.name;
-            document.getElementById('selected_behavior_display').classList.remove('d-none');
-            document.getElementById('btn_registrar').classList.remove('d-none');
-            // Actualizar texto del botón
-            var n = selectedStudents.length;
-            document.getElementById('btn_registrar').innerHTML =
-                '<i class="fa fa-check mr-2"></i> Registrar Incidencia' + (n > 1 ? ' (' + n + ' estudiantes)' : '');
+            var tipo = this.dataset.tipo;
+            if (tipo === 'negativa' && estaBloqueado && selectedStudents.length === 1) {
+                pendingBehaviorData = { id: this.dataset.id, name: this.dataset.name };
+                document.getElementById('modal_student_name').textContent = selectedStudents[0].name;
+                document.getElementById('modal_score').textContent = currentStudentScore;
+                $('#modalActa').modal('show');
+                return;
+            }
+            seleccionarComportamiento(this.dataset.id, this.dataset.name);
         });
     });
 
@@ -414,18 +508,19 @@
 
             // Registrar para cada estudiante en serie
             var studentIds = selectedStudents.map(function(s){ return s.id; });
-            var total = studentIds.length;
-            var done  = 0;
-            var errors = 0;
+            var total   = studentIds.length;
+            var done    = 0;
+            var errors  = 0;
+            var blocked = 0;
 
             function registrarSiguiente() {
                 if (done >= total) {
-                    if (errors === 0) {
-                        toastr.success('Incidencia registrada para ' + total + ' estudiante(s).');
-                    } else {
-                        toastr.warning('Registrado con ' + errors + ' error(es).');
-                    }
+                    var ok = total - errors - blocked;
+                    if (ok > 0) toastr.success('Incidencia registrada para ' + ok + ' estudiante(s).');
+                    if (blocked > 0) toastr.warning(blocked + ' estudiante(s) tienen ≤7 pts y requieren acta de reunión con el padre. Regístralos individualmente.');
+                    if (errors > 0) toastr.error(errors + ' error(es) al registrar.');
                     btn.disabled = false;
+                    btn.innerHTML = '<i class="fa fa-check mr-2"></i> Registrar Incidencia';
                     // Reset
                     document.querySelectorAll('.behavior-btn').forEach(function (b) { b.style.outline = ''; });
                     selectedBehaviorId = null;
@@ -438,7 +533,7 @@
 
                 btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Guardando ' + (done + 1) + '/' + total + '...';
 
-                $.post('<?= base_url('index.php/teacher/register_behavior') ?>', {
+                $.post('<?= base_url('teacher/register_behavior') ?>', {
                     student_id:  studentIds[done],
                     behavior_id: behaviorId,
                     subject_id:  subjectId,
@@ -447,7 +542,22 @@
                     period:      period,
                     observation: observation
                 }, function (res2) {
-                    if (res2.status !== 'success') errors++;
+                    if (res2.status === 'needs_acta') {
+                        blocked++;
+                        if (total === 1) {
+                            estaBloqueado = true;
+                            currentStudentScore = res2.nota;
+                            pendingBehaviorData = {
+                                id:   document.getElementById('selected_behavior_id').value,
+                                name: document.getElementById('selected_behavior_name').textContent
+                            };
+                            document.getElementById('modal_student_name').textContent = selectedStudents[0].name;
+                            document.getElementById('modal_score').textContent = res2.nota;
+                            $('#modalActa').modal('show');
+                        }
+                    } else if (res2.status !== 'success') {
+                        errors++;
+                    }
                     done++;
                     registrarSiguiente();
                 }, 'json').fail(function () {
@@ -463,6 +573,64 @@
             toastr.error('Error: ' + xhr.status + ' ' + xhr.responseText.substring(0, 100));
             btn.disabled = false;
             btn.innerHTML = '<i class="fa fa-check mr-2"></i> Registrar Incidencia';
+        });
+    });
+
+    // ── Modal Acta ─────────────────────────────────────────────────
+    document.getElementById('acta_file').addEventListener('change', function () {
+        var label = this.nextElementSibling;
+        label.textContent = this.files[0] ? this.files[0].name : 'Seleccionar archivo (PDF o imagen)';
+    });
+
+    document.getElementById('btn_subir_acta').addEventListener('click', function () {
+        var fecha = document.getElementById('acta_fecha_reunion').value;
+        var file  = document.getElementById('acta_file').files[0];
+        if (!fecha) { toastr.warning('Selecciona la fecha de reunión.'); return; }
+        if (!file)  { toastr.warning('Debes adjuntar el acta de reunión.'); return; }
+        if (file.size > 5 * 1024 * 1024) { toastr.warning('El archivo no debe superar 5MB.'); return; }
+
+        var btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Subiendo...';
+
+        var formData = new FormData();
+        formData.append('student_id',    selectedStudents[0].id);
+        formData.append('subject_id',    document.getElementById('subject_select').value);
+        formData.append('fecha_reunion', fecha);
+        formData.append('observacion',   document.getElementById('acta_observacion').value);
+        formData.append('acta_file',     file);
+
+        $.ajax({
+            url: '<?= base_url('index.php/teacher/upload_acta') ?>',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function (res) {
+                if (res.status === 'success') {
+                    estaBloqueado = false;
+                    $('#modalActa').modal('hide');
+                    document.getElementById('acta_fecha_reunion').value = '';
+                    document.getElementById('acta_observacion').value   = '';
+                    document.getElementById('acta_file').value          = '';
+                    document.querySelector('label[for="acta_file"]').textContent = 'Seleccionar archivo (PDF o imagen)';
+                    toastr.success('Acta subida correctamente. Ya puede registrar la incidencia.');
+                    if (pendingBehaviorData) {
+                        seleccionarComportamiento(pendingBehaviorData.id, pendingBehaviorData.name);
+                        pendingBehaviorData = null;
+                    }
+                } else {
+                    toastr.error(res.message || 'Error al subir el acta.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa fa-upload mr-2"></i> Subir Acta y Continuar';
+                }
+            },
+            error: function () {
+                toastr.error('Error de conexión al subir el acta.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-upload mr-2"></i> Subir Acta y Continuar';
+            }
         });
     });
 

@@ -134,6 +134,26 @@
                         </div>
                     </div>
                 </div>
+                <?php if (!empty($grave_incidents)): ?>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="alert alert-custom alert-light-danger d-flex align-items-center p-4 mb-5" role="alert">
+                            <span class="font-size-h3 mr-4">🟢</span>
+                            <div>
+                                <span class="font-weight-bolder text-danger font-size-lg">
+                                    <?= $grave_incidents ?> Boleta(s) Verde Registrada(s)
+                                </span>
+                                <span class="d-block text-muted font-size-sm">
+                                    Cada boleta descuenta −3 puntos del Ser en la(s) materia(s) afectada(s)
+                                </span>
+                            </div>
+                            <span class="ml-auto font-weight-bolder text-danger font-size-h4">
+                                −<?= $grave_incidents * 3 ?> pts
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
 
             <!-- Charts & Counters -->
@@ -262,66 +282,90 @@
                         <tbody>
                             <?php if (empty($logs)): ?>
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted p-5">Sin registros de comportamiento aún.
-                                    </td>
+                                    <td colspan="<?= $subject_id == 0 ? 6 : 5 ?>" class="text-center text-muted p-5">Sin registros de comportamiento aún.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($logs as $log): ?>
-                                    <tr id="log-row-<?= $log['id'] ?>">
+                                    <?php $isGrave = ($log['tipo'] ?? '') === 'grave'; ?>
+                                    <tr id="log-row-<?= $log['id'] ?>" <?= $isGrave ? 'class="table-warning"' : '' ?>>
                                         <td>
                                             <span class="text-dark-75 font-weight-bolder d-block font-size-lg">
-                                                <!-- Assuming date_id creates a relation, but logs usually have created_at -->
                                                 <?= date('d/m/Y', strtotime($log['created_at'])) ?>
                                             </span>
+                                            <?php if (!$isGrave): ?>
                                             <span class="text-muted font-weight-bold font-size-sm">
                                                 <?= date('H:i', strtotime($log['created_at'])) ?>
                                             </span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
-                                            <div class="d-flex align-items-center">
+                                            <div class="d-flex align-items-start">
                                                 <div class="symbol symbol-30 symbol-light mr-3">
                                                     <span class="symbol-label font-size-h5"><?= $log['icono'] ?></span>
                                                 </div>
-                                                <span class="text-dark-75 font-weight-bolder font-size-lg">
-                                                    <?= $log['nombre'] ?>
-                                                </span>
-                                                <?php if (!empty($log['observacion'])): ?>
-                                                    <div class="text-muted font-size-sm mt-1 d-block w-100"
-                                                        style="margin-left: 46px;">
-                                                        <i class="flaticon2-information small mr-1"></i>
-                                                        <?= $log['observacion'] ?>
-                                                    </div>
-                                                <?php endif; ?>
+                                                <div class="d-flex flex-column">
+                                                    <span class="text-dark-75 font-weight-bolder font-size-lg">
+                                                        <?= $log['nombre'] ?>
+                                                    </span>
+                                                    <?php if (!empty($log['observacion'])): ?>
+                                                        <span class="text-muted font-size-sm">
+                                                            <i class="flaticon2-information small mr-1"></i><?= htmlspecialchars($log['observacion']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <?php if ($isGrave && !empty($log['dias_suspension'])): ?>
+                                                        <span class="label label-light-danger label-inline mt-1" style="width:fit-content">
+                                                            Suspensión: <?= $log['dias_suspension'] ?> día(s)
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <?php if ($isGrave && !empty($log['medidas_restaurativas'])): ?>
+                                                        <span class="text-info font-size-sm mt-1">
+                                                            <i class="fas fa-hands-helping small mr-1"></i><?= htmlspecialchars($log['medidas_restaurativas']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                         </td>
                                         <?php if ($subject_id == 0): ?>
                                         <td>
                                             <span class="text-dark-75 font-weight-bold font-size-sm">
-                                                <?= !empty($log['subject_name']) ? $log['subject_name'] : '<span class="text-muted">—</span>' ?>
+                                                <?= !empty($log['subject_name']) ? htmlspecialchars($log['subject_name']) : '<span class="text-muted">—</span>' ?>
                                             </span>
                                         </td>
                                         <?php endif; ?>
                                         <td>
-                                            <?php $isLogistic = $log['tipo'] === 'neutral'; ?>
-                                            <span class="label label-lg label-inline <?= $isLogistic ? 'label-light-info' : ($log['tipo'] === 'positiva' ? 'label-light-success' : 'label-light-danger') ?> font-weight-bold py-4">
-                                                <?= $isLogistic ? 'Logística' : ($log['tipo'] === 'positiva' ? 'Positivo' : 'Negativo') ?>
-                                            </span>
+                                            <?php if ($isGrave): ?>
+                                                <span class="label label-lg label-inline label-danger font-weight-bold py-4">Falta Grave</span>
+                                            <?php elseif ($log['tipo'] === 'neutral'): ?>
+                                                <span class="label label-lg label-inline label-light-info font-weight-bold py-4">Logística</span>
+                                            <?php elseif ($log['tipo'] === 'positiva'): ?>
+                                                <span class="label label-lg label-inline label-light-success font-weight-bold py-4">Positivo</span>
+                                            <?php else: ?>
+                                                <span class="label label-lg label-inline label-light-danger font-weight-bold py-4">Negativo</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td class="text-right">
-                                            <?php $pts = $log['tipo'] === 'negativa' ? -0.5 : ($log['tipo'] === 'positiva' ? 0.5 : 0); ?>
-                                            <span class="font-weight-bolder font-size-h5 <?= $log['tipo'] === 'negativa' ? 'text-danger' : 'text-success' ?>">
-                                                <?= $pts > 0 ? '+' . $pts : $pts ?> pts
-                                            </span>
+                                            <?php if ($isGrave): ?>
+                                                <span class="font-weight-bolder font-size-h5 text-danger">−3 pts</span>
+                                            <?php else: ?>
+                                                <?php $pts = $log['tipo'] === 'negativa' ? -0.5 : ($log['tipo'] === 'positiva' ? 0.5 : 0); ?>
+                                                <span class="font-weight-bolder font-size-h5 <?= $log['tipo'] === 'negativa' ? 'text-danger' : 'text-success' ?>">
+                                                    <?= $pts > 0 ? '+' . $pts : $pts ?> pts
+                                                </span>
+                                            <?php endif; ?>
                                         </td>
                                         <td class="text-right">
-                                            <button type="button" class="btn btn-sm btn-light-primary font-weight-bold mr-2"
-                                                onclick="editObservation(<?= $log['id'] ?>, '<?= htmlspecialchars($log['observacion'] ?? '', ENT_QUOTES) ?>')">
-                                                <i class="fa fa-edit"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-light-danger font-weight-bold"
-                                                onclick="deleteBehavior(<?= $log['id'] ?>)">
-                                                <i class="fa fa-trash"></i>
-                                            </button>
+                                            <?php if ($isGrave): ?>
+                                                <span class="text-muted font-size-xs">Sec. académica</span>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-sm btn-light-primary font-weight-bold mr-2"
+                                                    onclick="editObservation(<?= $log['id'] ?>, '<?= htmlspecialchars($log['observacion'] ?? '', ENT_QUOTES) ?>')">
+                                                    <i class="fa fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-light-danger font-weight-bold"
+                                                    onclick="deleteBehavior(<?= $log['id'] ?>)">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

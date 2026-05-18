@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alerta SAAT Nivel 2</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 14px; color: #1a1a1a; background: #f5f5f5; margin: 0; padding: 20px; }
+  .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; }
+  .header { background: #BA7517; padding: 24px 28px; }
+  .header h1 { color: #ffffff; font-size: 18px; margin: 0 0 4px; }
+  .header p { color: #FAEEDA; font-size: 13px; margin: 0; }
+  .alert-bar { background: #FAEEDA; border-left: 4px solid #BA7517; padding: 12px 16px; margin: 20px 28px 0; border-radius: 0 6px 6px 0; font-size: 13px; color: #633806; }
+  .body { padding: 20px 28px 28px; }
+  .materia-card { border: 2px solid #EF9F27; border-radius: 10px; overflow: hidden; margin: 18px 0; }
+  .materia-header { background: #BA7517; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .materia-name { color: #ffffff; font-size: 15px; font-weight: bold; }
+  .materia-badge { background: #ffffff; color: #BA7517; font-size: 12px; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+  .materia-body { padding: 14px 16px; display: flex; align-items: center; gap: 16px; background: #fafafa; }
+  .score-num { font-size: 40px; font-weight: bold; color: #BA7517; line-height: 1; }
+  .score-of { font-size: 13px; color: #999; margin-top: 2px; }
+  .score-right { flex: 1; }
+  .score-label { font-size: 12px; color: #777; margin-bottom: 6px; }
+  .score-bar-wrap { height: 8px; background: #e0e0e0; border-radius: 4px; margin-bottom: 4px; }
+  .score-bar { height: 8px; width: 50%; background: #EF9F27; border-radius: 4px; }
+  .score-hint { font-size: 12px; color: #999; }
+  ul { padding-left: 18px; margin: 10px 0; }
+  ul li { margin-bottom: 8px; line-height: 1.6; }
+  .footer { background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 16px 28px; font-size: 12px; color: #888; }
+  .footer strong { color: #444; display: block; margin-bottom: 2px; }
+  p { line-height: 1.7; margin: 0 0 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Sistema SAAT — Alerta Nivel 2</h1>
+    <p>Colegio Tiquipaya · Presencia obligatoria</p>
+  </div>
+  <div class="alert-bar">
+    🔴 <strong>Presencia obligatoria en el colegio.</strong> El colegio coordinará una reunión con el consejero.
+  </div>
+  <div class="body">
+    <p>Estimado padre o madre de familia,</p>
+    <p>Le escribimos desde la plataforma <strong>SAAT</strong> del Colegio Tiquipaya para informarle que su hijo/a <strong>[Nombre del Estudiante]</strong> ha alcanzado el <strong>nivel de alerta 2</strong> en la dimensión del Ser.</p>
+    <div class="materia-card">
+      <div class="materia-header">
+        <span class="materia-name">[Nombre de la Materia]</span>
+        <span class="materia-badge">Alerta nivel 2</span>
+      </div>
+      <div class="materia-body">
+        <div>
+          <div class="score-num">5</div>
+          <div class="score-of">de 10 pts</div>
+        </div>
+        <div class="score-right">
+          <div class="score-label">Puntaje actual — Dimensión del Ser</div>
+          <div class="score-bar-wrap"><div class="score-bar"></div></div>
+          <div class="score-hint">Docente: [Nombre del Docente]</div>
+        </div>
+      </div>
+    </div>
+    <p>El Sistema SAAT registra cada acción con hora exacta, motivo y nombre del docente responsable. Todo puede consultarse en la plataforma en cualquier momento.</p>
+    <p><strong>Próximos pasos:</strong></p>
+    <ul>
+      <li><strong>Es obligatorio apersonarse al colegio</strong> en horario de entrevista docente.</li>
+      <li>El colegio coordinará una reunión con el consejero y se pondrá en contacto con usted para informarle la fecha y hora.</li>
+      <li>Revise el historial completo en la plataforma SAAT para conocer los motivos detallados de cada registro.</li>
+    </ul>
+    <p>Atentamente,</p>
+  </div>
+  <div class="footer">
+    <strong>Sistema SAAT — Colegio Tiquipaya</strong>
+    Este mensaje fue generado automáticamente. Por favor no responda a este mensaje.
+  </div>
+</div>
+</body>
+</html>

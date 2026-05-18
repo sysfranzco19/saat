@@ -4,7 +4,7 @@
 
 			<!--begin::Logo-->
 			<a href="index.html">
-				<img alt="Logo" src="assets/media/logos/logo-letter-1.png" class="logo-default max-h-30px" />
+				<img alt="Logo" src="<?= base_url('assets/media/logos/logo-letter-1.png') ?>" class="logo-default max-h-30px" />
 			</a>
 
 			<!--end::Logo-->

@@ -38,13 +38,32 @@ class SubjectModel extends Model
     }
     public function subjects_docente($teacher_id)
     {
-        $sql = "SELECT t1.subject_id, t2.completo as curso, t1.name as materia, t1.section_id, t3.link FROM subject AS t1
+        $sql = "SELECT t1.subject_id, t2.completo as curso, t1.name as materia, t1.section_id,
+                       t2.class_id, t2.grade, t3.link
+                FROM subject AS t1
                 INNER JOIN section AS t2 ON(t1.section_id=t2.section_id)
-                LEFT JOIN document as t3 ON(t1.section_id=t3.code) WHERE t1.teacher_id=" . $teacher_id;
-        $subject = $this->db->query($sql);
-        //return $student->get()->getResultArray();
-        return $subject->getResult();
+                LEFT JOIN document as t3 ON(t1.section_id=t3.code)
+                WHERE t1.teacher_id=" . $teacher_id . "
+                ORDER BY t2.class_id, t1.name, t1.subject_id";
+        return $this->db->query($sql)->getResult();
     }
+
+    public function canonical_subjects_for_grade($class_id)
+    {
+        $sql = "SELECT s.name, s.teacher_id, MIN(s.subject_id) as canonical_id
+                FROM subject s
+                JOIN section sec ON s.section_id = sec.section_id
+                WHERE sec.class_id = " . (int)$class_id . "
+                GROUP BY s.name, s.teacher_id";
+        return $this->db->query($sql)->getResultArray();
+    }
+
+    public function get_class_id_for_section($section_id)
+    {
+        $row = $this->db->query("SELECT class_id FROM section WHERE section_id = " . (int)$section_id)->getRowArray();
+        return $row ? (int)$row['class_id'] : 0;
+    }
+
     public function subjects_teacher($teacher_id)
     {
         $sql = 'SELECT t1.subject_id,t2.teacher_id,t1.name as materia,t2.name as profe, t3.completo, t3.section_id, t1.sheet_id,

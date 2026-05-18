@@ -567,12 +567,141 @@
     </div>
 </div>
 
+<!-- Modal: Acta de Reunión con el Padre/Tutor -->
+<div class="modal fade" id="modalActaGamif" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f64e60;">
+                <h5 class="modal-title text-white font-weight-bolder">
+                    <i class="fa fa-exclamation-triangle mr-2"></i> Acta de Reunión Requerida
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning d-flex align-items-start mb-5">
+                    <i class="fa fa-info-circle mr-3 mt-1 fa-lg text-warning"></i>
+                    <div>
+                        El estudiante <strong id="gamif_modal_student_name">—</strong> tiene
+                        <strong id="gamif_modal_score">—</strong>/10 pts en esta materia.<br>
+                        Para registrar esta incidencia debes acreditar la reunión con el padre o tutor.
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Fecha de reunión <span class="text-danger">*</span></label>
+                    <input type="date" id="gamif_acta_fecha" class="form-control form-control-solid"
+                        max="<?= date('Y-m-d') ?>">
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Acuerdos / Observaciones</label>
+                    <textarea id="gamif_acta_obs" class="form-control form-control-solid" rows="3"
+                        placeholder="Compromisos establecidos con el padre o tutor..."></textarea>
+                </div>
+                <div class="form-group mb-0">
+                    <label class="font-weight-bold">Acta / Constancia <span class="text-danger">*</span></label>
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="gamif_acta_file" accept=".pdf,.jpg,.jpeg,.png">
+                        <label class="custom-file-label" for="gamif_acta_file">Seleccionar archivo (PDF o imagen)</label>
+                    </div>
+                    <small class="text-muted">Formatos: PDF, JPG, PNG. Máx. 5 MB.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light font-weight-bold" data-dismiss="modal">Cancelar</button>
+                <button type="button" id="gamif_btn_subir_acta" class="btn btn-danger font-weight-bolder"
+                    onclick="submitActaGamifiedModal()">
+                    <i class="fa fa-upload mr-2"></i> Subir Acta y Registrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const SUBJECT_ID = "<?= isset($subject_id) ? $subject_id : '' ?>";
     const DATE_ID = "<?= isset($date_id) ? $date_id : '' ?>";
     const PERIOD = "<?= isset($periodo) ? $periodo : '' ?>";
     const BASE_URL = "<?= base_url() ?>";
     let hasUnsavedChanges = false;
+    let pendingActa = null;
+
+    function showActaModal(postParams, nota, badge, priorScore) {
+        pendingActa = { postParams: postParams, badge: badge, priorScore: priorScore };
+        document.getElementById('gamif_modal_score').textContent = nota;
+        var studentName = 'Estudiante';
+        var rowElem = document.getElementById('row-' + postParams.student_id);
+        if (rowElem) {
+            var nameEl = rowElem.querySelector('a.text-dark-75') || rowElem.querySelector('a.text-hover-primary') || rowElem.querySelector('a');
+            if (nameEl) studentName = nameEl.innerText.trim();
+        }
+        document.getElementById('gamif_modal_student_name').textContent = studentName;
+        document.getElementById('gamif_acta_fecha').value = '';
+        document.getElementById('gamif_acta_obs').value   = '';
+        document.getElementById('gamif_acta_file').value  = '';
+        document.querySelector('label[for="gamif_acta_file"]').textContent = 'Seleccionar archivo (PDF o imagen)';
+        $('#modalActaGamif').modal('show');
+    }
+
+    function submitActaGamifiedModal() {
+        var fecha = document.getElementById('gamif_acta_fecha').value;
+        var file  = document.getElementById('gamif_acta_file').files[0];
+        if (!fecha) { Swal.fire('Campo requerido', 'Selecciona la fecha de la reunión.', 'warning'); return; }
+        if (!file)  { Swal.fire('Campo requerido', 'Debes adjuntar el acta de reunión.', 'warning'); return; }
+        if (file.size > 5 * 1024 * 1024) { Swal.fire('Archivo muy grande', 'El archivo no debe superar 5MB.', 'warning'); return; }
+
+        var btn = document.getElementById('gamif_btn_subir_acta');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Subiendo...';
+
+        var formData = new FormData();
+        formData.append('student_id',    pendingActa.postParams.student_id);
+        formData.append('subject_id',    SUBJECT_ID);
+        formData.append('fecha_reunion', fecha);
+        formData.append('observacion',   document.getElementById('gamif_acta_obs').value);
+        formData.append('acta_file',     file);
+
+        $.ajax({
+            url: BASE_URL + 'index.php/teacher/upload_acta',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(res) {
+                if (res.status === 'success') {
+                    $.post(BASE_URL + 'index.php/teacher/register_behavior', pendingActa.postParams, function(data2) {
+                        if (data2.status === 'success') {
+                            if (pendingActa.badge) updateBadgeUI(pendingActa.badge, data2.new_score);
+                            var sid = pendingActa.postParams.student_id;
+                            var negEl = document.getElementById('negative-count-' + sid);
+                            if (negEl && data2.new_negative_count !== undefined) negEl.innerText = data2.new_negative_count;
+                            var posEl = document.getElementById('positive-count-' + sid);
+                            if (posEl && data2.new_positive_count !== undefined) posEl.innerText = data2.new_positive_count;
+                            Swal.fire({ icon: 'success', title: 'Listo', text: 'Acta subida e incidencia registrada.', timer: 2000, showConfirmButton: false });
+                        } else {
+                            Swal.fire('Error', data2.message || 'Error al registrar la incidencia.', 'error');
+                        }
+                        pendingActa = null;
+                        $('#modalActaGamif').modal('hide');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa fa-upload mr-2"></i> Subir Acta y Registrar';
+                    }, 'json');
+                } else {
+                    Swal.fire('Error', res.message || 'Error al subir el acta.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa fa-upload mr-2"></i> Subir Acta y Registrar';
+                }
+            },
+            error: function() {
+                Swal.fire('Error de conexión', 'No se pudo subir el acta.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-upload mr-2"></i> Subir Acta y Registrar';
+            }
+        });
+    }
+
+    document.getElementById('gamif_acta_file').addEventListener('change', function() {
+        var label = this.nextElementSibling;
+        label.textContent = this.files[0] ? this.files[0].name : 'Seleccionar archivo (PDF o imagen)';
+    });
 
     window.addEventListener('beforeunload', function (e) {
         if (hasUnsavedChanges) {
@@ -814,7 +943,7 @@
         }, function (data) {
             if (data.status === 'success') {
                 updateBadgeUI(badge, data.new_score);
-                
+
                 // Update incident counts visually
                 let negElem = document.getElementById('negative-count-' + studentId);
                 if (negElem && data.new_negative_count !== undefined) {
@@ -824,7 +953,14 @@
                 if (posElem && data.new_positive_count !== undefined) {
                     posElem.innerText = data.new_positive_count;
                 }
+            } else if (data.status === 'needs_acta') {
+                updateBadgeUI(badge, currentScore);
+                showActaModal({
+                    student_id: studentId, behavior_id: behaviorId, points: points,
+                    subject_id: SUBJECT_ID, date_id: DATE_ID, period: PERIOD, observation: observation
+                }, data.nota, badge, currentScore);
             } else {
+                updateBadgeUI(badge, currentScore);
                 Swal.fire('Error', data.message || "Error desconocido", 'error');
             }
         }, 'json').fail(function(xhr, status, error) {
@@ -1028,12 +1164,24 @@
 
                 // Close modal
                 $('#modalRegister').modal('hide');
+            } else if (data.status === 'needs_acta') {
+                $('#modalRegister').modal('hide');
+                var badgeEl = document.getElementById('badge-' + studentId);
+                showActaModal({
+                    student_id: studentId,
+                    behavior_id: behaviorId,
+                    points: $('#reg-points').val(),
+                    subject_id: SUBJECT_ID,
+                    date_id: DATE_ID,
+                    period: PERIOD,
+                    observation: $('#reg-observation').val()
+                }, data.nota, badgeEl, parseFloat(badgeEl ? badgeEl.innerText : 10) || 10);
             } else {
-                alert("Error al registrar incidencia: " + (data.message || "Error desconocido"));
+                Swal.fire('Error', data.message || "Error desconocido", 'error');
             }
         }, 'json').fail(function(xhr, status, error) {
             console.error("Modal Register AJAX Fail:", status, error, xhr.responseText);
-            alert("Error de conexión al registrar incidencia.");
+            Swal.fire('Error de Conexión', 'No se pudo conectar con el servidor.', 'error');
         });
     }
 

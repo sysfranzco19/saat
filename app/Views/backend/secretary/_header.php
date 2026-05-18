@@ -529,6 +529,14 @@
 
                         <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
                             aria-haspopup="true">
+                            <a href="<?php echo base_url(); ?>secretary/boletas" class="menu-link">
+                                <span class="menu-text">Boletas</span>
+                                <i class="menu-arrow"></i>
+                            </a>
+                        </li>
+
+                        <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
+                            aria-haspopup="true">
                             <a href="javascript:;" class="menu-link menu-toggle">
                                 <span class="menu-text">Dirección Técnica</span>
                                 <span class="menu-desc"></span>

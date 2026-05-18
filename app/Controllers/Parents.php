@@ -83,38 +83,116 @@ class Parents extends BaseController
         $family_id = $session->get('family_id');
         if ($session->get('login_type') != 'parents')
             return redirect()->to(base_url());
-        //Settings
+
         $Setting = new SettingModel();
-        $page_data['phase_id'] = $Setting->get_phase_id();
-        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['phase_name']   = $Setting->get_phase_name();
         $page_data['system_title'] = $Setting->get_system_title();
-        $page_data['system_name'] = $Setting->get_system_name();
-        //HIJOS
+        $page_data['system_name']  = $Setting->get_system_name();
+
         $StudentMod = new StudentModel();
-        $students = $StudentMod->students_family($family_id);
+        $students   = $StudentMod->students_family($family_id);
         $page_data['students'] = $students;
-        //CARTAS DE CONTENIDOS
-        $document = array();
-        foreach ($students as $stu):
-            //Documento
-            $Document = new DocumentModel();
-            $letter = $Document->document_link("content_letter", "section", $stu['section_id']);
-            if (count($letter) > 0) {
-                $document['letter' . $stu['section_id']] = $letter[0]->link;
+
+        // Drive links for primary/inicial keyed by grade slug → [1=>url, 2=>url, 3=>url]
+        $drive_links = [
+            'kinder' => [
+                1 => 'https://drive.google.com/drive/folders/1vOm60FQZLHdaxzjSnQxGIUk1jAjDw5rm',
+                2 => 'https://drive.google.com/drive/folders/1Z9ngUrjpckTXgwq6Q1XnQO8datFjYjDU',
+                3 => 'https://drive.google.com/drive/folders/133wcdBdPUVcHNWKQROdwaIeLL1yUvLzB',
+            ],
+            '1ro' => [
+                1 => 'https://drive.google.com/drive/folders/1-WJrLAwxGws_EvoEDWja-VxxZckJGG0j',
+                2 => 'https://drive.google.com/drive/folders/1N8H67MqdDFPSs4KIwwWN7syYDsWD8H7e',
+                3 => 'https://drive.google.com/drive/folders/1LkJ7j2kTT9k41A52HmXtsweUsuSKrCEp',
+            ],
+            '2do' => [
+                1 => 'https://drive.google.com/drive/folders/1fHzSlqkQnDcrUOVihlO9iskIesAZP2Ev',
+                2 => 'https://drive.google.com/drive/folders/1cA-_jAyFvO_XdOoJhy8_Io90JUh7JETB',
+                3 => 'https://drive.google.com/drive/folders/118ArJF0oEYehYNPUMcqBwyQRREkmbo4p',
+            ],
+            '3ro' => [
+                1 => 'https://drive.google.com/drive/folders/1Nle5_Y4gIn2uuX_D3HMxuaSNw4k-BNMt',
+                2 => 'https://drive.google.com/drive/folders/1L_T1cwrqVtHNQnDKuuppzHq5WacVtOcM',
+                3 => 'https://drive.google.com/drive/folders/1s46I5t8OpgRu9TqXZwuCc0xiXXOzAUFF',
+            ],
+            '4to' => [
+                1 => 'https://drive.google.com/drive/folders/1uVN3aECHhbddKDRjDfU-CP00AmgyeKzJ',
+                2 => 'https://drive.google.com/drive/folders/1KH9POAhjKoDFfokmoX6O3H47XVMU2EjF',
+                3 => 'https://drive.google.com/drive/folders/1MBYgERK54enYjqe-vM39CJzCX49ooTRO',
+            ],
+            '5to' => [
+                1 => 'https://drive.google.com/drive/folders/1ChJvHQdkf8sC7mwLGzk1Oqhs6SwtefmC',
+                2 => 'https://drive.google.com/drive/folders/1mtXYtrq-PR8IsyWcVrA6RXNuk777hziw',
+                3 => 'https://drive.google.com/drive/folders/1j91ToPsSDGWjXpCCm271N8Mosm1c9Kyb',
+            ],
+            '6to' => [
+                1 => 'https://drive.google.com/drive/folders/1Ul9hN3QuWmMvFktptjD8G_5L8CZCDHnj',
+                2 => 'https://drive.google.com/drive/folders/1mUsh3pY3w_cyyQEv4O7_CZi8KSqU1b4k',
+                3 => 'https://drive.google.com/drive/folders/1w6MWIjn_2ZXa-4qJQbMe5zhMDsGCq7vS',
+            ],
+        ];
+
+        $Subject      = new SubjectModel();
+        $student_data = [];
+
+        foreach ($students as $stu) {
+            $sid        = $stu['student_id'];
+            $section_id = (int)$stu['section_id'];
+            $is_sec     = stripos($stu['grade'] ?? '', 'secundaria') !== false;
+
+            if ($is_sec) {
+                $subjects = $Subject->subjects_student($section_id, $stu['sex']);
+
+                // Build canonical_id map: MIN(subject_id) per (name, teacher_id) for this grade
+                $class_id      = $Subject->get_class_id_for_section($section_id);
+                $canonical_map = [];
+                if ($class_id) {
+                    foreach ($Subject->canonical_subjects_for_grade($class_id) as $r) {
+                        $canonical_map[$r['name'] . '||' . $r['teacher_id']] = (int)$r['canonical_id'];
+                    }
+                }
+
+                $subjects_out = [];
+                foreach ($subjects as $sub) {
+                    $map_key      = $sub['name'] . '||' . $sub['teacher_id'];
+                    $canonical_id = $canonical_map[$map_key] ?? $sub['subject_id'];
+                    $trims        = [];
+                    for ($t = 1; $t <= 3; $t++) {
+                        $fname     = "CC_{$canonical_id}_T{$t}.pdf";
+                        $trims[$t] = file_exists(FCPATH . 'uploads/content_letter/' . $fname) ? $fname : null;
+                    }
+                    $subjects_out[] = ['name' => $sub['name'], 'trims' => $trims];
+                }
+                $student_data[$sid] = ['type' => 'secondary', 'subjects' => $subjects_out];
             } else {
-                //Materias
-                $Subject = new SubjectModel();
-                $subjects = $Subject->subjects_student($stu['section_id'], $stu['sex']);
-                $document['materias' . $stu['section_id']] = $subjects;
+                $grade_key = $this->_gradeKey($stu['grade'] ?? '');
+                $student_data[$sid] = [
+                    'type'        => 'primary',
+                    'drive_links' => $grade_key ? ($drive_links[$grade_key] ?? null) : null,
+                ];
             }
-        endforeach;
-        $page_data['document'] = $document;
-        //VISTA
-        $page_data['login_type'] = $session->get('login_type');
+        }
+
+        $page_data['student_data'] = $student_data;
+        $page_data['login_type']   = $session->get('login_type');
         $page_data['account_type'] = 'parents';
-        $page_data['page_name'] = 'content_letter';
-        $page_data['page_title'] = 'Cartas de Contenidos';
+        $page_data['page_name']    = 'content_letter';
+        $page_data['page_title']   = 'Cartas de Contenidos';
         return view('backend/index', $page_data);
+    }
+
+    private function _gradeKey(string $grade): ?string
+    {
+        $g = strtolower(trim($grade));
+        // Kinder: grade field is "Inicial" in this DB
+        if ($g === 'inicial' || strpos($g, 'kinder') !== false)       return 'kinder';
+        if (preg_match('/\b(1ro|1°|primero)\b/', $g))                 return '1ro';
+        if (preg_match('/\b(2do|2°|segundo|segundi)\b/', $g))         return '2do';
+        if (preg_match('/\b(3ro|3°|tercero)\b/', $g))                 return '3ro';
+        if (preg_match('/\b(4to|4°|cuarto)\b/', $g))                  return '4to';
+        if (preg_match('/\b(5to|5°|quinto)\b/', $g))                  return '5to';
+        if (preg_match('/\b(6to|6°|sexto)\b/', $g))                   return '6to';
+        return null;
     }
     /***************************HORARIOS DE ENTREVISTAS *****************/
     function interview_schedule()
@@ -728,12 +806,10 @@ class Parents extends BaseController
         if ($session->get('login_type') != 'parents')
             return redirect()->to(base_url());
 
-        $Licencia = new LicenciaModel();
+        $Licencia   = new LicenciaModel();
         $StudentMod = new StudentModel();
 
-        $students = $StudentMod->datosStudent($_POST['student_id']);
-
-        $fecha_solicitud = date("Y-m-d H:i:s");
+        $students   = $StudentMod->datosStudent($_POST['student_id']);
         $student_id = $_POST['student_id'];
         $section_id = $students[0]->section_id;
 
@@ -743,32 +819,48 @@ class Parents extends BaseController
         }
 
         $inicio = date("Y-m-d", strtotime($_POST['fecha_inicio']));
-        $fin = date("Y-m-d", strtotime($_POST['fecha_fin']));
+        $fin    = date("Y-m-d", strtotime($_POST['fecha_fin']));
 
-        $datosLicencia = [
-            "student_id" => $student_id,
-            "tipo_id" => 1,
-            "fecha_solicitud" => $fecha_solicitud,
-            "solicitante" => trim($_POST['parent_text']),
-            "parentesco_id" => $_POST['parents'],
-            "motivo_id" => $_POST['motivo_id'],
-            "detalle" => trim($_POST['detalle']),
-            "medio_id" => 10,
-            "enviado" => 0
-        ];
+        // Verificar si ya existe una licencia igual registrada hoy (evita doble envío)
+        $db       = db_connect('asistencia');
+        $existing = $db->query(
+            "SELECT l.licencias_id FROM t_licencias l
+             INNER JOIN t_licencias_dia ld ON ld.licencias_id = l.licencias_id
+             WHERE l.student_id = ? AND l.tipo_id = 1
+               AND DATE(l.fecha_solicitud) = CURDATE()
+               AND ld.fecha_inicio = ? AND ld.fecha_fin = ?
+             LIMIT 1",
+            [$student_id, $inicio, $fin]
+        )->getRow();
 
-        $licencias_id = $Licencia->insert($datosLicencia);
-
-        if ($licencias_id) {
-            $datosDia = [
-                "licencias_id" => $licencias_id,
-                "fecha_inicio" => $inicio,
-                "fecha_fin"    => $fin,
-                "cantidad_dias" => 0
+        if ($existing) {
+            $licencias_id = $existing->licencias_id;
+        } else {
+            $datosLicencia = [
+                "student_id"    => $student_id,
+                "tipo_id"       => 1,
+                "fecha_solicitud" => date("Y-m-d H:i:s"),
+                "solicitante"   => trim($_POST['parent_text']),
+                "parentesco_id" => $_POST['parents'],
+                "motivo_id"     => $_POST['motivo_id'],
+                "detalle"       => trim($_POST['detalle']),
+                "medio_id"      => 10,
+                "enviado"       => 0
             ];
-            db_connect('asistencia')->table('t_licencias_dia')->insert($datosDia);
+            $licencias_id = $Licencia->insert($datosLicencia);
 
-            // Guardar comprobante médico
+            if ($licencias_id) {
+                $db->table('t_licencias_dia')->insert([
+                    "licencias_id"  => $licencias_id,
+                    "fecha_inicio"  => $inicio,
+                    "fecha_fin"     => $fin,
+                    "cantidad_dias" => 0
+                ]);
+            }
+        }
+
+        // Subir o reemplazar comprobante médico en el registro (nuevo o existente)
+        if ($licencias_id) {
             $fileInput = $this->request->getFile('comprobante_medico');
             if ($fileInput && $fileInput->isValid() && !$fileInput->hasMoved()) {
                 $extension         = strtolower($fileInput->getClientExtension());
@@ -798,12 +890,10 @@ class Parents extends BaseController
         if ($session->get('login_type') != 'parents')
             return redirect()->to(base_url());
 
-        $Licencia = new LicenciaModel();
+        $Licencia   = new LicenciaModel();
         $StudentMod = new StudentModel();
 
-        $students = $StudentMod->datosStudent($_POST['student_id']);
-
-        $fecha_solicitud = date("Y-m-d H:i:s");
+        $students   = $StudentMod->datosStudent($_POST['student_id']);
         $student_id = $_POST['student_id'];
         $section_id = $students[0]->section_id;
 
@@ -812,34 +902,50 @@ class Parents extends BaseController
             return redirect()->to(base_url() . 'parents/licenses/');
         }
 
-        $fecha = date("Y-m-d", strtotime($_POST['fecha']));
+        $fecha   = date("Y-m-d", strtotime($_POST['fecha']));
         $periodos = $_POST['periodos']; // array de periodos
 
-        $datosLicencia = [
-            "student_id" => $student_id,
-            "tipo_id" => 2,
-            "fecha_solicitud" => $fecha_solicitud,
-            "solicitante" => trim($_POST['parent_text']),
-            "parentesco_id" => $_POST['parents'],
-            "motivo_id" => $_POST['motivo_id'],
-            "detalle" => trim($_POST['detalle']),
-            "medio_id" => 10,
-            "enviado" => 0
-        ];
+        // Verificar si ya existe una licencia igual registrada hoy (evita doble envío)
+        $db       = db_connect('asistencia');
+        $existing = $db->query(
+            "SELECT l.licencias_id FROM t_licencias l
+             INNER JOIN t_licencias_periodo lp ON lp.licencias_id = l.licencias_id
+             WHERE l.student_id = ? AND l.tipo_id = 2
+               AND DATE(l.fecha_solicitud) = CURDATE()
+               AND lp.fecha = ?
+             LIMIT 1",
+            [$student_id, $fecha]
+        )->getRow();
 
-        $licencias_id = $Licencia->insert($datosLicencia);
+        if ($existing) {
+            $licencias_id = $existing->licencias_id;
+        } else {
+            $datosLicencia = [
+                "student_id"    => $student_id,
+                "tipo_id"       => 2,
+                "fecha_solicitud" => date("Y-m-d H:i:s"),
+                "solicitante"   => trim($_POST['parent_text']),
+                "parentesco_id" => $_POST['parents'],
+                "motivo_id"     => $_POST['motivo_id'],
+                "detalle"       => trim($_POST['detalle']),
+                "medio_id"      => 10,
+                "enviado"       => 0
+            ];
+            $licencias_id = $Licencia->insert($datosLicencia);
 
-        if ($licencias_id) {
-            foreach ($periodos as $periodo_id) {
-                $datosPeriodo = [
-                    "licencias_id" => $licencias_id,
-                    "fecha"        => $fecha,
-                    "periodo_id"   => $periodo_id
-                ];
-                db_connect('asistencia')->table('t_licencias_periodo')->insert($datosPeriodo);
+            if ($licencias_id) {
+                foreach ($periodos as $periodo_id) {
+                    $db->table('t_licencias_periodo')->insert([
+                        "licencias_id" => $licencias_id,
+                        "fecha"        => $fecha,
+                        "periodo_id"   => $periodo_id
+                    ]);
+                }
             }
+        }
 
-            // Guardar comprobante médico
+        // Subir o reemplazar comprobante médico en el registro (nuevo o existente)
+        if ($licencias_id) {
             $fileInput = $this->request->getFile('comprobante_medico');
             if ($fileInput && $fileInput->isValid() && !$fileInput->hasMoved()) {
                 $extension         = strtolower($fileInput->getClientExtension());

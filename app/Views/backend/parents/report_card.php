@@ -27,7 +27,7 @@ $archivo ="RepT3".strval(60900045 + $student_id).".pdf";
                 </div>
                 
             </div>
-            <object data="https://tiquipaya.edu.bo/plataforma/public/uploads/t3/<?php echo $archivo;?>" type="application/pdf" width="100%" height="800px">
+            <object data="https://tiquipaya.edu.bo/plataforma/public/uploads/t1/<?php echo $archivo;?>" type="application/pdf" width="100%" height="800px">
                 <p>Su navegador no soporta el visualizador de PDF <a href="https://tiquipaya.edu.bo/plataforma/public/uploads/t3/<?php echo $archivo;?>">click aqui para descargar el Documento PDF.</a></p>
             </object>
         </div>

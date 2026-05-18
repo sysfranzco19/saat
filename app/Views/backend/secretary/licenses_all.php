@@ -120,10 +120,11 @@ $(document).ready(function() {
              '<"row"<"col-sm-5"i><"col-sm-7"p>>',
         buttons: [
             {
-                extend: 'excelHtml5',
                 text: '<i class="far fa-file-excel"></i> Excel',
                 className: 'btn btn-sm btn-success',
-                exportOptions: { columns: [1,2,3,4,5,6,7,8,9] }
+                action: function(e, dt, node, config) {
+                    window.location.href = '<?php echo base_url('secretary/licenses_all_export'); ?>';
+                }
             },
             {
                 extend: 'pdfHtml5',

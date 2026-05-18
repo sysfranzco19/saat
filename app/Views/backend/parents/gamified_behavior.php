@@ -66,6 +66,127 @@ $session = session();
             <div class="flex-row-fluid ml-md-8">
                 <h4 class="mb-5 text-dark font-weight-bold">Historial de Comportamiento</h4>
 
+                <!-- Guía del Sistema de Evaluación Conductual -->
+                <div class="card card-custom gutter-b mb-8" style="border: 2px dashed #3699FF; background: #f0f8ff;">
+                    <div class="card-body py-4 px-5">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap">
+                            <div class="d-flex align-items-center">
+                                <i class="flaticon2-information text-primary icon-2x mr-4"></i>
+                                <div>
+                                    <div class="font-weight-bolder text-dark font-size-h6 mb-1">Sistema de Evaluación Conductual</div>
+                                    <div class="text-muted font-weight-bold font-size-sm">Conoce cómo se calcula la nota del Ser, qué acciones suman o restan puntos y los niveles de alerta.</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary font-weight-bolder mt-3 mt-md-0" data-toggle="collapse" data-target="#guia_sistema" aria-expanded="false">
+                                <i class="flaticon2-down icon-sm mr-1" id="guia_icon"></i> Ver reglas
+                            </button>
+                        </div>
+                    </div>
+                    <div id="guia_sistema" class="collapse">
+                        <div class="separator separator-solid mx-5"></div>
+                        <div class="card-body pt-0">
+
+                            <!-- Fórmula -->
+                            <div class="alert alert-custom alert-light-primary border border-primary rounded p-5 mb-6">
+                                <div class="alert-text text-center">
+                                    <span class="font-weight-bold font-size-lg text-dark">Cada estudiante inicia el trimestre con </span>
+                                    <span class="font-weight-boldest font-size-h4 text-primary">10 puntos</span>
+                                    <span class="font-weight-bold font-size-lg text-dark"> por materia.</span>
+                                    <div class="mt-3 font-size-h6 font-weight-bold text-dark-75">
+                                        Puntaje Inicial (10) + Pts. Ganados &minus; Pts. Restados = <span class="text-primary">Nota del Ser</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-6">
+                                <!-- Acciones que SUMAN -->
+                                <div class="col-md-6 mb-4 mb-md-0">
+                                    <div class="bg-light-success rounded p-5 h-100">
+                                        <div class="d-flex align-items-center mb-4">
+                                            <i class="flaticon-star text-success icon-xl mr-3"></i>
+                                            <div>
+                                                <div class="font-weight-boldest text-success font-size-lg">Acciones que SUMAN</div>
+                                                <div class="font-weight-bold text-success font-size-sm">+0.5 pts cada una</div>
+                                            </div>
+                                        </div>
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-check-mark text-success mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Participación proactiva y destacada en clase</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-check-mark text-success mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Demostrar honestidad e integridad</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-check-mark text-success mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Liderazgo o resiliencia ante desafíos</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-check-mark text-success mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Solidaridad, empatía o apoyo a compañeros</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-check-mark text-success mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Esfuerzo notable en el aprendizaje</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-check-mark text-success mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Trabajo en equipo efectivo y escucha respetuosa</span></li>
+                                            <li class="d-flex align-items-start mb-0"><i class="flaticon2-check-mark text-success mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Admitir responsabilidad y demostrar cambio de actitud</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <!-- Acciones que RESTAN -->
+                                <div class="col-md-6">
+                                    <div class="bg-light-danger rounded p-5 h-100">
+                                        <div class="d-flex align-items-center mb-4">
+                                            <i class="flaticon2-warning text-danger icon-xl mr-3"></i>
+                                            <div>
+                                                <div class="font-weight-boldest text-danger font-size-lg">Acciones que RESTAN</div>
+                                                <div class="font-weight-bold text-danger font-size-sm">-0.5 pts cada una</div>
+                                            </div>
+                                        </div>
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-delete text-danger mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Comer en clases</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-delete text-danger mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Uso no autorizado de celular u otros dispositivos</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-delete text-danger mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Uso incorrecto del uniforme</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-delete text-danger mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Asistir sin el material escolar requerido</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-delete text-danger mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Llegada tarde al aula</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-delete text-danger mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Indisciplina</span></li>
+                                            <li class="d-flex align-items-start mb-2"><i class="flaticon2-delete text-danger mr-2 mt-1" style="font-size:10px;"></i><span class="font-weight-bold text-dark-75 font-size-sm">Otros que falten a los valores institucionales</span></li>
+                                        </ul>
+                                        <div class="separator separator-dashed my-4"></div>
+                                        <div class="font-weight-boldest text-danger font-size-sm mb-2">Faltas Graves: -3 pts</div>
+                                        <p class="text-dark-75 font-size-sm mb-0">Las faltas graves según el reglamento descuentan 3 pts en la materia afectada. Si ocurren fuera del aula, descuentan 3 pts <strong>en todas las materias</strong>.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Niveles de Alerta -->
+                            <h5 class="font-weight-bolder text-dark mb-4">Niveles de Alerta por Materia</h5>
+                            <div class="row">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <div class="card bg-light-warning border border-warning rounded p-4 h-100">
+                                        <div class="text-center mb-3">
+                                            <span class="font-weight-boldest font-size-h3 text-warning">7 pts o menos</span>
+                                        </div>
+                                        <p class="text-dark-75 font-weight-bold font-size-sm text-center mb-0">Se solicita al padre revisar el SAAT y apersonarse al colegio en horario de entrevista docente.</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <div class="card bg-light-danger border border-danger rounded p-4 h-100">
+                                        <div class="text-center mb-3">
+                                            <span class="font-weight-boldest font-size-h3 text-danger">5 pts o menos</span>
+                                        </div>
+                                        <p class="text-dark-75 font-weight-bold font-size-sm text-center mb-0">Es obligatorio apersonarse al colegio. Se notifica también al consejero para programar una reunión.</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border rounded p-4 h-100" style="background:#3f0000; border-color:#7a0000 !important;">
+                                        <div class="text-center mb-3">
+                                            <span class="font-weight-boldest font-size-h3 text-white">1 pt o menos</span>
+                                        </div>
+                                        <p class="font-weight-bold font-size-sm text-center mb-0 text-white">Reunión urgente con Dirección Técnica y Comisión Disciplinaria. Suspensión de un día.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <!-- Fin Guía -->
+                <script>
+                    $('#guia_sistema').on('show.bs.collapse', function () {
+                        $('[data-target="#guia_sistema"]').html('<i class="flaticon2-up icon-sm mr-1"></i> Ocultar reglas');
+                    }).on('hide.bs.collapse', function () {
+                        $('[data-target="#guia_sistema"]').html('<i class="flaticon2-down icon-sm mr-1"></i> Ver reglas');
+                    });
+                </script>
+
                 <?php if (isset($students) && count($students) > 1): ?>
                     <!-- Selector de Hijos -->
                     <div class="row mb-5">
@@ -125,6 +246,16 @@ $session = session();
                                 // Color del puntaje
                                 $scoreColor = ($ss['ser_score'] >= 8) ? 'success' : (($ss['ser_score'] >= 5) ? 'warning' : 'danger');
                                 $isLast = ($key === array_key_last($subject_stats));
+                                // Badge de alerta
+                                if ($ss['ser_score'] <= 1) {
+                                    $alertBadge = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta Crítica</span>';
+                                } elseif ($ss['ser_score'] <= 5) {
+                                    $alertBadge = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1" style="background:#c0392b;"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta 2 enviada</span>';
+                                } elseif ($ss['ser_score'] <= 7) {
+                                    $alertBadge = '<span class="badge badge-warning font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-dark icon-xs mr-1"></i> Alerta 1 enviada</span>';
+                                } else {
+                                    $alertBadge = '';
+                                }
                                 ?>
                                 <div
                                     class="d-flex flex-wrap align-items-center justify-content-between <?= !$isLast ? 'mb-4 pb-4 border-bottom' : '' ?>">
@@ -136,9 +267,9 @@ $session = session();
                                             </span>
                                         </div>
                                         <div class="d-flex flex-column">
-                                            <span
-                                                class="text-dark-75 font-weight-bold font-size-lg mb-0"><?= $ss['name'] ?></span>
+                                            <span class="text-dark-75 font-weight-bold font-size-lg mb-0"><?= $ss['name'] ?></span>
                                             <span class="text-muted font-size-sm">Prof. <?= $ss['teacher'] ?></span>
+                                            <?= $alertBadge ?>
                                         </div>
                                     </div>
 

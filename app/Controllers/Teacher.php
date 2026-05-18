@@ -41,6 +41,7 @@ use App\Models\DelayModel;
 use App\Models\ScoreModel;
 use App\Models\BehaviorModel;
 use App\Models\IncidenciaModel;
+use App\Models\BoletaModel;
 use App\Models\InterviewModel;
 use App\Models\EvaluationModel;
 use App\Models\EhcModel;
@@ -380,21 +381,44 @@ class Teacher extends BaseController
     function content_letter()
     {
         $session = session();
-
-
         $Subject = new SubjectModel();
-        $materias = $Subject->subjects_docente($session->get('teacher_id'));
+        $raw     = $Subject->subjects_docente($session->get('teacher_id'));
 
-        //$page_data['teacher_id'] = $this->session->userdata('teacher_id');
+        // Group secondary subjects by (materia, class_id); keep primary individual.
+        // canonical_id = MIN subject_id of the group (used as filename key).
+        $grouped = [];
+        foreach ($raw as $row) {
+            $is_sec = stripos($row->grade ?? '', 'secundaria') !== false;
+            if ($is_sec) {
+                $gkey = $row->materia . '||' . $row->class_id;
+                if (!isset($grouped[$gkey])) {
+                    $grouped[$gkey] = [
+                        'canonical_id' => $row->subject_id,
+                        'materia'      => $row->materia,
+                        'nivel'        => $row->grade,
+                    ];
+                } else {
+                    if ($row->subject_id < $grouped[$gkey]['canonical_id']) {
+                        $grouped[$gkey]['canonical_id'] = $row->subject_id;
+                    }
+                }
+            } else {
+                $gkey = 'P_' . $row->subject_id;
+                $grouped[$gkey] = [
+                    'canonical_id' => $row->subject_id,
+                    'materia'      => $row->materia,
+                    'nivel'        => $row->curso,
+                ];
+            }
+        }
+
         $Setting = new SettingModel();
-
-        $page_data['phase_id'] = $Setting->get_phase_id();
-        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['phase_name']   = $Setting->get_phase_name();
         $page_data['system_title'] = $Setting->get_system_title();
-        $page_data['system_name'] = $Setting->get_system_name();
-        $page_data['materias'] = $materias;
-        $page_data['page_name'] = 'content_letter';
-        $page_data['page_title'] = 'Cartas de Contenidos';
+        $page_data['system_name']  = $Setting->get_system_name();
+        $page_data['materias']     = $grouped;
+        $page_data['page_name']    = 'content_letter';
+        $page_data['page_title']   = 'Cartas de Contenidos';
         return view('backend/index', $page_data);
     }
     function upfile_letter($param1 = '')
@@ -431,6 +455,39 @@ class Teacher extends BaseController
             $session->set('flash_message_error', 'Error al cargar');
             return redirect()->to(base_url() . '/' . $session->get('login_type') . '/content_letter/');
         }
+    }
+    function upfile_letter_trim($subject_id = 0, $trim = 0)
+    {
+        $session = session();
+        $subject_id = (int)$subject_id;
+        $trim       = (int)$trim;
+
+        if (!$subject_id || !in_array($trim, [1, 2, 3])) {
+            $session->set('flash_message_error', 'Parámetros inválidos.');
+            return redirect()->to(base_url() . '/' . $session->get('login_type') . '/content_letter');
+        }
+
+        $nomArchivo  = "CC_{$subject_id}_T{$trim}.pdf";
+        $uploadPath  = FCPATH . 'uploads/content_letter/';
+
+        if (file_exists($uploadPath . $nomArchivo)) {
+            unlink($uploadPath . $nomArchivo);
+        }
+
+        $archivoFile = $this->request->getFile('userfile');
+
+        if ($archivoFile && $archivoFile->isValid() && !$archivoFile->hasMoved()) {
+            if (strtolower($archivoFile->getClientExtension()) === 'pdf') {
+                $archivoFile->move($uploadPath, $nomArchivo);
+                $session->set('flash_message', 'Carta del Trimestre ' . $trim . ' cargada correctamente.');
+            } else {
+                $session->set('flash_message_error', 'Solo se permiten archivos PDF.');
+            }
+        } else {
+            $session->set('flash_message_error', 'Error al cargar el archivo. Asegúrese de seleccionar un PDF.');
+        }
+
+        return redirect()->to(base_url() . '/' . $session->get('login_type') . '/content_letter');
     }
     function pdcs()
     {
@@ -585,13 +642,35 @@ class Teacher extends BaseController
 
         $IncidenciaMod = new IncidenciaModel();
         $logs = $IncidenciaMod->getRegistroEstudiante($student_id, $page_data['phase_id'], $subject_id > 0 ? $subject_id : null);
+
+        // Merge boletas as "falta grave" entries
+        $BoletaMod = new BoletaModel();
+        $boletas = $BoletaMod->getBoletasEstudiante($student_id, $page_data['phase_id'], $subject_id > 0 ? $subject_id : null);
+        foreach ($boletas as $b) {
+            $logs[] = [
+                'id'                  => 'boleta_' . $b['id'],
+                'source'              => 'boleta',
+                'incidencia_tipo_id'  => null,
+                'nombre'              => 'Boleta Verde – Falta Grave',
+                'icono'               => '🟢',
+                'tipo'                => 'grave',
+                'observacion'         => $b['descripcion'],
+                'subject_name'        => $b['subject_name'] ?? ($b['tipo'] === 'recreo' ? 'Todas las materias' : null),
+                'created_at'          => $b['fecha'] . ' 00:00:00',
+                'fecha'               => $b['fecha'],
+                'dias_suspension'     => (int)$b['dias_suspension'],
+                'medidas_restaurativas' => $b['medidas_restaurativas'],
+            ];
+        }
+        // Sort merged array by date descending
+        usort($logs, fn($a, $b) => strcmp($b['created_at'], $a['created_at']));
         $page_data['logs'] = $logs;
 
         // Daily Logistics (Neutral type: Enfermería/Baño)
         $currentDate = $this->request->getGet('date') ?: date('Y-m-d');
         $page_data['logistics'] = $IncidenciaMod->getLogisticasHoy($student_id, $currentDate, $page_data['phase_id']);
 
-        // Puntos del Ser
+        // Puntos del Ser (calcularNota already includes boleta deductions)
         $page_data['puntos_del_ser'] = $subject_id > 0
             ? $IncidenciaMod->calcularNota($student_id, $subject_id, $page_data['phase_id'])
             : 10;
@@ -600,8 +679,13 @@ class Teacher extends BaseController
         $behaviorCounts = [];
         $positiveCount = 0;
         $negativeCount = 0;
-        $neutralCount = 0;
+        $neutralCount  = 0;
+        $graveCount    = 0;
         foreach ($logs as $log) {
+            if ($log['tipo'] === 'grave') {
+                $graveCount++;
+                continue;
+            }
             $bid = $log['incidencia_tipo_id'];
             if (!isset($behaviorCounts[$bid])) {
                 $behaviorCounts[$bid] = [
@@ -620,11 +704,20 @@ class Teacher extends BaseController
                 $neutralCount++;
             }
         }
+        if ($graveCount > 0) {
+            $behaviorCounts['grave'] = [
+                'nombre' => 'Boleta Verde – Falta Grave',
+                'icono'  => '🟢',
+                'count'  => $graveCount,
+                'tipo'   => 'grave',
+            ];
+        }
 
         $page_data['positive_incidents'] = $positiveCount;
         $page_data['negative_incidents'] = $negativeCount;
-        $page_data['neutral_incidents'] = $neutralCount;
-        $page_data['behavior_counts'] = $behaviorCounts;
+        $page_data['neutral_incidents']  = $neutralCount;
+        $page_data['grave_incidents']    = $graveCount;
+        $page_data['behavior_counts']    = $behaviorCounts;
 
         $page_data['student'] = $student;
         $page_data['subject_id'] = $subject_id;
@@ -836,6 +929,22 @@ class Teacher extends BaseController
         $teacher_id = $session->get('teacher_id');
 
         $IncidenciaMod = new IncidenciaModel();
+
+        $tipoInfo = $IncidenciaMod->getTipoById($tipoId);
+        if ($tipoInfo && $tipoInfo['tipo'] === 'negativa') {
+            $conteos = $IncidenciaMod->getConteos($studentId, $subjectId, $phase_id);
+            if ($conteos['nota'] <= 7 && !$IncidenciaMod->tieneCompromiso($studentId, $subjectId, $phase_id)) {
+                return $this->response->setJSON([
+                    'status'  => 'needs_acta',
+                    'nota'    => $conteos['nota'],
+                    'message' => 'El estudiante tiene ' . $conteos['nota'] . ' pts. Se requiere acta de reunión con el padre/tutor.',
+                ]);
+            }
+        }
+
+        // Capturar nota anterior para detectar cruce de umbral
+        $nota_anterior = isset($conteos) ? $conteos['nota'] : null;
+
         $IncidenciaMod->registrar([
             'student_id'        => $studentId,
             'subject_id'        => $subjectId,
@@ -847,6 +956,90 @@ class Teacher extends BaseController
         ]);
 
         $conteos = $IncidenciaMod->getConteos($studentId, $subjectId, $phase_id);
+
+        // Envío de correo de advertencia (solo en producción, no en localhost)
+        $host         = $_SERVER['HTTP_HOST'] ?? '';
+        $isProduction = ($host !== 'localhost' && strpos($host, '127.') !== 0 && $host !== '::1');
+
+        if ($isProduction && $nota_anterior !== null && $tipoInfo && $tipoInfo['tipo'] === 'negativa') {
+            $nota_nueva   = $conteos['nota'];
+            $templateFile = null;
+            $asuntoEmail  = null;
+
+            if ($nota_nueva <= 1 && $nota_anterior > 1) {
+                $templateFile = 'incidencia1.html';
+                $asuntoEmail  = 'Alerta Nivel 3 (Crítico) — Dimensión del Ser';
+            } elseif ($nota_nueva <= 5 && $nota_anterior > 5) {
+                $templateFile = 'incidencia5.html';
+                $asuntoEmail  = 'Alerta Nivel 2 — Dimensión del Ser';
+            } elseif ($nota_nueva <= 7 && $nota_anterior > 7) {
+                $templateFile = 'incidencia7.html';
+                $asuntoEmail  = 'Alerta Nivel 1 — Dimensión del Ser';
+            }
+
+            if ($templateFile) {
+                $templatePath = APPPATH . 'Views/emails/' . $templateFile;
+                if (file_exists($templatePath)) {
+                    $StudentMod   = new StudentModel();
+                    $students     = $StudentMod->datosStudent($studentId);
+                    $student_name = $students[0]->nombre ?? 'Estudiante';
+                    $section_id   = $students[0]->section_id ?? null;
+
+                    $SubjectMod   = new SubjectModel();
+                    $subjectInfo  = $SubjectMod->subject_docente_name($subjectId);
+                    $materia_name = $subjectInfo[0]['materia'] ?? '';
+                    $docente_name = $subjectInfo[0]['docente'] ?? '';
+
+                    $FamilyMod = new FamilyModel();
+                    $family    = $FamilyMod->get_family_emails($studentId);
+                    $to_parent = '';
+                    if (!empty($family)) {
+                        $emails    = array_filter([$family[0]['email1'] ?? '', $family[0]['email2'] ?? '']);
+                        $to_parent = implode(', ', $emails);
+                    }
+
+                    // Emails de copia según nivel de alerta
+                    $emailDocente   = $session->get('email') ?? '';  // docente que registra
+                    $emailConsejero = '';
+                    $emailDirector  = '';
+                    if ($section_id) {
+                        $SectionMod    = new SectionModel();
+                        $sectionEmails = $SectionMod->section_emails($section_id);
+                        $emailConsejero = $sectionEmails[0]['emailDocente']  ?? '';
+                        $emailDirector  = $sectionEmails[0]['emailDirector'] ?? '';
+                    }
+
+                    // incidencia7 → CC: emailDocente + seguimiento
+                    // incidencia5 → CC: emailDocente + emailConsejero + seguimiento
+                    // incidencia1 → CC: emailDocente + emailConsejero + emailDirector + seguimiento
+                    $ccList = [$emailDocente, 'etorrico@tiquipaya.edu.bo'];
+                    if ($templateFile === 'incidencia5.html' || $templateFile === 'incidencia1.html') {
+                        $ccList[] = $emailConsejero;
+                    }
+                    if ($templateFile === 'incidencia1.html') {
+                        $ccList[] = $emailDirector;
+                    }
+                    $cc = implode(', ', array_filter($ccList));
+
+                    if ($to_parent) {
+                        $html = file_get_contents($templatePath);
+                        $html = str_replace(
+                            ['[Nombre del Estudiante]', '[Nombre de la Materia]', '[Nombre del Docente]'],
+                            [$student_name, $materia_name, $docente_name],
+                            $html
+                        );
+                        $headers = implode("\r\n", [
+                            'From: Saat Tiquipaya <saat@tiquipaya.edu.bo>',
+                            'Cc: ' . $cc,
+                            'MIME-Version: 1.0',
+                            'Content-type: text/html; charset=utf-8',
+                            'X-Mailer: PHP/' . phpversion(),
+                        ]);
+                        mail($to_parent, $asuntoEmail, $html, $headers);
+                    }
+                }
+            }
+        }
 
         return $this->response->setJSON([
             'status'             => 'success',
@@ -882,6 +1075,87 @@ class Teacher extends BaseController
             'new_positive_count' => $conteos['positiva'],
             'student_id'         => $registro['student_id'],
         ]);
+    }
+
+    function get_student_score()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return $this->response->setJSON(['status' => 'error']);
+
+        $student_id = $this->request->getGet('student_id');
+        $subject_id = $this->request->getGet('subject_id');
+
+        if (!$student_id || !$subject_id)
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Faltan parámetros']);
+
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+
+        $IncidenciaMod   = new IncidenciaModel();
+        $conteos         = $IncidenciaMod->getConteos($student_id, $subject_id, $phase_id);
+        $tieneCompromiso = $IncidenciaMod->tieneCompromiso($student_id, $subject_id, $phase_id);
+
+        return $this->response->setJSON([
+            'status'          => 'success',
+            'nota'            => $conteos['nota'],
+            'negativa'        => $conteos['negativa'],
+            'positiva'        => $conteos['positiva'],
+            'tiene_compromiso'=> $tieneCompromiso,
+            'bloqueado'       => ($conteos['nota'] <= 7 && !$tieneCompromiso),
+        ]);
+    }
+
+    function upload_acta()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Sin autorización']);
+
+        $student_id    = $this->request->getPost('student_id');
+        $subject_id    = $this->request->getPost('subject_id');
+        $fecha_reunion = $this->request->getPost('fecha_reunion');
+        $observacion   = $this->request->getPost('observacion');
+        $teacher_id    = $session->get('teacher_id');
+
+        if (!$student_id || !$subject_id || !$fecha_reunion)
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Faltan datos requeridos']);
+
+        $file = $this->request->getFile('acta_file');
+        if (!$file || !$file->isValid() || $file->hasMoved())
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Debes subir el acta de reunión']);
+
+        $allowedTypes = ['pdf', 'jpg', 'jpeg', 'png'];
+        if (!in_array(strtolower($file->getExtension()), $allowedTypes))
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Formato no permitido. Usa PDF, JPG o PNG.']);
+
+        if ($file->getSize() > 5 * 1024 * 1024)
+            return $this->response->setJSON(['status' => 'error', 'message' => 'El archivo no debe superar 5MB.']);
+
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+
+        $uploadPath = FCPATH . 'uploads/actas/';
+        if (!is_dir($uploadPath)) {
+            mkdir($uploadPath, 0755, true);
+            file_put_contents($uploadPath . 'index.html', '');
+        }
+
+        $newName = 'acta_' . $student_id . '_' . $subject_id . '_' . time() . '.' . $file->getExtension();
+        $file->move($uploadPath, $newName);
+
+        $IncidenciaMod = new IncidenciaModel();
+        $IncidenciaMod->registrarCompromiso([
+            'student_id'    => $student_id,
+            'subject_id'    => $subject_id,
+            'phase_id'      => $phase_id,
+            'teacher_id'    => $teacher_id,
+            'fecha_reunion' => $fecha_reunion,
+            'observacion'   => $observacion,
+            'archivo'       => $newName,
+        ]);
+
+        return $this->response->setJSON(['status' => 'success']);
     }
 
     function update_attendance_ajax()
@@ -1388,7 +1662,7 @@ class Teacher extends BaseController
         $allAsistencias = [];
         if (!empty($date_ids)) {
             $student_ids    = array_column($students, 'student_id');
-            $rows_bulk      = $this->db->table('assistance_subject')
+            $rows_bulk      = db_connect('asistencia')->table('assistance_subject')
                 ->whereIn('student_id', $student_ids)
                 ->whereIn('date_id', $date_ids)
                 ->where('subject_id', $subject_id)

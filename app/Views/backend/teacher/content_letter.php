@@ -1,25 +1,5 @@
-<script type="text/javascript">
-    function confirmar()
-    {
-        var respuesta = confirm("¿Esta seguro de realizar los Cambios?");
-        if (respuesta == true){
-            document.form_teacher.submit(); 
-        }else{
-            return false;
-        }
-    }
-    function imprim1(imp1){
-        var printContents = document.getElementById('imp1').innerHTML;
-        w = window.open();
-        w.document.write(printContents);
-        w.document.close(); // necessary for IE >= 10
-        w.focus(); // necessary for IE >= 10
-        w.print();
-        w.close();
-        return true;
-    }
-</script>
 <?php $session = session(); ?>
+
 <!--begin::Entry-->
 <div class="d-flex flex-column-fluid">
     <!--begin::Container-->
@@ -28,76 +8,100 @@
         <div class="card card-custom">
             <div class="card-header flex-wrap border-0 pt-6 pb-0">
                 <div class="card-title">
-                    <h3 class="card-label">Cartas de Contenidos - <?php echo $phase_name; ?>
-                    <span class="d-block text-muted pt-2 font-size-sm">Listado de Cartas de Contenido</span></h3>
-                </div>
-                <div class="card-toolbar">
-
+                    <h3 class="card-label">Cartas de Contenidos
+                        <span class="d-block text-muted pt-2 font-size-sm">Listado de Cartas de Contenido</span>
+                    </h3>
                 </div>
             </div>
-            <div class="card-body" id="imp1">
-                                        
+            <div class="card-body">
+
+                <!-- Flash messages -->
+                <?php if ($session->get('flash_message')): ?>
+                <div class="alert alert-success alert-dismissible fade show">
+                    <i class="fas fa-check-circle mr-2"></i><?= htmlspecialchars($session->get('flash_message')) ?>
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                </div>
+                <?php $session->remove('flash_message'); endif; ?>
+                <?php if ($session->get('flash_message_error')): ?>
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="fas fa-exclamation-circle mr-2"></i><?= htmlspecialchars($session->get('flash_message_error')) ?>
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                </div>
+                <?php $session->remove('flash_message_error'); endif; ?>
+
                 <!--begin: Datatable-->
                 <table class="table">
                     <thead class="thead-inverse">
                         <tr>
-                            <th>Curso</th>
-                            <th>Carta de Contenidos</th>
+                            <th>Materia</th>
+                            <th>Nivel</th>
+                            <th class="text-center">1er Trimestre</th>
+                            <th class="text-center">2do Trimestre</th>
+                            <th class="text-center">3er Trimestre</th>
                         </tr>
                     </thead>
                     <tbody>
-                    <?php
-                        //RECUPERAMOS EL BIMESTRE ACTUAL
-                        //$students = $this->db->order_by('lastname', 'ASC')->get_where('student' , array('class_id'=>$class_id , 'section_id' => $row['section_id']))->result_array();
-                        //$students = $this->db->query($csl1)->result_array();
-                    foreach($materias as $row):
-                        if (is_null($row->link)) {
-                            ?>
-                            <tr>
-                                <td><?php echo $row->curso;?></td>
-                                <td><?php //echo $row['subject_id'];
-                                //Verificamos si el archivo Existe
-                                $nomArchivo = "CC_".$row->subject_id."_".$phase_id.".pdf";
-                                $nombre_fichero = $_SERVER['DOCUMENT_ROOT'] ."/plataforma/public/uploads/content_letter/".$nomArchivo;
-                                if (file_exists($nombre_fichero)) {
-                                    ?>
-                                    <a href="<?php echo base_url();?>/uploads/content_letter/<?php echo $nomArchivo;?>" target="_blank" class="btn btn-text-info btn-hover-light-info font-weight-bold mr-2">Ver C.C. <?php echo $row->materia;?></a>
-                                    <!--<a href="http://tiquipaya.edu.bo/saat2023/uploads/content_letter/<?php echo $nomArchivo;?>" target="_blank" class="btn btn-text-info btn-hover-light-info font-weight-bold mr-2">Ver C.C. <?php echo $row->materia;?></a>-->
-                                    <a onclick="showAjaxModal('<?php echo base_url();?>/modal/popup/modal_upfile/<?php echo $row->curso;?>/<?php echo $row->materia;?>/<?php echo $row->subject_id;?>/0/0');" class="btn btn-text-primary btn-hover-light-primary font-weight-bold mr-2">Cambiar</a>
-                                    <?php
-                                } else {
-                                    ?>
-                                <button type="button" class="btn btn-info" 
-                                onclick="showAjaxModal('<?php echo base_url();?>/modal/popup/modal_upfile/<?php echo $row->curso;?>/<?php echo $row->materia;?>/<?php echo $row->subject_id;?>/0/0');" >Subir C.C. de <?php echo $row->materia;?></button>
-                                    <?php
-                                }
-                                ?>
-                                
-                                </td>
-                            </tr>
-                            <?php 
-                        }else{
-                            ?>
-                            <tr>
-                                <td><?php echo $row->curso;?></td>
-                                <td>
-                                    <a href="<?php echo $row->link;?>" target="_blank" class="btn btn-text-info btn-hover-light-info font-weight-bold mr-2">Ver C.C. <?php echo $row->materia;?></a>
-                                </td>
-                            </tr>
-                            <?php 
+                    <?php foreach ($materias as $item):
+                        $sid   = $item['canonical_id'];
+                        $trims = [];
+                        for ($t = 1; $t <= 3; $t++) {
+                            $fname = "CC_{$sid}_T{$t}.pdf";
+                            if (!file_exists(FCPATH . 'uploads/content_letter/' . $fname)) {
+                                $alt = "CC_{$sid}_{$t}.pdf";
+                                $fname = file_exists(FCPATH . 'uploads/content_letter/' . $alt) ? $alt : null;
+                            }
+                            $trims[$t] = $fname;
                         }
-                        
-                    endforeach;
                     ?>
+                    <tr>
+                        <td class="font-weight-bold align-middle">
+                            <?= htmlspecialchars($item['materia']) ?>
+                        </td>
+                        <td class="align-middle text-muted">
+                            <?= htmlspecialchars($item['nivel']) ?>
+                        </td>
+                        <?php for ($t = 1; $t <= 3; $t++): ?>
+                        <td class="text-center align-middle">
+                            <?php if ($trims[$t]): ?>
+                                <a href="<?= base_url('uploads/content_letter/' . $trims[$t]) ?>"
+                                   target="_blank"
+                                   class="btn btn-text-info btn-hover-light-info font-weight-bold mr-1">
+                                   Ver C.C.
+                                </a>
+                                <label class="btn btn-text-primary btn-hover-light-primary font-weight-bold mb-0"
+                                       style="cursor:pointer;" title="Reemplazar PDF">
+                                    Cambiar
+                                    <form action="<?= base_url("teacher/upfile_letter_trim/{$sid}/{$t}") ?>"
+                                          method="post" enctype="multipart/form-data" style="display:none;" id="form_<?= $sid ?>_<?= $t ?>">
+                                        <input type="file" name="userfile" accept="application/pdf"
+                                               onchange="document.getElementById('form_<?= $sid ?>_<?= $t ?>').submit()">
+                                    </form>
+                                </label>
+                            <?php else: ?>
+                                <label class="btn btn-info font-weight-bold mb-0" style="cursor:pointer;">
+                                    Subir C.C.
+                                    <form action="<?= base_url("teacher/upfile_letter_trim/{$sid}/{$t}") ?>"
+                                          method="post" enctype="multipart/form-data" style="display:none;" id="form_<?= $sid ?>_<?= $t ?>">
+                                        <input type="file" name="userfile" accept="application/pdf"
+                                               onchange="document.getElementById('form_<?= $sid ?>_<?= $t ?>').submit()">
+                                    </form>
+                                </label>
+                            <?php endif; ?>
+                        </td>
+                        <?php endfor; ?>
+                    </tr>
+                    <?php endforeach; ?>
                     </tbody>
                 </table>
                 <!--end: Datatable-->
+
             </div>
         </div>
         <!--end::Card-->
     </div>
     <!--end::Container-->
 </div>
+<!--end::Entry-->
 
 
 

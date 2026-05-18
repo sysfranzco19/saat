@@ -97,7 +97,7 @@ class StudentModel extends Model
     }
     public function students_family($family_id)
     {
-        $sql = "SELECT t1.*, CONCAT(t1.lastname,' ', t1.lastname2, ' ', t1.name) as student, t2.completo FROM t_student as t1 INNER JOIN section as t2 ON(t1.section_id=t2.section_id) 
+        $sql = "SELECT t1.*, CONCAT(t1.lastname,' ', t1.lastname2, ' ', t1.name) as student, t2.completo, t2.grade FROM t_student as t1 INNER JOIN section as t2 ON(t1.section_id=t2.section_id)
         WHERE t1.family_id=" . $family_id . " ORDER BY t1.section_id";
         $student = $this->db->query($sql);
         return $student->getResultArray();

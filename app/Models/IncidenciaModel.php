@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use CodeIgniter\Model;
@@ -6,6 +7,7 @@ use CodeIgniter\Model;
 class IncidenciaModel extends Model
 {
     protected $DBGroup = 'tiquipaya';
+
     public function getTipos()
     {
         return $this->db->table('incidencia_tipos')
@@ -68,7 +70,10 @@ class IncidenciaModel extends Model
                 $c[$row['tipo']] = (int) $row['total'];
             }
         }
-        $c['nota'] = max(0, min(10, round(10 - $c['negativa'] * 0.5 + $c['positiva'] * 0.5, 1)));
+        $BoletaMod = new \App\Models\BoletaModel();
+        $boletasPts = $BoletaMod->impactoNota($student_id, $subject_id, $phase_id);
+        $c['boletas'] = (int)($boletasPts / 3);
+        $c['nota'] = max(0, min(10, round(10 - $c['negativa'] * 0.5 + $c['positiva'] * 0.5 - $boletasPts, 1)));
         return $c;
     }
 
@@ -96,12 +101,17 @@ class IncidenciaModel extends Model
             }
         }
 
+        $BoletaMod = new \App\Models\BoletaModel();
+        $boletasImpacto = $BoletaMod->impactoNotaBulk($student_ids, $subject_id, $phase_id);
+
         foreach ($student_ids as $sid) {
             if (!isset($result[$sid])) {
                 $result[$sid] = ['negativa' => 0, 'positiva' => 0, 'neutral' => 0];
             }
             $c = $result[$sid];
-            $result[$sid]['nota'] = max(0, min(10, round(10 - $c['negativa'] * 0.5 + $c['positiva'] * 0.5, 1)));
+            $pts = isset($boletasImpacto[$sid]) ? $boletasImpacto[$sid] : 0;
+            $result[$sid]['boletas'] = (int)($pts / 3);
+            $result[$sid]['nota'] = max(0, min(10, round(10 - $c['negativa'] * 0.5 + $c['positiva'] * 0.5 - $pts, 1)));
         }
 
         return $result;
@@ -125,7 +135,10 @@ class IncidenciaModel extends Model
             ->where('it.tipo', 'positiva')
             ->countAllResults();
 
-        return max(0, min(10, round(10 - $neg * 0.5 + $pos * 0.5, 1)));
+        $BoletaMod = new \App\Models\BoletaModel();
+        $boletasPts = $BoletaMod->impactoNota($student_id, $subject_id, $phase_id);
+
+        return max(0, min(10, round(10 - $neg * 0.5 + $pos * 0.5 - $boletasPts, 1)));
     }
 
     public function getRegistroSeccion($section_id, $phase_id)
@@ -160,6 +173,26 @@ class IncidenciaModel extends Model
         }
 
         return $builder->orderBy('ir.created_at', 'DESC')->get()->getResultArray();
+    }
+
+    public function getTipoById($id)
+    {
+        return $this->db->table('incidencia_tipos')->where('id', $id)->get()->getRowArray();
+    }
+
+    public function tieneCompromiso($student_id, $subject_id, $phase_id)
+    {
+        return (bool) $this->db->table('incidencia_compromisos')
+            ->where('student_id', $student_id)
+            ->where('subject_id', $subject_id)
+            ->where('phase_id', $phase_id)
+            ->countAllResults();
+    }
+
+    public function registrarCompromiso(array $datos)
+    {
+        $this->db->table('incidencia_compromisos')->insert($datos);
+        return $this->db->insertID();
     }
 
     public function updateObservacion($id, $observacion)

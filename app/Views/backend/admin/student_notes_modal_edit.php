@@ -12,7 +12,6 @@
                 document.getElementById('ser_average').value = data.ser_average;
                 document.getElementById('saber_average').value = data.saber_average;
                 document.getElementById('hacer_average').value = data.hacer_average;
-                document.getElementById('decidir_average').value = data.decidir_average;
                 document.getElementById('autoevaluacion').value = data.autoevaluacion;
                 document.getElementById('total_average').value = data.total_average;
                 document.getElementById('total_vc').value = data.total_vc;
@@ -70,12 +69,6 @@
         </div>
     </div>
     <div class="form-group row">
-    <label for="decidir_average" class="col-3 col-form-label">DECIDIR: </label>
-    	<div class="col-9">
-            <input type="text" class="form-control" id="decidir_average" name="decidir_average" >
-        </div>
-    </div>
-    <div class="form-group row">
     <label for="autoevaluacion" class="col-3 col-form-label">AUTOEVALUACION: </label>
     	<div class="col-9">
             <input type="text" class="form-control" id="autoevaluacion" name="autoevaluacion" >
@@ -100,3 +93,18 @@
 </div>
 </form> 
 <!--end::Modal-->
+<script type="text/javascript">
+    function calcularTotal() {
+        var campos = ['ser_average', 'saber_average', 'hacer_average', 'autoevaluacion'];
+        var total = 0;
+        campos.forEach(function(id) {
+            var val = parseFloat(document.getElementById(id).value);
+            if (!isNaN(val)) total += val;
+        });
+        document.getElementById('total_average').value = total.toFixed(2);
+    }
+
+    ['ser_average', 'saber_average', 'hacer_average', 'autoevaluacion'].forEach(function(id) {
+        document.getElementById(id).addEventListener('input', calcularTotal);
+    });
+</script>

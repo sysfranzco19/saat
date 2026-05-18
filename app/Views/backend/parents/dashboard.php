@@ -351,7 +351,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('parents/behaviors') ?>"
+                                                    <a href="<?= base_url('parents/gamified_behavior') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Historial
                                                         de Comportamiento</a>
                                                     <span class="text-muted font-weight-bold d-block">Registro de

@@ -114,10 +114,8 @@
                              id="grade-<?php echo htmlspecialchars(preg_replace('/[\s]+/', '-', $grade)); ?>">
                             <div class="row">
                             <?php foreach ($subjects as $sub):
-                                $uploaded_secs = array_filter($sub['secciones'], fn($s) => $s['has_pdf']);
-                                $first_pdf     = current($uploaded_secs) ?: null;
-                                $color_bg      = $sub['has_any_pdf'] ? '#e8f5e9' : '#fdecea';
-                                $color_text    = $sub['has_any_pdf'] ? '#2e7d32'  : '#c62828';
+                                $color_bg   = $sub['has_any_pdf'] ? '#e8f5e9' : '#fdecea';
+                                $color_text = $sub['has_any_pdf'] ? '#2e7d32'  : '#c62828';
                             ?>
                             <div class="col-xl-6 col-lg-6 mb-4">
                                 <div class="card border <?php echo $sub['has_any_pdf'] ? 'border-success' : 'border-danger'; ?>"
@@ -150,29 +148,38 @@
                                         <!-- Badges de secciones -->
                                         <div class="d-flex flex-wrap mb-3">
                                             <?php foreach ($sub['secciones'] as $sec): ?>
-                                            <span class="label label-inline mr-1 mb-1 <?php echo $sec['has_pdf'] ? 'label-success' : 'label-danger'; ?>">
+                                            <span class="label label-inline label-light-primary mr-1 mb-1">
                                                 <?php echo htmlspecialchars($sec['seccion']); ?>
                                             </span>
                                             <?php endforeach; ?>
                                         </div>
-                                        <!-- Botón ver PDF -->
-                                        <?php if ($first_pdf): ?>
-                                        <button type="button"
-                                                class="btn btn-sm btn-light-primary btn-block font-weight-bold"
-                                                onclick="verPDF(
-                                                    <?php echo json_encode($sub['docente']); ?>,
-                                                    <?php echo json_encode($sub['materia']); ?>,
-                                                    <?php echo json_encode($grade); ?>,
-                                                    <?php echo json_encode($sub['personal_email'] ?? ''); ?>,
-                                                    <?php echo json_encode(base_url('uploads/content_letter/' . $first_pdf['pdf_file'])); ?>
-                                                )">
-                                            <i class="flaticon-eye mr-1"></i> Ver Carta PDF
-                                        </button>
-                                        <?php else: ?>
-                                        <button type="button" class="btn btn-sm btn-light btn-block font-weight-bold" disabled>
-                                            <i class="flaticon-upload mr-1"></i> Sin carta subida
-                                        </button>
-                                        <?php endif; ?>
+                                        <!-- Badges trimestres -->
+                                        <div class="d-flex justify-content-around mb-3">
+                                            <?php
+                                            $trim_short = [1 => 'T1', 2 => 'T2', 3 => 'T3'];
+                                            foreach ($trim_short as $t => $label):
+                                                $has_t = !empty($sub['trims'][$t]);
+                                            ?>
+                                            <div class="text-center">
+                                                <?php if ($has_t): ?>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-light-success font-weight-bold"
+                                                        onclick="verPDF(
+                                                            <?php echo json_encode($sub['docente']); ?>,
+                                                            <?php echo json_encode($sub['materia'] . ' — ' . $label); ?>,
+                                                            <?php echo json_encode($grade); ?>,
+                                                            <?php echo json_encode($sub['personal_email'] ?? ''); ?>,
+                                                            <?php echo json_encode(base_url('uploads/content_letter/' . $sub['trims'][$t])); ?>
+                                                        )">
+                                                    <i class="fas fa-file-pdf mr-1"></i><?= $label ?>
+                                                </button>
+                                                <?php else: ?>
+                                                <button class="btn btn-sm btn-light font-weight-bold" disabled>
+                                                    <i class="fas fa-minus mr-1"></i><?= $label ?>
+                                                </button>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php endforeach; ?></div>
                                     </div>
                                 </div>
                             </div>
