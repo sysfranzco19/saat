@@ -1872,6 +1872,60 @@ class Manager extends BaseController
             ORDER BY ad.date_class ASC
         ")->getResultArray();
 
+        // T2: datos del sistema nuevo (incidencia_registro en tiqui0_tiquisaat26)
+        $db_t2 = \Config\Database::connect('tiquipaya');
+
+        $t2_total_neg = (int) $db_t2->query("
+            SELECT COUNT(*) AS c
+            FROM incidencia_registro ir
+            JOIN incidencia_tipos it ON ir.incidencia_tipo_id = it.id
+            WHERE it.tipo = 'negativa'
+        ")->getRowArray()['c'];
+
+        $t2_total_pos = (int) $db_t2->query("
+            SELECT COUNT(*) AS c
+            FROM incidencia_registro ir
+            JOIN incidencia_tipos it ON ir.incidencia_tipo_id = it.id
+            WHERE it.tipo = 'positiva'
+        ")->getRowArray()['c'];
+
+        $t2_por_tipo = $db_t2->query("
+            SELECT it.nombre AS name, it.icono AS icon, it.tipo AS type, COUNT(*) AS total
+            FROM incidencia_registro ir
+            JOIN incidencia_tipos it ON ir.incidencia_tipo_id = it.id
+            GROUP BY it.id
+            ORDER BY total DESC
+        ")->getResultArray();
+
+        $t2_evolucion = $db_t2->query("
+            SELECT ir.fecha, COUNT(*) AS total
+            FROM incidencia_registro ir
+            JOIN incidencia_tipos it ON ir.incidencia_tipo_id = it.id
+            WHERE it.tipo = 'negativa'
+            GROUP BY ir.fecha
+            ORDER BY ir.fecha ASC
+        ")->getResultArray();
+
+        $t2_top_negativos_raw = $db_t2->query("
+            SELECT ir.student_id, COUNT(*) AS total_neg,
+                   s.name AS sn, s.lastname AS sl, s.lastname2 AS sl2,
+                   sec.grade AS grado, sec.name AS seccion
+            FROM incidencia_registro ir
+            JOIN incidencia_tipos it ON ir.incidencia_tipo_id = it.id AND it.tipo = 'negativa'
+            JOIN tiqui0_tiquiasis26.t_student s ON s.student_id = ir.student_id
+            JOIN tiqui0_tiquiasis26.section sec ON sec.section_id = s.section_id
+            GROUP BY ir.student_id
+            HAVING total_neg >= 3
+            ORDER BY total_neg DESC
+            LIMIT 15
+        ")->getResultArray();
+
+        $t2_top_negativos = [];
+        foreach ($t2_top_negativos_raw as $tn) {
+            $tn['alumno'] = trim($tn['sn'] . ' ' . ($tn['sl'] ?? '') . ' ' . ($tn['sl2'] ?? ''));
+            $t2_top_negativos[] = $tn;
+        }
+
         // Separar primaria y secundaria del resumen por curso
         $primaria = [];
         $secundaria = [];
@@ -1900,6 +1954,11 @@ class Manager extends BaseController
         $page_data['top_estudiantes'] = $top_estudiantes;
         $page_data['por_tipo'] = $por_tipo;
         $page_data['evolucion'] = $evolucion;
+        $page_data['t2_total_neg']     = $t2_total_neg;
+        $page_data['t2_total_pos']     = $t2_total_pos;
+        $page_data['t2_por_tipo']      = $t2_por_tipo;
+        $page_data['t2_evolucion']     = $t2_evolucion;
+        $page_data['t2_top_negativos'] = $t2_top_negativos;
 
         return view('backend/index', $page_data);
     }
@@ -1942,7 +2001,7 @@ class Manager extends BaseController
             ORDER BY s.name, s.lastname
         ", [$section_id])->getResultArray();
 
-        // Incidencias por estudiante + materia (filtramos via subquery para evitar JOIN cross-db)
+        // T1: Incidencias por estudiante + materia (sistema antiguo)
         $inc_raw = $db->query("
             SELECT bl.student_id, bl.subject_id, COUNT(bl.id) AS total
             FROM tiqui0_tiquiweb26.behavior_log bl
@@ -1953,13 +2012,12 @@ class Manager extends BaseController
             GROUP BY bl.student_id, bl.subject_id
         ", [$section_id])->getResultArray();
 
-        // Matriz: student_id => subject_id => count
+        // Matriz T1: student_id => subject_id => count
         $matriz = [];
         foreach ($inc_raw as $row) {
             $matriz[$row['student_id']][$row['subject_id']] = (int)$row['total'];
         }
 
-        // Total por estudiante y stats globales
         $totales     = [];
         $total_inc   = 0;
         $alumnos_con = 0;
@@ -1970,6 +2028,32 @@ class Manager extends BaseController
             if ($t > 0) $alumnos_con++;
         }
         $max_inc = !empty($totales) ? max($totales) : 1;
+
+        // T2: Incidencias por estudiante + materia (sistema nuevo)
+        $db_t2 = \Config\Database::connect('tiquipaya');
+        $inc_raw_t2 = $db_t2->query("
+            SELECT ir.student_id, ir.subject_id, COUNT(*) AS total
+            FROM incidencia_registro ir
+            JOIN incidencia_tipos it ON ir.incidencia_tipo_id = it.id AND it.tipo = 'negativa'
+            WHERE ir.student_id IN (
+                SELECT student_id FROM tiqui0_tiquiasis26.t_student WHERE section_id = ?
+            )
+            GROUP BY ir.student_id, ir.subject_id
+        ", [$section_id])->getResultArray();
+
+        $matriz_t2     = [];
+        $totales_t2    = [];
+        $total_inc_t2  = 0;
+        $alumnos_t2    = 0;
+        foreach ($inc_raw_t2 as $row) {
+            $matriz_t2[$row['student_id']][$row['subject_id']] = (int)$row['total'];
+        }
+        foreach ($matriz_t2 as $sid => $subs) {
+            $t = array_sum($subs);
+            $totales_t2[$sid] = $t;
+            $total_inc_t2    += $t;
+            if ($t > 0) $alumnos_t2++;
+        }
 
         $page_data['login_type']   = $session->get('login_type');
         $page_data['cuenta']       = $session->get('cuenta');
@@ -1987,6 +2071,10 @@ class Manager extends BaseController
         $page_data['total_inc']    = $total_inc;
         $page_data['alumnos_con']  = $alumnos_con;
         $page_data['max_inc']      = $max_inc;
+        $page_data['matriz_t2']    = $matriz_t2;
+        $page_data['totales_t2']   = $totales_t2;
+        $page_data['total_inc_t2'] = $total_inc_t2;
+        $page_data['alumnos_t2']   = $alumnos_t2;
 
         return view('backend/index', $page_data);
     }
@@ -2043,9 +2131,9 @@ class Manager extends BaseController
         if (!$student)
             return $this->response->setJSON(['error' => 'not found']);
 
-        // Detalle de incidencias negativas
+        // T1: todas las incidencias del sistema antiguo (behavior_log)
         $detalle = $db->query("
-            SELECT bt.name AS tipo, bt.icon, bt.points,
+            SELECT bt.name AS tipo, bt.icon, bt.type AS tipo_clase, bt.points,
                    ad.date_class AS fecha,
                    IFNULL(sub.name, '—') AS materia,
                    bl.observation
@@ -2053,25 +2141,52 @@ class Manager extends BaseController
             JOIN tiqui0_tiquiweb26.behavior_types bt   ON bl.behavior_type_id = bt.id
             JOIN tiqui0_tiquiasis26.attendance_dates ad ON bl.date_id = ad.date_id
             LEFT JOIN tiqui0_tiquiasis26.subject sub    ON bl.subject_id = sub.subject_id
-            WHERE bl.student_id = ? AND bt.type = 'negative'
+            WHERE bl.student_id = ?
             ORDER BY ad.date_class DESC
         ", [$student_id])->getResultArray();
 
-        // Resumen por tipo
         $por_tipo = $db->query("
-            SELECT bt.name AS tipo, bt.icon, COUNT(*) AS total
+            SELECT bt.name AS tipo, bt.icon, bt.type AS tipo_clase, COUNT(*) AS total
             FROM tiqui0_tiquiweb26.behavior_log bl
             JOIN tiqui0_tiquiweb26.behavior_types bt ON bl.behavior_type_id = bt.id
-            WHERE bl.student_id = ? AND bt.type = 'negative'
+            WHERE bl.student_id = ?
             GROUP BY bt.id
             ORDER BY total DESC
         ", [$student_id])->getResultArray();
 
+        // T2: sistema nuevo (incidencia_registro en tiqui0_tiquisaat26)
+        $db_t2 = \Config\Database::connect('tiquipaya');
+
+        $detalle_t2 = $db_t2->query("
+            SELECT it.nombre AS tipo, it.icono AS icon, it.tipo AS tipo_clase,
+                   ir.fecha,
+                   IFNULL(sub.name, '—') AS materia,
+                   ir.observacion AS observation,
+                   ir.phase_id
+            FROM incidencia_registro ir
+            JOIN incidencia_tipos it ON ir.incidencia_tipo_id = it.id
+            LEFT JOIN tiqui0_tiquiasis26.subject sub ON ir.subject_id = sub.subject_id
+            WHERE ir.student_id = ?
+            ORDER BY ir.fecha DESC, ir.created_at DESC
+        ", [$student_id])->getResultArray();
+
+        $por_tipo_t2 = $db_t2->query("
+            SELECT it.nombre AS tipo, it.icono AS icon, it.tipo AS tipo_clase, COUNT(*) AS total
+            FROM incidencia_registro ir
+            JOIN incidencia_tipos it ON ir.incidencia_tipo_id = it.id
+            WHERE ir.student_id = ?
+            GROUP BY it.id
+            ORDER BY total DESC
+        ", [$student_id])->getResultArray();
+
         return $this->response->setJSON([
-            'student' => $student,
-            'detalle' => $detalle,
-            'por_tipo' => $por_tipo,
-            'total' => count($detalle),
+            'student'     => $student,
+            'detalle'     => $detalle,
+            'por_tipo'    => $por_tipo,
+            'total'       => count($detalle),
+            'detalle_t2'  => $detalle_t2,
+            'por_tipo_t2' => $por_tipo_t2,
+            'total_t2'    => count($detalle_t2),
         ]);
     }
 
@@ -3091,6 +3206,7 @@ class Manager extends BaseController
             return redirect()->to(base_url());
         $Setting = new SettingModel();
         $phase_id = $Setting->get_phase_id();
+        $gestion = $Setting->get_gestion();
         $StudentMod = new StudentModel();
         $students = $StudentMod->student_active($section_id);
         $conter = 8;
@@ -3153,14 +3269,14 @@ class Manager extends BaseController
                     $b = 1 + $i;
                     $CsamarksMod = new CsamarksModel();
                     $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
-                    $lenque = 0; $ing = 0; $cnat = 0; $prom = 0;
+                    $ing = 0; $cnat = 0; $prom = 0;
                     $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
                     foreach ($ed_fisica as $ef) { $prom += round($ef['total_average']); }
                     foreach ($notas as $nota) {
                         switch ($nota['name']) {
-                            case 'LITERATURA': $lenque += $nota['obtained_mark']; break;
-                            case 'LENGUAJE': $lenque += $nota['obtained_mark']; break;
-                            case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
+                            case 'LITERATURA': $prom += round($nota['obtained_mark']); break;
+                            case 'LENGUAJE': $prom += round($nota['obtained_mark']); break;
+                            //case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
                             case 'LITERATURE': $ing += $nota['obtained_mark']; break;
                             case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
                             case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
@@ -3176,7 +3292,7 @@ class Manager extends BaseController
                             case 'VAL_ESP_REL': $prom += round($nota['obtained_mark']); break;
                         }
                     }
-                    $prom += round($lenque / 2) + round($ing / 2) + round($cnat);
+                    $prom += round($ing / 2) + round($cnat);
                     if ($prom != 0) { $notaBim[$b] = round($prom / 11, 2); }
                 }
                 $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
@@ -3191,14 +3307,14 @@ class Manager extends BaseController
                     $b = 1 + $i;
                     $CsamarksMod = new CsamarksModel();
                     $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
-                    $lenque = 0; $ing = 0; $prom = 0;
+                    $ing = 0; $prom = 0;
                     $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
                     foreach ($ed_fisica as $ef) { $prom += round($ef['total_average']); }
                     foreach ($notas as $nota) {
                         switch ($nota['name']) {
-                            case 'LITERATURA': $lenque += $nota['obtained_mark']; break;
-                            case 'LENGUAJE': $lenque += $nota['obtained_mark']; break;
-                            case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
+                            case 'LITERATURA': $prom += round($nota['obtained_mark']); break;
+                            case 'LENGUAJE': $prom += round($nota['obtained_mark']); break;
+                            //case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
                             case 'LITERATURE': $ing += $nota['obtained_mark']; break;
                             case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
                             case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
@@ -3214,7 +3330,7 @@ class Manager extends BaseController
                             case 'VAL_ESP_REL': $prom += round($nota['obtained_mark']); break;
                         }
                     }
-                    $prom += round($lenque / 2) + round($ing / 2);
+                    $prom +=  round($ing / 2);
                     if ($prom != 0) { $notaBim[$b] = round($prom / 13, 2); }
                 }
                 $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
@@ -3230,13 +3346,12 @@ class Manager extends BaseController
                     $b = 1 + $i;
                     $CsamarksMod = new CsamarksModel();
                     $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
-                    $lenque = 0; $ing = 0; $prom = 0;
+                    $ing = 0; $prom = 0;
                     $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
                     foreach ($ed_fisica as $ef) { $prom += round($ef['total_average']); }
                     foreach ($notas as $nota) {
                         switch ($nota['name']) {
-                            case 'LITERATURA': $lenque += round($nota['obtained_mark']); break;
-                            case 'QUECHUA': $lenque += round($nota['obtained_mark']); break;
+                            case 'LITERATURA': $prom += round($nota['obtained_mark']); break;
                             case 'LITERATURE': $ing += round($nota['obtained_mark']); break;
                             case 'GRAMMAR': $ing += round($nota['obtained_mark']); break;
                             case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
@@ -3251,7 +3366,6 @@ class Manager extends BaseController
                             case 'VAL_ESP_REL': $prom += round($nota['obtained_mark']); break;
                         }
                     }
-                    $prom += round($lenque / 2);
                     $prom += round($ing / 2);
                     if ($prom != 0) { $notaBim[$b] = round($prom / 13, 2); }
                 }
@@ -3274,6 +3388,7 @@ class Manager extends BaseController
         $SectionMod = new SectionModel();
         $section = $SectionMod->get_section($data);
         $fileName = 'RNK_' . $section[0]['completo'] . '.xlsx';
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('A4', "GESTIÓN " . $gestion . " RANKING OFICIAL");
         $obj_PHPExcel->getActiveSheet()->SetCellValue('A5', strtoupper($section[0]['completo']));
         $fecha_actual = date("d/m/Y");
         $obj_PHPExcel->getActiveSheet()->SetCellValue('F42', 'Generado el : ' . $fecha_actual);
@@ -3289,6 +3404,7 @@ class Manager extends BaseController
             return redirect()->to(base_url());
         $Setting = new SettingModel();
         $phase_id = $Setting->get_phase_id();
+        $gestion = $Setting->get_gestion();
         $StudentMod = new StudentModel();
         $students = $StudentMod->student_class($class_id);
         $conter = 8;
@@ -3346,45 +3462,39 @@ class Manager extends BaseController
             $students = $StudentMod->student_class($class_id);
             foreach ($students as $row) {
                 $est = $row['lastname'] . ' ' . $row['lastname2'] . ' ' . $row['name'] . ' - ' . $row['nick_name'];
-                $CsamarksMod = new CsamarksModel();
-                $notas = $CsamarksMod->csamarks_student_pa($row['student_id']);
-                $lenque1 = 0; $lenque2 = 0; $lenque3 = 0; $lenque_pa = 0;
-                $ing1 = 0; $ing2 = 0; $ing3 = 0; $ing_pa = 0;
-                $nat1 = 0; $nat2 = 0; $nat3 = 0; $nat_pa = 0;
-                $prom1 = 0; $prom2 = 0; $prom3 = 0; $prom_pa = 0;
-                foreach ($notas as $nota) {
-                    if ($nota['PA'] !== null) {
-                        switch ($nota['name']) {
-                            case 'LITERATURA':
-                                $lenque1 += $nota['T1']; $lenque2 += $nota['T2']; $lenque3 += $nota['T3']; $lenque_pa += round($nota['PA']); break;
-                            case 'LENGUAJE':
-                                $lenque1 += $nota['T1']; $lenque2 += $nota['T2']; $lenque3 += $nota['T3']; $lenque_pa += round($nota['PA']); break;
-                            case 'QUECHUA':
-                                $lenque1 += $nota['T1']; $lenque2 += $nota['T2']; $lenque3 += $nota['T3']; $lenque_pa += round($nota['PA']); break;
-                            case 'LITERATURE':
-                                $ing1 += $nota['T1']; $ing2 += $nota['T2']; $ing3 += $nota['T3']; $ing_pa += round($nota['PA']); break;
-                            case 'GRAMMAR':
-                                $ing1 += $nota['T1']; $ing2 += $nota['T2']; $ing3 += $nota['T3']; $ing_pa += round($nota['PA']); break;
-                            case 'FÍSICA':
-                                $nat1 += $nota['T1']; $nat2 += $nota['T2']; $nat3 += $nota['T3']; $nat_pa += round($nota['PA']); break;
-                            case 'QUÍMICA':
-                                $nat1 += $nota['T1']; $nat2 += $nota['T2']; $nat3 += $nota['T3']; $nat_pa += round($nota['PA']); break;
-                            case 'BTH CONTENIDOS': break;
-                            case 'BTH INGLÉS': break;
-                            default:
-                                $prom1 += round($nota['T1']); $prom2 += round($nota['T2']); $prom3 += round($nota['T3']); $prom_pa += round($nota['PA']); break;
+                for ($i = 0; $i <= $phase_id; $i++) {
+                    $b = 1 + $i;
+                    $CsamarksMod = new CsamarksModel();
+                    $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
+                    $ing = 0; $cnat = 0; $prom = 0;
+                    $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
+                    foreach ($ed_fisica as $ef) { $prom += round($ef['total_average']); }
+                    foreach ($notas as $nota) {
+                        if ($nota['obtained_mark'] !== null) {
+                            switch ($nota['name']) {
+                                case 'LITERATURA': $prom += round($nota['obtained_mark']); break;
+                                case 'LENGUAJE': $prom += round($nota['obtained_mark']); break;
+                                case 'LITERATURE': $ing += $nota['obtained_mark']; break;
+                                case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
+                                case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
+                                case 'MÚSICA': $prom += round($nota['obtained_mark']); break;
+                                case 'ART. PLAST.': $prom += round($nota['obtained_mark']); break;
+                                case 'MATEMÁTICA': $prom += round($nota['obtained_mark']); break;
+                                case 'TEC. TECNOLÓGICA': $prom += round($nota['obtained_mark']); break;
+                                case 'BIOLOGÍA': $cnat += round($nota['obtained_mark'] * 0.8); break;
+                                case 'FÍSICA': $cnat += round($nota['obtained_mark'] * 0.1); break;
+                                case 'QUÍMICA': $cnat += round($nota['obtained_mark'] * 0.1); break;
+                                case 'PSICOLOGÍA': $prom += round($nota['obtained_mark']); break;
+                                case 'FILOSOFÍA': $prom += round($nota['obtained_mark']); break;
+                                case 'VAL_ESP_REL': $prom += round($nota['obtained_mark']); break;
+                            }
                         }
                     }
+                    $prom += round($ing / 2) + round($cnat);
+                    if ($prom != 0) { $notaBim[$b] = round($prom / 11, 2); }
                 }
-                $prom1 += round($lenque1 / 2, 0) + round($ing1 / 2, 0) + round($nat1 / 2, 0);
-                $prom2 += round($lenque2 / 2) + round($ing2 / 2) + round($nat2 / 2);
-                $prom3 += round($lenque3 / 2) + round($ing3 / 2) + round($nat3 / 2);
-                $prom_pa += round($lenque_pa / 2) + round($ing_pa / 2) + round($nat_pa / 2);
-                if ($prom1 != 0) { $prom1 = round($prom1 / 11, 0); }
-                if ($prom2 != 0) { $prom2 = round($prom2 / 11, 0); }
-                if ($prom3 != 0) { $prom3 = round($prom3 / 11, 0); }
-                if ($prom_pa != 0) { $prom_pa = round($prom_pa / 11, 0); }
-                $alumnos[] = array('nombre' => $est, 'prom1' => $prom1, 'prom2' => $prom2, 'prom3' => $prom3, 'prom4' => 0, 'final' => $prom_pa);
+                $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
+                $alumnos[] = array('nombre' => $est, 'prom1' => $notaBim[1], 'prom2' => $notaBim[2], 'prom3' => $notaBim[3], 'prom4' => $notaBim[4], 'final' => $final);
             }
         } elseif ($class_id >= 31 And $class_id <= 32) {
             $StudentMod = new StudentModel();
@@ -3395,7 +3505,7 @@ class Manager extends BaseController
                     $b = 1 + $i;
                     $CsamarksMod = new CsamarksModel();
                     $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
-                    $lenque = 0; $ing = 0; $prom = 0;
+                    $ing = 0; $prom = 0;
                     $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
                     foreach ($ed_fisica as $ef) {
                         if ($ef['total_average'] !== null) { $prom += round($ef['total_average']); }
@@ -3403,9 +3513,8 @@ class Manager extends BaseController
                     foreach ($notas as $nota) {
                         if ($nota['obtained_mark'] !== null) {
                             switch ($nota['name']) {
-                                case 'LITERATURA': $lenque += $nota['obtained_mark']; break;
-                                case 'LENGUAJE': $lenque += $nota['obtained_mark']; break;
-                                case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
+                                case 'LITERATURA': $prom += round($nota['obtained_mark']); break;
+                                case 'LENGUAJE': $prom += round($nota['obtained_mark']); break;
                                 case 'LITERATURE': $ing += $nota['obtained_mark']; break;
                                 case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
                                 case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
@@ -3422,7 +3531,7 @@ class Manager extends BaseController
                             }
                         }
                     }
-                    $prom += round($lenque / 2) + round($ing / 2);
+                    $prom += round($ing / 2);
                     if ($prom != 0) { $notaBim[$b] = round($prom / 13, 2); }
                 }
                 $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
@@ -3437,7 +3546,7 @@ class Manager extends BaseController
                     $b = 1 + $i;
                     $CsamarksMod = new CsamarksModel();
                     $notas = $CsamarksMod->csamarks_centralizer($row['student_id'], $b);
-                    $lenque = 0; $ing = 0; $prom = 0;
+                    $ing = 0; $prom = 0;
                     $ed_fisica = $CsamarksMod->csamarks_ed_fisica($row['student_id'], $b);
                     foreach ($ed_fisica as $ef) {
                         if ($ef['total_average'] !== null) { $prom += round($ef['total_average']); }
@@ -3445,8 +3554,7 @@ class Manager extends BaseController
                     foreach ($notas as $nota) {
                         if ($nota['obtained_mark'] !== null) {
                             switch ($nota['name']) {
-                                case 'LITERATURA': $lenque += $nota['obtained_mark']; break;
-                                case 'QUECHUA': $lenque += $nota['obtained_mark']; break;
+                                case 'LITERATURA': $prom += round($nota['obtained_mark']); break;
                                 case 'LITERATURE': $ing += $nota['obtained_mark']; break;
                                 case 'GRAMMAR': $ing += $nota['obtained_mark']; break;
                                 case 'SOCIALES': $prom += round($nota['obtained_mark']); break;
@@ -3462,7 +3570,7 @@ class Manager extends BaseController
                             }
                         }
                     }
-                    $prom += round($lenque / 2) + round($ing / 2);
+                    $prom += round($ing / 2);
                     if ($prom != 0) { $notaBim[$b] = round($prom / 13, 2); }
                 }
                 $final = ($notaBim[1] + $notaBim[2] + $notaBim[3] + $notaBim[4]) / $phase_id;
@@ -3484,6 +3592,7 @@ class Manager extends BaseController
         $SectionMod = new SectionModel();
         $section = $SectionMod->get_section($data);
         $fileName = 'RNK_' . $section[0]['grade'] . '.xlsx';
+        $obj_PHPExcel->getActiveSheet()->SetCellValue('A4', "GESTIÓN " . $gestion . " RANKING OFICIAL");
         $obj_PHPExcel->getActiveSheet()->SetCellValue('A5', strtoupper($section[0]['grade']));
         $fecha_actual = date("d/m/Y");
         $obj_PHPExcel->getActiveSheet()->SetCellValue('F102', 'Generado el : ' . $fecha_actual);

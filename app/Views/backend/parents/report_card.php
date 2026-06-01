@@ -1,5 +1,5 @@
 <?php
-$archivo ="RepT3".strval(60900045 + $student_id).".pdf";
+$archivo ="RepT1".strval(60900045 + $student_id).".pdf";
 ?>
 <div class="row mt-0 mt-lg-8">
     <div class="col-xl-12">
@@ -28,56 +28,20 @@ $archivo ="RepT3".strval(60900045 + $student_id).".pdf";
                 
             </div>
             <object data="https://tiquipaya.edu.bo/plataforma/public/uploads/t1/<?php echo $archivo;?>" type="application/pdf" width="100%" height="800px">
-                <p>Su navegador no soporta el visualizador de PDF <a href="https://tiquipaya.edu.bo/plataforma/public/uploads/t3/<?php echo $archivo;?>">click aqui para descargar el Documento PDF.</a></p>
+                <p>Su navegador no soporta el visualizador de PDF <a href="https://tiquipaya.edu.bo/plataforma/public/uploads/t1/<?php echo $archivo;?>">click aqui para descargar el Documento PDF.</a></p>
             </object>
         </div>
     </div>
 
 </div>
-
 <div class="d-flex flex-column-fluid">
 
     <!--begin::Container-->
     <div class="container">
 
-        <!--[html-partial:begin:{"id":"demo10/dist/inc/view/demos/pages/index","page":"index"}]/-->
-
-        <!--[html-partial:begin:{"id":"demo1/dist/inc/view/partials/content/dashboards/demo10","page":"index"}]/-->
-
-        <!--begin::Dashboard-->
-
-        <!--begin::Row-->
-        
-
-        <!--end::Row-->
-
-        <!--begin::Row-->
-
-
-        <!--end::Row-->
-
-        <!--begin::Row-->
-
-
-        <!--begin::Container-->
         <div class="container-fluid">
-            <!--begin::Row-->
 
-            <!--end::Row-->
-            <!--begin::Row-->
-
-            <!--end::Row-->
-            <!--begin::Row-->
-
-            <!--end::Row-->
         </div>
-        <!--end::Row-->
-
-        <!--end::Dashboard-->
-
-        <!--[html-partial:end:{"id":"demo1/dist/inc/view/partials/content/dashboards/demo10","page":"index"}]/-->
-
-        <!--[html-partial:end:{"id":"demo10/dist/inc/view/demos/pages/index","page":"index"}]/-->
     </div>
 
     <!--end::Container-->

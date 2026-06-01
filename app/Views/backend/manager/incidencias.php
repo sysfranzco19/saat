@@ -96,6 +96,72 @@ $max_inc           = count($top_estudiantes) > 0 ? max(array_column($top_estudia
     </div>
     <!--end::Stats-->
 
+    <!--begin::T2 Stats-->
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card card-custom gutter-b border-left-primary" style="border-left:4px solid #3699FF">
+                <div class="card-header border-0 pt-5 pb-2">
+                    <h3 class="card-title align-items-start flex-column">
+                        <span class="card-label font-weight-bolder text-dark">
+                            <i class="flaticon-warning-sign text-primary mr-2"></i>
+                            Segundo Trimestre — Sistema Nuevo
+                        </span>
+                        <span class="text-muted mt-1 font-weight-bold font-size-sm">incidencia_registro · tiqui0_tiquisaat26</span>
+                    </h3>
+                </div>
+                <div class="card-body pt-3 pb-5">
+                    <div class="d-flex flex-wrap align-items-center" style="gap:16px">
+                        <!--begin::Stat negativas-->
+                        <div class="d-flex align-items-center bg-light-danger rounded p-4" style="min-width:160px">
+                            <span class="font-size-h3 mr-3">⚠️</span>
+                            <div>
+                                <div class="font-weight-bolder font-size-h4 text-danger"><?php echo $t2_total_neg; ?></div>
+                                <div class="text-muted font-size-sm font-weight-bold">Negativas</div>
+                            </div>
+                        </div>
+                        <!--begin::Stat positivas-->
+                        <div class="d-flex align-items-center bg-light-success rounded p-4" style="min-width:160px">
+                            <span class="font-size-h3 mr-3">✅</span>
+                            <div>
+                                <div class="font-weight-bolder font-size-h4 text-success"><?php echo $t2_total_pos; ?></div>
+                                <div class="text-muted font-size-sm font-weight-bold">Positivas</div>
+                            </div>
+                        </div>
+                        <!--begin::Por tipo list-->
+                        <div class="flex-grow-1 d-flex flex-wrap" style="gap:8px">
+                            <?php foreach ($t2_por_tipo as $t2t):
+                                $t2cl = $t2t['type'] === 'negativa' ? 'danger' : ($t2t['type'] === 'positiva' ? 'success' : 'info');
+                            ?>
+                            <span class="label label-inline label-light-<?php echo $t2cl; ?> font-weight-bold py-3 px-4">
+                                <?php echo html_entity_decode($t2t['icon']); ?>
+                                <?php echo htmlspecialchars(html_entity_decode($t2t['name'])); ?>
+                                <strong class="ml-1"><?php echo $t2t['total']; ?></strong>
+                            </span>
+                            <?php endforeach; ?>
+                            <?php if (empty($t2_por_tipo)): ?>
+                                <span class="text-muted font-size-sm">Sin registros en el sistema nuevo.</span>
+                            <?php endif; ?>
+                        </div>
+                        <!--begin::Top negativos-->
+                        <?php if (!empty($t2_top_negativos)): ?>
+                        <div class="ml-auto">
+                            <div class="font-weight-bold font-size-sm text-dark mb-2">Top negativos (T2):</div>
+                            <?php foreach (array_slice($t2_top_negativos, 0, 5) as $tn): ?>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="label label-danger label-dot mr-2"></span>
+                                <span class="font-size-sm font-weight-bold text-dark-75 mr-2"><?php echo htmlspecialchars($tn['alumno']); ?></span>
+                                <span class="label label-light-danger label-inline font-size-xs font-weight-bolder"><?php echo $tn['total_neg']; ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--end::T2 Stats-->
+
     <!--begin::Search-->
     <div class="row">
         <div class="col-xl-12">
@@ -464,30 +530,65 @@ $max_inc           = count($top_estudiantes) > 0 ? max(array_column($top_estudia
     function renderResumen(data) {
         const s     = data.student;
         const nivel = s.grado.toLowerCase().includes('secundaria') ? 'primary' : 'warning';
-        const colorAlerta = data.total >= 18 ? 'danger' : (data.total >= 10 ? 'warning' : (data.total >= 5 ? 'info' : 'success'));
 
-        const badges = data.por_tipo.map(t =>
-            `<span class="label label-inline label-light-danger font-weight-bold mr-2 mb-2 py-3 px-4">
+        const totalT1 = data.total || 0;
+        const totalT2 = data.total_t2 || 0;
+        const negT1   = (data.por_tipo || []).filter(t => t.tipo_clase === 'negative').reduce((acc, t) => acc + parseInt(t.total), 0);
+        const negT2   = (data.por_tipo_t2 || []).filter(t => t.tipo_clase === 'negativa').reduce((acc, t) => acc + parseInt(t.total), 0);
+        const colorT1 = negT1 >= 18 ? 'danger' : (negT1 >= 10 ? 'warning' : (negT1 >= 5 ? 'info' : 'success'));
+        const colorT2 = negT2 >= 18 ? 'danger' : (negT2 >= 10 ? 'warning' : (negT2 >= 5 ? 'info' : 'success'));
+
+        // T1 badges
+        const badgesT1 = (data.por_tipo || []).map(t => {
+            const cl = t.tipo_clase === 'negative' ? 'danger' : (t.tipo_clase === 'positive' ? 'success' : 'info');
+            return `<span class="label label-inline label-light-${cl} font-weight-bold mr-2 mb-2 py-3 px-4">
                 ${dec(t.icon)} ${dec(t.tipo)} <strong class="ml-1">${t.total}</strong>
-            </span>`
-        ).join('');
+            </span>`;
+        }).join('');
 
-        const filas = data.detalle.length
-            ? data.detalle.map(d => `<tr>
-                <td class="font-size-sm text-muted">${d.fecha}</td>
-                <td class="font-weight-bold">${dec(d.icon)} ${dec(d.tipo)}</td>
-                <td class="text-muted font-size-sm">${dec(d.materia)}</td>
-                <td class="text-muted font-size-sm">${d.observation && d.observation !== 'NULL' ? d.observation : '—'}</td>
-              </tr>`).join('')
-            : `<tr><td colspan="4" class="text-center text-muted py-5">Sin incidencias registradas.</td></tr>`;
+        // T2 badges
+        const badgesT2 = (data.por_tipo_t2 || []).map(t => {
+            const cl = t.tipo_clase === 'negativa' ? 'danger' : (t.tipo_clase === 'positiva' ? 'success' : 'info');
+            return `<span class="label label-inline label-light-${cl} font-weight-bold mr-2 mb-2 py-3 px-4">
+                ${dec(t.icon)} ${dec(t.tipo)} <strong class="ml-1">${t.total}</strong>
+            </span>`;
+        }).join('');
+
+        // T1 rows
+        const filasT1 = totalT1
+            ? (data.detalle || []).map(d => {
+                const cl = d.tipo_clase === 'negative' ? 'danger' : (d.tipo_clase === 'positive' ? 'success' : 'secondary');
+                return `<tr>
+                    <td class="font-size-sm text-muted">${d.fecha || '—'}</td>
+                    <td class="font-weight-bold text-${cl}">${dec(d.icon)} ${dec(d.tipo)}</td>
+                    <td class="text-muted font-size-sm">${dec(d.materia)}</td>
+                    <td class="text-muted font-size-sm">${d.observation && d.observation !== 'NULL' ? d.observation : '—'}</td>
+                </tr>`;
+              }).join('')
+            : `<tr><td colspan="4" class="text-center text-muted py-5">Sin incidencias en Primer Trimestre.</td></tr>`;
+
+        // T2 rows
+        const filasT2 = totalT2
+            ? (data.detalle_t2 || []).map(d => {
+                const cl = d.tipo_clase === 'negativa' ? 'danger' : (d.tipo_clase === 'positiva' ? 'success' : 'info');
+                return `<tr>
+                    <td class="font-size-sm text-muted">${d.fecha || '—'}</td>
+                    <td class="font-weight-bold text-${cl}">${dec(d.icon)} ${dec(d.tipo)}</td>
+                    <td class="text-muted font-size-sm">${dec(d.materia)}</td>
+                    <td class="text-muted font-size-sm">${d.observation && d.observation !== 'NULL' ? d.observation : '—'}</td>
+                </tr>`;
+              }).join('')
+            : `<tr><td colspan="4" class="text-center text-muted py-5">Sin incidencias en Segundo Trimestre.</td></tr>`;
+
+        const uid = 'st' + Math.random().toString(36).substr(2, 8);
 
         return `
         <div class="card card-custom gutter-b">
             <div class="card-header border-0 pt-5">
                 <h3 class="card-title align-items-start flex-column">
                     <span class="card-label font-weight-bolder text-dark d-flex align-items-center">
-                        <div class="symbol symbol-40 symbol-light-${colorAlerta} mr-3">
-                            <span class="symbol-label font-weight-bolder font-size-h5 text-${colorAlerta}">${s.nombre.charAt(0).toUpperCase()}</span>
+                        <div class="symbol symbol-40 symbol-light-primary mr-3">
+                            <span class="symbol-label font-weight-bolder font-size-h5 text-primary">${s.nombre.charAt(0).toUpperCase()}</span>
                         </div>
                         ${s.nombre.trim()}
                     </span>
@@ -497,20 +598,54 @@ $max_inc           = count($top_estudiantes) > 0 ? max(array_column($top_estudia
                     </span>
                 </h3>
                 <div class="card-toolbar">
-                    <span class="label label-xl label-${colorAlerta} label-inline font-weight-bolder" style="font-size:1.2rem; padding:1rem 1.5rem">
-                        ${data.total} incidencia${data.total !== 1 ? 's' : ''}
+                    <span class="label label-xl label-light-warning label-inline font-weight-bolder mr-2"
+                          style="font-size:1rem; padding:.7rem 1.2rem" title="Primer Trimestre (sistema antiguo)">
+                        T1: ${totalT1}
+                    </span>
+                    <span class="label label-xl label-light-primary label-inline font-weight-bolder"
+                          style="font-size:1rem; padding:.7rem 1.2rem" title="Segundo Trimestre (sistema nuevo)">
+                        T2: ${totalT2}
                     </span>
                 </div>
             </div>
             <div class="card-body pt-3">
-                ${badges ? `<div class="mb-5">${badges}</div>` : ''}
-                <div class="table-responsive" style="max-height:320px; overflow-y:auto">
-                    <table class="table table-hover table-sm">
-                        <thead class="text-muted font-size-xs text-uppercase">
-                            <tr><th>Fecha</th><th>Tipo</th><th>Materia</th><th>Observación</th></tr>
-                        </thead>
-                        <tbody>${filas}</tbody>
-                    </table>
+                <ul class="nav nav-tabs nav-tabs-line nav-tabs-line-2x mb-5" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bolder active" data-toggle="tab" href="#${uid}_t1">
+                            Primer Trimestre
+                            <span class="label label-light-warning label-inline ml-2">${totalT1}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bolder" data-toggle="tab" href="#${uid}_t2">
+                            Segundo Trimestre
+                            <span class="label label-light-primary label-inline ml-2">${totalT2}</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane show active" id="${uid}_t1">
+                        ${badgesT1 ? `<div class="mb-4">${badgesT1}</div>` : ''}
+                        <div class="table-responsive" style="max-height:320px; overflow-y:auto">
+                            <table class="table table-hover table-sm">
+                                <thead class="text-muted font-size-xs text-uppercase">
+                                    <tr><th>Fecha</th><th>Tipo</th><th>Materia</th><th>Observación</th></tr>
+                                </thead>
+                                <tbody>${filasT1}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="${uid}_t2">
+                        ${badgesT2 ? `<div class="mb-4">${badgesT2}</div>` : ''}
+                        <div class="table-responsive" style="max-height:320px; overflow-y:auto">
+                            <table class="table table-hover table-sm">
+                                <thead class="text-muted font-size-xs text-uppercase">
+                                    <tr><th>Fecha</th><th>Tipo</th><th>Materia</th><th>Observación</th></tr>
+                                </thead>
+                                <tbody>${filasT2}</tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>`;

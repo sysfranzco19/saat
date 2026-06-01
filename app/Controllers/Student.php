@@ -368,105 +368,119 @@ class Student extends BaseController
 
     public function gamified_behavior()
     {
-        $session = session();
+        helper('grade');
+        $session    = session();
         $student_id = $session->get('student_id');
-        if ($session->get('login_type') != 'student') {
+        if ($session->get('login_type') != 'student')
             return redirect()->to(base_url());
-        }
 
-        // Settings and basic data
         $Setting = new SettingModel();
-        $page_data['login_type'] = $session->get('login_type');
-        $page_data['phase_id'] = $Setting->get_phase_id();
-        $page_data['phase_name'] = $Setting->get_phase_name();
-        $page_data['system_title'] = $Setting->get_system_title();
-        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['login_type']    = $session->get('login_type');
+        $page_data['phase_id']      = $Setting->get_phase_id();
+        $page_data['phase_name']    = $Setting->get_phase_name();
+        $page_data['system_title']  = $Setting->get_system_title();
+        $page_data['system_name']   = $Setting->get_system_name();
 
         $StudentMod = new StudentModel();
-        $students = $StudentMod->datosStudent($student_id);
-        $page_data['student_name'] = $students[0]->nombre;
-        $page_data['curso'] = $students[0]->completo;
+        $students   = $StudentMod->datosStudent($student_id);
+        $stu        = $students[0];
 
-        // Fetch Enrolled Subjects
-        $SubjectMod = new SubjectModel();
-        $subjects = $SubjectMod->subjects_student($students[0]->section_id, $students[0]->sex);
+        $page_data['student_id']   = $student_id;
+        $page_data['student_name'] = $stu->nombre;
+        $page_data['curso']        = $stu->completo;
 
-        // Models for Gamification
+        $SubjectMod   = new SubjectModel();
+        $subjects     = $SubjectMod->subjects_student($stu->section_id, $stu->sex);
+        $section_id_p = (int) $stu->section_id;
+
+        // ── T1 (phase 1): behavior_log — desglose por materia ──
         $BehaviorMod = new BehaviorModel();
-        $ScoreMod = new ScoreModel();
+        $ScoreMod    = new ScoreModel();
 
-        $subjectStats = [];
-        $globalPositive = 0;
-        $globalNegative = 0;
-        $allLogs = [];
+        $recentDate_t1    = \Config\Database::connect('asistencia')->table('attendance_dates')
+            ->where('phase_id', 1)->orderBy('date_class', 'DESC')->limit(1)->get()->getRowArray();
+        $currentDateId_t1 = $recentDate_t1 ? $recentDate_t1['date_id'] : null;
 
-        // Global Behavior Types for rendering timeline icons correctly (if not fetched by getStudentLog)
-        $rawBehaviors = $BehaviorMod->getBehaviors();
-        $page_data['behaviors'] = $rawBehaviors;
-
-        // Get recent attendance date ID for scoring
-        $recentDate = \Config\Database::connect('asistencia')->table('attendance_dates')
-            ->where('phase_id', $page_data['phase_id'])
-            ->orderBy('date_class', 'DESC')
-            ->limit(1)
-            ->get()
-            ->getRowArray();
-        $currentDateId = $recentDate ? $recentDate['date_id'] : null;
+        $subjectStats_t1   = [];
+        $globalPositive_t1 = 0;
+        $globalNegative_t1 = 0;
+        $timeline_t1       = [];
 
         foreach ($subjects as $sub) {
             $subjId = $sub['subject_id'];
+            $logs   = $BehaviorMod->getStudentLog($student_id, null, $subjId, 1);
 
-            // Get logs for this subject globally or per phase? Let's use phase filter
-            $logs = $BehaviorMod->getStudentLog($student_id, null, $subjId, $page_data['phase_id']);
+            $pos = count(array_filter($logs, fn($l) => $l['type'] == 'positive'));
+            $neg = count(array_filter($logs, fn($l) => $l['type'] == 'negative'));
+            $globalPositive_t1 += $pos;
+            $globalNegative_t1 += $neg;
 
-            $pos = count(array_filter($logs, function ($l) {
-                return $l['type'] == 'positive'; }));
-            $neg = count(array_filter($logs, function ($l) {
-                return $l['type'] == 'negative'; }));
-
-            $globalPositive += $pos;
-            $globalNegative += $neg;
-
-            // Re-map to insert subject name for the timeline
             foreach ($logs as &$log) {
                 $log['subject_name'] = $sub['name'];
                 $log['teacher_name'] = $sub['profe'];
             }
-            $allLogs = array_merge($allLogs, $logs);
+            unset($log);
+            $timeline_t1 = array_merge($timeline_t1, $logs);
 
-            // Calculate 'Ser' Score
             $puntosDelSer = 10;
-            if ($currentDateId) {
-                $cumulativeScore = $ScoreMod->getDailyScore($student_id, $currentDateId, $subjId);
-                $scaled = ($cumulativeScore / 100) * 10;
-                $puntosDelSer = round($scaled, 1);
-                if ($puntosDelSer > 10)
-                    $puntosDelSer = 10;
-                if ($puntosDelSer < 0)
-                    $puntosDelSer = 0;
+            if ($currentDateId_t1) {
+                $scaled       = ($ScoreMod->getDailyScore($student_id, $currentDateId_t1, $subjId) / 100) * 10;
+                $puntosDelSer = max(0, min(10, round($scaled, 1)));
             }
-
-            $subjectStats[] = [
-                'subject_id' => $subjId,
-                'name' => $sub['name'],
-                'teacher' => $sub['profe'],
+            $subjectStats_t1[] = [
+                'subject_id'     => $subjId,
+                'name'           => $sub['name'],
+                'teacher'        => $sub['profe'],
                 'positive_count' => $pos,
                 'negative_count' => $neg,
-                'ser_score' => $puntosDelSer
+                'ser_score'      => $puntosDelSer,
             ];
         }
+        usort($timeline_t1, fn($a, $b) => strtotime($b['created_at']) <=> strtotime($a['created_at']));
 
-        // Sort all logs by created_at DESC
-        usort($allLogs, function ($a, $b) {
-            return strtotime($b['created_at']) <=> strtotime($a['created_at']);
-        });
+        $page_data['subject_stats_t1']   = $subjectStats_t1;
+        $page_data['global_positive_t1'] = $globalPositive_t1;
+        $page_data['global_negative_t1'] = $globalNegative_t1;
+        $page_data['timeline_t1']        = $timeline_t1;
 
-        $page_data['subject_stats'] = $subjectStats;
-        $page_data['global_positive'] = $globalPositive;
-        $page_data['global_negative'] = $globalNegative;
-        $page_data['timeline_logs'] = $allLogs;
+        // ── T2 y T3 (phase 2, 3): incidencia_registro — desglose por maestro ──
+        $IncidenciaMod = new \App\Models\IncidenciaModel();
 
-        $page_data['page_name'] = 'gamified_behavior';
+        $teacherMap = [];
+        foreach ($subjects as $sub) {
+            $tid = (int) $sub['teacher_id'];
+            if (!isset($teacherMap[$tid]))
+                $teacherMap[$tid] = ['teacher_id' => $tid, 'teacher_name' => $sub['profe'], 'subjects' => []];
+            $teacherMap[$tid]['subjects'][] = $sub['name'];
+        }
+
+        foreach ([2 => 't2', 3 => 't3'] as $phase => $suffix) {
+            $teacher_stats  = [];
+            $globalNegativa = 0;
+            $globalPositiva = 0;
+
+            foreach ($teacherMap as $tid => $tdata) {
+                $conteos         = $IncidenciaMod->getConteosByTeacher($student_id, $tid, $section_id_p, $phase);
+                $globalNegativa += $conteos['negativa'];
+                $globalPositiva += $conteos['positiva'];
+                $teacher_stats[] = [
+                    'teacher_id'   => $tid,
+                    'teacher_name' => $tdata['teacher_name'],
+                    'subjects'     => implode(', ', $tdata['subjects']),
+                    'negativa'     => $conteos['negativa'],
+                    'positiva'     => $conteos['positiva'],
+                    'nota'         => $conteos['nota'],
+                ];
+            }
+            usort($teacher_stats, fn($a, $b) => $a['nota'] <=> $b['nota']);
+
+            $page_data["teacher_stats_{$suffix}"]   = $teacher_stats;
+            $page_data["timeline_{$suffix}"]        = $IncidenciaMod->getRegistroEstudianteConMaestro($student_id, $phase);
+            $page_data["global_negativa_{$suffix}"] = $globalNegativa;
+            $page_data["global_positiva_{$suffix}"] = $globalPositiva;
+        }
+
+        $page_data['page_name']  = 'gamified_behavior';
         $page_data['page_title'] = 'Historial de Comportamiento';
         return view('backend/index', $page_data);
     }

@@ -33,7 +33,7 @@
                             <td><?php echo $row['completo'];?></td>
                             <td>
                                 <!-- <a href="<?php echo base_url(); ?>parents/report_half/<?php echo $row['student_id'];?>" class="btn btn-warning btn-sm">Ver evaluaciones</a> -->
-                                  <a href="<?php echo base_url(); ?>parents/report_card/<?php echo $row['student_id'];?>" class="btn btn-primary btn-sm">Boletin de Notas</a>
+                                  <a href="<?php echo base_url(); ?>parents/report_card/<?php echo $row['student_id'];?>" class="btn btn-success btn-sm">Boletin de Notas</a>
                                 <div class="btn-group">
                                     <button class="btn btn-secondary font-weight-bold btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         Asistencias

@@ -581,7 +581,7 @@
                     <i class="fa fa-info-circle mr-3 mt-1 fa-lg text-warning"></i>
                     <div>
                         El estudiante <strong id="gamif_modal_student_name">—</strong> tiene
-                        <strong id="gamif_modal_score">—</strong>/10 pts en esta materia.<br>
+                        <strong id="gamif_modal_score">—</strong>/10 pts <span id="gamif_modal_context">en esta materia</span>.<br>
                         Para registrar esta incidencia debes acreditar la reunión con el padre o tutor.
                     </div>
                 </div>
@@ -616,15 +616,17 @@
 </div>
 
 <script>
-    const SUBJECT_ID = "<?= isset($subject_id) ? $subject_id : '' ?>";
-    const DATE_ID = "<?= isset($date_id) ? $date_id : '' ?>";
-    const PERIOD = "<?= isset($periodo) ? $periodo : '' ?>";
-    const BASE_URL = "<?= base_url() ?>";
+    const SUBJECT_ID    = "<?= isset($subject_id) ? $subject_id : '' ?>";
+    const DATE_ID       = "<?= isset($date_id) ? $date_id : '' ?>";
+    const PERIOD        = "<?= isset($periodo) ? $periodo : '' ?>";
+    const BASE_URL      = "<?= base_url() ?>";
+    const IS_PRIMARIA36 = <?= !empty($is_primaria36) ? 'true' : 'false' ?>;
     let hasUnsavedChanges = false;
     let pendingActa = null;
 
-    function showActaModal(postParams, nota, badge, priorScore) {
-        pendingActa = { postParams: postParams, badge: badge, priorScore: priorScore };
+    function showActaModal(postParams, nota, badge, priorScore, teacherIdActa) {
+        teacherIdActa = teacherIdActa || null;
+        pendingActa = { postParams: postParams, badge: badge, priorScore: priorScore, teacherIdActa: teacherIdActa };
         document.getElementById('gamif_modal_score').textContent = nota;
         var studentName = 'Estudiante';
         var rowElem = document.getElementById('row-' + postParams.student_id);
@@ -633,6 +635,9 @@
             if (nameEl) studentName = nameEl.innerText.trim();
         }
         document.getElementById('gamif_modal_student_name').textContent = studentName;
+        // Update context label: teacher-level vs subject-level
+        var ctx = document.getElementById('gamif_modal_context');
+        if (ctx) ctx.textContent = teacherIdActa ? 'en todas sus materias' : 'en esta materia';
         document.getElementById('gamif_acta_fecha').value = '';
         document.getElementById('gamif_acta_obs').value   = '';
         document.getElementById('gamif_acta_file').value  = '';
@@ -653,7 +658,11 @@
 
         var formData = new FormData();
         formData.append('student_id',    pendingActa.postParams.student_id);
-        formData.append('subject_id',    SUBJECT_ID);
+        if (pendingActa.teacherIdActa) {
+            formData.append('teacher_id_acta', pendingActa.teacherIdActa);
+        } else {
+            formData.append('subject_id', SUBJECT_ID);
+        }
         formData.append('fecha_reunion', fecha);
         formData.append('observacion',   document.getElementById('gamif_acta_obs').value);
         formData.append('acta_file',     file);
@@ -958,7 +967,7 @@
                 showActaModal({
                     student_id: studentId, behavior_id: behaviorId, points: points,
                     subject_id: SUBJECT_ID, date_id: DATE_ID, period: PERIOD, observation: observation
-                }, data.nota, badge, currentScore);
+                }, data.nota, badge, currentScore, data.teacher_id || null);
             } else {
                 updateBadgeUI(badge, currentScore);
                 Swal.fire('Error', data.message || "Error desconocido", 'error');
@@ -1002,7 +1011,7 @@
         $.post(BASE_URL + "index.php/teacher/get_daily_log_ajax", {
             student_id: studentId,
             date_id: DATE_ID,
-            subject_id: SUBJECT_ID
+            subject_id: IS_PRIMARIA36 ? 0 : SUBJECT_ID
         }, function (data) {
             console.log("Logs received:", data);
             
@@ -1175,7 +1184,7 @@
                     date_id: DATE_ID,
                     period: PERIOD,
                     observation: $('#reg-observation').val()
-                }, data.nota, badgeEl, parseFloat(badgeEl ? badgeEl.innerText : 10) || 10);
+                }, data.nota, badgeEl, parseFloat(badgeEl ? badgeEl.innerText : 10) || 10, data.teacher_id || null);
             } else {
                 Swal.fire('Error', data.message || "Error desconocido", 'error');
             }

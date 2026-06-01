@@ -293,6 +293,36 @@
                                                         Informático</span>
                                                 </td>
                                             </tr>
+                                            <tr>
+                                                <td class="pl-0 py-5">
+                                                    <div class="symbol symbol-45 symbol-light-success mr-2">
+                                                        <span class="symbol-label">
+                                                            <span class="svg-icon svg-icon-2x svg-icon-success">
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                                                                    width="24px" height="24px" viewBox="0 0 24 24"
+                                                                    version="1.1">
+                                                                    <g stroke="none" stroke-width="1" fill="none"
+                                                                        fill-rule="evenodd">
+                                                                        <rect x="0" y="0" width="24" height="24" />
+                                                                        <path
+                                                                            d="M6,2 L18,2 C18.5522847,2 19,2.44771525 19,3 L19,21 C19,21.5522847 18.5522847,22 18,22 L6,22 C5.44771525,22 5,21.5522847 5,21 L5,3 C5,2.44771525 5.44771525,2 6,2 Z"
+                                                                            fill="currentColor" opacity="0.3" />
+                                                                        <rect fill="currentColor" x="7" y="7" width="10" height="2" rx="1" />
+                                                                        <rect fill="currentColor" x="7" y="11" width="10" height="2" rx="1" />
+                                                                        <rect fill="currentColor" x="7" y="15" width="6" height="2" rx="1" />
+                                                                    </g>
+                                                                </svg>
+                                                            </span>
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td class="pl-0">
+                                                    <a href="<?php echo base_url(); ?>parents/reportcards"
+                                                        class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Boletines de Notas</a>
+                                                    <span class="text-muted font-weight-bold d-block">Reportes de Aprovechamiento Académico</span>
+                                                </td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>

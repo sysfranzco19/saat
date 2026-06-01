@@ -236,8 +236,9 @@
     var selectedBehaviorId  = null;
     var searchTimeout       = null;
     var currentStudentScore = null;
-    var estaBloqueado       = false;
-    var pendingBehaviorData = null;
+    var estaBloqueado         = false;
+    var pendingBehaviorData   = null;
+    var pendingTeacherIdActa  = null;
 
     // ── Helpers ────────────────────────────────────────────────────
     function enableCard(id) {
@@ -303,8 +304,9 @@
     window.clearStudent = function () {
         selectedStudents    = [];
         currentStudentScore = null;
-        estaBloqueado       = false;
-        pendingBehaviorData = null;
+        estaBloqueado        = false;
+        pendingBehaviorData  = null;
+        pendingTeacherIdActa = null;
         var select = document.getElementById('subject_select');
         select.value = '';
         Array.from(select.options).forEach(function (opt) { opt.hidden = false; });
@@ -547,6 +549,7 @@
                         if (total === 1) {
                             estaBloqueado = true;
                             currentStudentScore = res2.nota;
+                            pendingTeacherIdActa = res2.teacher_id || null;
                             pendingBehaviorData = {
                                 id:   document.getElementById('selected_behavior_id').value,
                                 name: document.getElementById('selected_behavior_name').textContent
@@ -594,8 +597,12 @@
         btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Subiendo...';
 
         var formData = new FormData();
-        formData.append('student_id',    selectedStudents[0].id);
-        formData.append('subject_id',    document.getElementById('subject_select').value);
+        formData.append('student_id', selectedStudents[0].id);
+        if (pendingTeacherIdActa) {
+            formData.append('teacher_id_acta', pendingTeacherIdActa);
+        } else {
+            formData.append('subject_id', document.getElementById('subject_select').value);
+        }
         formData.append('fecha_reunion', fecha);
         formData.append('observacion',   document.getElementById('acta_observacion').value);
         formData.append('acta_file',     file);
@@ -616,6 +623,7 @@
                     document.getElementById('acta_file').value          = '';
                     document.querySelector('label[for="acta_file"]').textContent = 'Seleccionar archivo (PDF o imagen)';
                     toastr.success('Acta subida correctamente. Ya puede registrar la incidencia.');
+                    pendingTeacherIdActa = null;
                     if (pendingBehaviorData) {
                         seleccionarComportamiento(pendingBehaviorData.id, pendingBehaviorData.name);
                         pendingBehaviorData = null;

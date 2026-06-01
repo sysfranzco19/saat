@@ -208,17 +208,56 @@ $session = session();
 
                 <h4 class="mb-5 text-dark font-weight-bold">Historial de: <?= $student_name ?></h4>
 
-                <!-- Resumen Global -->
+                <!-- ══ TABS T1 / T2 / T3 ══ -->
+                <?php
+                $gb_neg1 = $global_negative_t1 ?? 0; $gb_pos1 = $global_positive_t1 ?? 0;
+                $gb_neg2 = $global_negativa_t2 ?? 0; $gb_pos2 = $global_positiva_t2 ?? 0;
+                $gb_neg3 = $global_negativa_t3 ?? 0; $gb_pos3 = $global_positiva_t3 ?? 0;
+                ?>
+                <div class="card card-custom gutter-b">
+                    <div class="card-header card-header-tabs-line">
+                        <div class="card-toolbar w-100">
+                            <ul class="nav nav-tabs nav-tabs-line nav-tabs-line-primary nav-tabs-line-2x w-100" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active font-weight-bold" data-toggle="tab" href="#gb_t1_<?= $student_id ?>">
+                                        <i class="fa fa-history mr-2"></i> Primer Trimestre
+                                        <?php if ($gb_pos1 > 0): ?><span class="badge badge-success ml-1"><?= $gb_pos1 ?></span><?php endif; ?>
+                                        <?php if ($gb_neg1 > 0): ?><span class="badge badge-warning ml-1"><?= $gb_neg1 ?></span><?php endif; ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link font-weight-bold" data-toggle="tab" href="#gb_t2_<?= $student_id ?>">
+                                        <i class="fa fa-history mr-2"></i> Segundo Trimestre
+                                        <?php if ($gb_pos2 > 0): ?><span class="badge badge-success ml-1"><?= $gb_pos2 ?></span><?php endif; ?>
+                                        <?php if ($gb_neg2 > 0): ?><span class="badge badge-warning ml-1"><?= $gb_neg2 ?></span><?php endif; ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link font-weight-bold" data-toggle="tab" href="#gb_t3_<?= $student_id ?>">
+                                        <i class="fa fa-history mr-2"></i> Tercer Trimestre
+                                        <?php if ($gb_pos3 > 0): ?><span class="badge badge-success ml-1"><?= $gb_pos3 ?></span><?php endif; ?>
+                                        <?php if ($gb_neg3 > 0): ?><span class="badge badge-warning ml-1"><?= $gb_neg3 ?></span><?php endif; ?>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+
+                        <!-- ══ T1: behavior_log — por materia ══ -->
+                        <div class="tab-pane fade show active" id="gb_t1_<?= $student_id ?>">
+
+                <!-- ── Resumen Global T1 ── -->
                 <div class="row mb-5">
                     <div class="col-lg-6">
                         <div class="card card-custom bg-light-success card-stretch gutter-b">
                             <div class="card-body">
                                 <h3 class="card-title font-weight-bolder text-success">
-                                    <i class="flaticon-star text-success icon-xl mr-2"></i> Puntos Positivos
+                                    <i class="flaticon-star text-success icon-xl mr-2"></i> Acciones Positivas
                                 </h3>
-                                <div class="text-dark font-weight-bold font-size-h1"><?= $global_positive ?></div>
-                                <div class="text-muted font-weight-bold font-size-lg mt-1">Total de buenas acciones
-                                    registradas</div>
+                                <div class="text-dark font-weight-bold font-size-h1"><?= $global_positive_t1 ?? 0 ?></div>
+                                <div class="text-muted font-weight-bold font-size-lg mt-1">Total de buenas acciones registradas</div>
                             </div>
                         </div>
                     </div>
@@ -228,43 +267,31 @@ $session = session();
                                 <h3 class="card-title font-weight-bolder text-danger">
                                     <i class="flaticon2-warning text-danger icon-xl mr-2"></i> Llamadas de Atención
                                 </h3>
-                                <div class="text-dark font-weight-bold font-size-h1"><?= $global_negative ?></div>
-                                <div class="text-muted font-weight-bold font-size-lg mt-1">Total de incidencias
-                                    acumuladas</div>
+                                <div class="text-dark font-weight-bold font-size-h1"><?= $global_negative_t1 ?? 0 ?></div>
+                                <div class="text-muted font-weight-bold font-size-lg mt-1">Total de incidencias acumuladas</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Desglose por Materia como Lista Compacta -->
-                <h4 class="font-weight-bold text-dark mb-4 mt-10">Desglose por Materias</h4>
+                <!-- Desglose por Materia T1 -->
+                <h4 class="font-weight-bold text-dark mb-4 mt-6">Desglose por Materias</h4>
                 <div class="card card-custom gutter-b shadow-sm border-0">
                     <div class="card-body p-4">
-                        <?php if (!empty($subject_stats)): ?>
-                            <?php foreach ($subject_stats as $key => $ss): ?>
+                        <?php if (!empty($subject_stats_t1)): ?>
+                            <?php foreach ($subject_stats_t1 as $key => $ss): ?>
                                 <?php
-                                // Color del puntaje
                                 $scoreColor = ($ss['ser_score'] >= 8) ? 'success' : (($ss['ser_score'] >= 5) ? 'warning' : 'danger');
-                                $isLast = ($key === array_key_last($subject_stats));
-                                // Badge de alerta
-                                if ($ss['ser_score'] <= 1) {
-                                    $alertBadge = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta Crítica</span>';
-                                } elseif ($ss['ser_score'] <= 5) {
-                                    $alertBadge = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1" style="background:#c0392b;"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta 2 enviada</span>';
-                                } elseif ($ss['ser_score'] <= 7) {
-                                    $alertBadge = '<span class="badge badge-warning font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-dark icon-xs mr-1"></i> Alerta 1 enviada</span>';
-                                } else {
-                                    $alertBadge = '';
-                                }
+                                $isLast     = ($key === array_key_last($subject_stats_t1));
+                                if ($ss['ser_score'] <= 1)      $alertBadge = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta Crítica</span>';
+                                elseif ($ss['ser_score'] <= 5)  $alertBadge = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1" style="background:#c0392b;"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta 2 enviada</span>';
+                                elseif ($ss['ser_score'] <= 7)  $alertBadge = '<span class="badge badge-warning font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-dark icon-xs mr-1"></i> Alerta 1 enviada</span>';
+                                else $alertBadge = '';
                                 ?>
-                                <div
-                                    class="d-flex flex-wrap align-items-center justify-content-between <?= !$isLast ? 'mb-4 pb-4 border-bottom' : '' ?>">
-                                    <!-- Info Materia y Nota -->
+                                <div class="d-flex flex-wrap align-items-center justify-content-between <?= !$isLast ? 'mb-4 pb-4 border-bottom' : '' ?>">
                                     <div class="d-flex align-items-center w-100 w-md-50 mb-3 mb-md-0">
                                         <div class="symbol symbol-40 symbol-light-<?= $scoreColor ?> mr-3">
-                                            <span class="symbol-label font-size-h5 font-weight-boldest text-<?= $scoreColor ?>">
-                                                <?= $ss['ser_score'] ?>
-                                            </span>
+                                            <span class="symbol-label font-size-h5 font-weight-boldest text-<?= $scoreColor ?>"><?= $ss['ser_score'] ?></span>
                                         </div>
                                         <div class="d-flex flex-column">
                                             <span class="text-dark-75 font-weight-bold font-size-lg mb-0"><?= $ss['name'] ?></span>
@@ -272,185 +299,404 @@ $session = session();
                                             <?= $alertBadge ?>
                                         </div>
                                     </div>
-
-                                    <!-- Estadísticas e Interacción -->
-                                    <div
-                                        class="d-flex align-items-center justify-content-between justify-content-md-end w-100 w-md-50">
+                                    <div class="d-flex align-items-center justify-content-between justify-content-md-end w-100 w-md-50">
                                         <div class="d-flex mr-5">
-                                            <div class="d-flex align-items-center mr-4"
-                                                title="Estrellas: <?= $ss['positive_count'] ?>">
+                                            <div class="d-flex align-items-center mr-4">
                                                 <i class="flaticon-star text-success icon-md mr-1"></i>
-                                                <span
-                                                    class="font-weight-bolder text-dark-75 font-size-lg"><?= $ss['positive_count'] ?></span>
+                                                <span class="font-weight-bolder text-dark-75 font-size-lg"><?= $ss['positive_count'] ?></span>
                                             </div>
-                                            <div class="d-flex align-items-center"
-                                                title="Incidencias: <?= $ss['negative_count'] ?>">
+                                            <div class="d-flex align-items-center">
                                                 <i class="flaticon2-warning text-danger icon-md mr-1"></i>
                                                 <span class="font-weight-bolder text-dark-75 font-size-lg mr-1"><?= $ss['negative_count'] ?></span>
                                                 <span class="text-muted font-size-sm font-weight-bold">Incidencias</span>
                                             </div>
                                         </div>
-
                                         <button type="button" class="btn btn-sm btn-light-primary font-weight-bolder px-3 py-1"
-                                            data-toggle="modal" data-target="#modal_details_<?= $ss['subject_id'] ?>">
+                                            data-toggle="modal" data-target="#modal_t1_<?= $ss['subject_id'] ?>">
                                             <i class="flaticon-eye icon-sm mr-1"></i> Detalles
                                         </button>
                                     </div>
                                 </div>
-
-                                <!-- Modal de Detalles por Materia -->
-                                <div class="modal fade" id="modal_details_<?= $ss['subject_id'] ?>" tabindex="-1" role="dialog"
-                                    aria-hidden="true">
+                                <div class="modal fade" id="modal_t1_<?= $ss['subject_id'] ?>" tabindex="-1" role="dialog" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                                         <div class="modal-content">
-                                            <div
-                                                class="modal-header d-flex justify-content-between align-items-center border-0 pb-0">
-                                                <h4 class="modal-title font-weight-bolder text-dark">Detalles:
-                                                    <?= $ss['name'] ?>
-                                                </h4>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                    <i aria-hidden="true" class="ki ki-close"></i>
-                                                </button>
+                                            <div class="modal-header d-flex justify-content-between align-items-center border-0 pb-0">
+                                                <h4 class="modal-title font-weight-bolder text-dark">T1 — <?= $ss['name'] ?></h4>
+                                                <button type="button" class="close" data-dismiss="modal"><i class="ki ki-close"></i></button>
                                             </div>
                                             <div class="modal-body">
                                                 <div class="timeline timeline-6 mt-3 p-5">
-                                                    <?php
-                                                    $hasLogs = false;
-                                                    if (!empty($timeline_logs)) {
-                                                        foreach ($timeline_logs as $log) {
-                                                            if ($log['subject_name'] == $ss['name']) {
-                                                                $hasLogs = true;
-                                                                $iconClass = 'text-primary';
-                                                                $bgClass = 'bg-light-primary';
-                                                                if ($log['type'] == 'positive') {
-                                                                    $iconClass = 'text-success';
-                                                                    $bgClass = 'bg-light-success';
-                                                                } else if ($log['type'] == 'negative') {
-                                                                    $iconClass = 'text-danger';
-                                                                    $bgClass = 'bg-light-danger';
-                                                                }
-                                                                ?>
-                                                                <div class="timeline-item align-items-start">
-                                                                    <div
-                                                                        class="timeline-label font-weight-bolder text-dark-75 font-size-lg">
-                                                                        <?= date('d M', strtotime($log['created_at'])) ?>
-                                                                    </div>
-                                                                    <div class="timeline-badge">
-                                                                        <i class="fa fa-genderless <?= $iconClass ?> icon-xl"></i>
-                                                                    </div>
-                                                                    <div class="timeline-content d-flex">
-                                                                        <span
-                                                                            class="mr-3 <?= $iconClass ?> font-size-h3 font-weight-bolder">
-                                                                            <?= $log['type'] == 'positive' ? '+' : ($log['type'] == 'negative' ? '-' : '') ?>
-                                                                            <?= abs($log['points']) ?>
-                                                                        </span>
-                                                                        <div class="d-flex flex-column w-100">
-                                                                            <span class="font-weight-bolder text-dark-75 font-size-lg">
-                                                                                <?= $log['name'] ?>
-                                                                            </span>
-                                                                            <p class="text-dark-50 p-3 <?= $bgClass ?> rounded mt-2 mb-0">
-                                                                                <?= !empty($log['observation']) ? $log['observation'] : 'Sin observación adicional.' ?>
-                                                                            </p>
-                                                                            <span class="text-muted font-size-sm mt-1">Registrado por:
-                                                                                <?= $log['teacher_name'] ?> -
-                                                                                <?= date('H:i', strtotime($log['created_at'])) ?></span>
-                                                                        </div>
-                                                                    </div>
+                                                    <?php $hasLogs = false; foreach ($timeline_t1 as $log): if ($log['subject_name'] != $ss['name']) continue; $hasLogs = true;
+                                                        $iconClass = $log['type'] == 'positive' ? 'text-success' : 'text-danger';
+                                                        $bgClass   = $log['type'] == 'positive' ? 'bg-light-success' : 'bg-light-danger'; ?>
+                                                        <div class="timeline-item align-items-start">
+                                                            <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg"><?= date('d M', strtotime($log['created_at'])) ?></div>
+                                                            <div class="timeline-badge"><i class="fa fa-genderless <?= $iconClass ?> icon-xl"></i></div>
+                                                            <div class="timeline-content d-flex">
+                                                                <span class="mr-3 <?= $iconClass ?> font-size-h3 font-weight-bolder"><?= $log['type'] == 'positive' ? '+' : '-' ?><?= abs($log['points']) ?></span>
+                                                                <div class="d-flex flex-column w-100">
+                                                                    <span class="font-weight-bolder text-dark-75"><?= $log['name'] ?></span>
+                                                                    <span class="text-muted font-size-sm">Prof. <?= $log['teacher_name'] ?> &bull; <?= date('H:i', strtotime($log['created_at'])) ?></span>
+                                                                    <p class="text-dark-50 p-3 <?= $bgClass ?> rounded mt-1 mb-0"><?= !empty($log['observation']) ? htmlspecialchars($log['observation']) : 'Sin observación.' ?></p>
                                                                 </div>
-                                                                <?php
-                                                            }
-                                                        }
-                                                    }
-                                                    if (!$hasLogs): ?>
-                                                        <div class="text-center text-muted p-10 font-weight-bold">No hay incidencias
-                                                            registradas en esta materia.</div>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; if (!$hasLogs): ?>
+                                                        <div class="text-center text-muted p-10 font-weight-bold">Sin incidencias en esta materia.</div>
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
                                             <div class="modal-footer border-0 pt-0">
-                                                <button type="button" class="btn btn-light-primary font-weight-bold"
-                                                    data-dismiss="modal">Cerrar</button>
+                                                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Cerrar</button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <div class="text-center text-muted p-5">
-                                Aún no hay materias registradas para este estudiante.
-                            </div>
+                            <div class="text-center text-muted p-5">Sin incidencias registradas en T1.</div>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <!-- Linea de Tiempo (Muro) -->
+                <!-- Muro T1 -->
                 <div class="card card-custom gutter-b">
                     <div class="card-header align-items-center border-0 mt-4">
                         <h3 class="card-title align-items-start flex-column">
-                            <span class="font-weight-bolder text-dark">Muro de Actividad Reciente</span>
-                            <span class="text-muted mt-3 font-weight-bold font-size-sm">Registro cronológico de
-                                comportamiento</span>
+                            <span class="font-weight-bolder text-dark">Muro de Actividad — T1</span>
+                            <span class="text-muted mt-3 font-weight-bold font-size-sm">Registro cronológico behavior_log</span>
                         </h3>
                     </div>
                     <div class="card-body pt-4">
                         <div class="timeline timeline-6 mt-3">
-                            <?php if (!empty($timeline_logs)): ?>
-                                <?php foreach ($timeline_logs as $log): ?>
-                                    <?php
-                                    $iconClass = 'text-primary';
-                                    $bgClass = 'bg-light-primary';
-                                    if ($log['type'] == 'positive') {
-                                        $iconClass = 'text-success';
-                                        $bgClass = 'bg-light-success';
-                                    } else if ($log['type'] == 'negative') {
-                                        $iconClass = 'text-danger';
-                                        $bgClass = 'bg-light-danger';
-                                    }
-                                    ?>
-                                    <!--begin::Item-->
-                                    <div class="timeline-item align-items-start">
-                                        <!--begin::Label-->
-                                        <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">
-                                            <?= date('H:i', strtotime($log['created_at'])) ?>
+                            <?php if (!empty($timeline_t1)): foreach ($timeline_t1 as $log):
+                                $iconClass = $log['type'] == 'positive' ? 'text-success' : 'text-danger';
+                                $bgClass   = $log['type'] == 'positive' ? 'bg-light-success' : 'bg-light-danger'; ?>
+                                <div class="timeline-item align-items-start">
+                                    <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg"><?= date('H:i', strtotime($log['created_at'])) ?></div>
+                                    <div class="timeline-badge"><i class="fa fa-genderless <?= $iconClass ?> icon-xl"></i></div>
+                                    <div class="timeline-content d-flex">
+                                        <span class="mr-2 <?= $iconClass ?> font-size-h3 font-weight-bolder"><?= $log['type'] == 'positive' ? '+' : '-' ?><?= abs($log['points']) ?></span>
+                                        <div class="d-flex flex-column">
+                                            <span class="font-weight-bolder text-dark-75 font-size-lg"><?= $log['subject_name'] ?> <span class="text-muted font-size-sm font-weight-normal ml-2"><?= date('d M Y', strtotime($log['created_at'])) ?></span></span>
+                                            <p class="text-dark-50 font-weight-normal mb-1">Prof. <?= $log['teacher_name'] ?></p>
+                                            <p class="text-dark-50 p-2 <?= $bgClass ?> rounded"><strong><?= $log['name'] ?>:</strong> <?= !empty($log['observation']) ? htmlspecialchars($log['observation']) : 'Sin observación.' ?></p>
                                         </div>
-                                        <!--end::Label-->
-                                        <!--begin::Badge-->
-                                        <div class="timeline-badge">
-                                            <i class="fa fa-genderless <?= $iconClass ?> icon-xl"></i>
-                                        </div>
-                                        <!--end::Badge-->
-                                        <!--begin::Content-->
-                                        <div class="timeline-content d-flex">
-                                            <span class="mr-2 <?= $iconClass ?> font-size-h3 font-weight-bolder">
-                                                <?= $log['type'] == 'positive' ? '+' : ($log['type'] == 'negative' ? '-' : '') ?>
-                                                <?= abs($log['points']) ?>
-                                            </span>
-                                            <div class="d-flex flex-column">
-                                                <span class="font-weight-bolder text-dark-75 font-size-lg">
-                                                    <?= $log['subject_name'] ?>
-                                                    <span
-                                                        class="text-muted font-size-sm font-weight-normal ml-2"><?= date('d M Y', strtotime($log['created_at'])) ?></span>
-                                                </span>
-                                                <p class="text-dark-50 font-weight-normal mb-1">
-                                                    Registrado por: <?= $log['teacher_name'] ?>
-                                                </p>
-                                                <p class="text-dark-50 p-2 <?= $bgClass ?> rounded">
-                                                    <strong><?= $log['name'] ?>:</strong>
-                                                    <?= !empty($log['observation']) ? $log['observation'] : 'Sin observación adicional.' ?>
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <!--end::Content-->
                                     </div>
-                                    <!--end::Item-->
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <div class="text-center text-muted p-10">No hay actividad registrada en el historial.
                                 </div>
+                            <?php endforeach; else: ?>
+                                <div class="text-center text-muted p-10">Sin actividad registrada en T1.</div>
                             <?php endif; ?>
                         </div>
                     </div>
                 </div>
+                </div><!-- /tab-pane T1 -->
+
+                <!-- ══ T2: incidencia_registro phase 2 — por maestro ══ -->
+                <div class="tab-pane fade" id="gb_t2_<?= $student_id ?>">
+                <?php
+                $ts_t2  = $teacher_stats_t2 ?? [];
+                $tl_t2  = $timeline_t2 ?? [];
+                $gpos2  = $global_positiva_t2 ?? 0;
+                $gneg2  = $global_negativa_t2 ?? 0;
+                ?>
+                <!-- Resumen Global T2 -->
+                <div class="row mb-5">
+                    <div class="col-lg-6">
+                        <div class="card card-custom bg-light-success card-stretch gutter-b">
+                            <div class="card-body">
+                                <h3 class="card-title font-weight-bolder text-success">
+                                    <i class="flaticon-star text-success icon-xl mr-2"></i> Acciones Positivas
+                                </h3>
+                                <div class="text-dark font-weight-bold font-size-h1"><?= $gpos2 ?></div>
+                                <div class="text-muted font-weight-bold font-size-lg mt-1">Total de buenas acciones registradas</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card card-custom bg-light-danger card-stretch gutter-b">
+                            <div class="card-body">
+                                <h3 class="card-title font-weight-bolder text-danger">
+                                    <i class="flaticon2-warning text-danger icon-xl mr-2"></i> Llamadas de Atención
+                                </h3>
+                                <div class="text-dark font-weight-bold font-size-h1"><?= $gneg2 ?></div>
+                                <div class="text-muted font-weight-bold font-size-lg mt-1">Total de incidencias acumuladas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Desglose por Maestro T2 -->
+                <h4 class="font-weight-bold text-dark mb-4 mt-6">Desglose por Maestros</h4>
+                <div class="card card-custom gutter-b shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <?php if (!empty($ts_t2)): ?>
+                            <?php foreach ($ts_t2 as $tkey => $ts): ?>
+                                <?php
+                                $nota2      = (float) $ts['nota'];
+                                $sc2        = ($nota2 >= 8) ? 'success' : (($nota2 >= 5) ? 'warning' : 'danger');
+                                $isLast2    = ($tkey === array_key_last($ts_t2));
+                                if ($nota2 <= 1)      $ab2 = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta Crítica</span>';
+                                elseif ($nota2 <= 5)  $ab2 = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1" style="background:#c0392b;"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta 2 enviada</span>';
+                                elseif ($nota2 <= 7)  $ab2 = '<span class="badge badge-warning font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-dark icon-xs mr-1"></i> Alerta 1 enviada</span>';
+                                else $ab2 = '';
+                                ?>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between <?= !$isLast2 ? 'mb-4 pb-4 border-bottom' : '' ?>">
+                                    <div class="d-flex align-items-center w-100 w-md-50 mb-3 mb-md-0">
+                                        <div class="symbol symbol-40 symbol-light-<?= $sc2 ?> mr-3">
+                                            <span class="symbol-label font-size-h5 font-weight-boldest text-<?= $sc2 ?>"><?= $nota2 ?></span>
+                                        </div>
+                                        <div class="d-flex flex-column">
+                                            <span class="text-dark-75 font-weight-bold font-size-lg mb-0"><?= htmlspecialchars($ts['teacher_name']) ?></span>
+                                            <span class="text-muted font-size-sm"><?= htmlspecialchars($ts['subjects']) ?></span>
+                                            <?= $ab2 ?>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between justify-content-md-end w-100 w-md-50">
+                                        <div class="d-flex mr-5">
+                                            <div class="d-flex align-items-center mr-4">
+                                                <i class="flaticon-star text-success icon-md mr-1"></i>
+                                                <span class="font-weight-bolder text-dark-75 font-size-lg"><?= $ts['positiva'] ?></span>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="flaticon2-warning text-danger icon-md mr-1"></i>
+                                                <span class="font-weight-bolder text-dark-75 font-size-lg mr-1"><?= $ts['negativa'] ?></span>
+                                                <span class="text-muted font-size-sm font-weight-bold">Incidencias</span>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-light-primary font-weight-bolder px-3 py-1"
+                                            data-toggle="modal" data-target="#modal_t2_<?= $ts['teacher_id'] ?>">
+                                            <i class="flaticon-eye icon-sm mr-1"></i> Detalles
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="modal fade" id="modal_t2_<?= $ts['teacher_id'] ?>" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header d-flex justify-content-between align-items-center border-0 pb-0">
+                                                <h4 class="modal-title font-weight-bolder text-dark">T2 — <?= htmlspecialchars($ts['teacher_name']) ?></h4>
+                                                <button type="button" class="close" data-dismiss="modal"><i class="ki ki-close"></i></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="timeline timeline-6 mt-3 p-5">
+                                                    <?php $hasLogs2 = false; foreach ($tl_t2 as $log): if ((int)$log['teacher_id'] !== (int)$ts['teacher_id']) continue; $hasLogs2 = true;
+                                                        $ic2 = $log['tipo'] == 'positiva' ? 'text-success' : 'text-danger';
+                                                        $bg2 = $log['tipo'] == 'positiva' ? 'bg-light-success' : 'bg-light-danger'; ?>
+                                                        <div class="timeline-item align-items-start">
+                                                            <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg"><?= date('d M', strtotime($log['created_at'])) ?></div>
+                                                            <div class="timeline-badge"><i class="fa fa-genderless <?= $ic2 ?> icon-xl"></i></div>
+                                                            <div class="timeline-content d-flex">
+                                                                <span class="mr-3 <?= $ic2 ?> font-size-h3 font-weight-bolder"><?= $log['tipo'] == 'positiva' ? '+' : '-' ?></span>
+                                                                <div class="d-flex flex-column w-100">
+                                                                    <span class="font-weight-bolder text-dark-75"><?= htmlspecialchars($log['nombre']) ?></span>
+                                                                    <span class="text-muted font-size-sm"><?= htmlspecialchars($log['subject_name']) ?> &bull; <?= date('H:i', strtotime($log['created_at'])) ?></span>
+                                                                    <p class="text-dark-50 p-3 <?= $bg2 ?> rounded mt-1 mb-0"><?= !empty($log['observacion']) ? htmlspecialchars($log['observacion']) : 'Sin observación.' ?></p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; if (!$hasLogs2): ?>
+                                                        <div class="text-center text-muted p-10 font-weight-bold">Sin incidencias con este maestro.</div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0">
+                                                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Cerrar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="text-center text-muted p-5">Sin incidencias registradas en T2.</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <!-- Muro T2 -->
+                <div class="card card-custom gutter-b">
+                    <div class="card-header align-items-center border-0 mt-4">
+                        <h3 class="card-title align-items-start flex-column">
+                            <span class="font-weight-bolder text-dark">Muro de Actividad — T2</span>
+                            <span class="text-muted mt-3 font-weight-bold font-size-sm">Registro cronológico incidencia_registro</span>
+                        </h3>
+                    </div>
+                    <div class="card-body pt-4">
+                        <div class="timeline timeline-6 mt-3">
+                            <?php if (!empty($tl_t2)): foreach ($tl_t2 as $log):
+                                $ic2 = $log['tipo'] == 'positiva' ? 'text-success' : 'text-danger';
+                                $bg2 = $log['tipo'] == 'positiva' ? 'bg-light-success' : 'bg-light-danger'; ?>
+                                <div class="timeline-item align-items-start">
+                                    <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg"><?= date('H:i', strtotime($log['created_at'])) ?></div>
+                                    <div class="timeline-badge"><i class="fa fa-genderless <?= $ic2 ?> icon-xl"></i></div>
+                                    <div class="timeline-content d-flex">
+                                        <span class="mr-2 <?= $ic2 ?> font-size-h3 font-weight-bolder"><?= $log['tipo'] == 'positiva' ? '+' : '-' ?></span>
+                                        <div class="d-flex flex-column">
+                                            <span class="font-weight-bolder text-dark-75 font-size-lg"><?= htmlspecialchars($log['subject_name']) ?> <span class="text-muted font-size-sm font-weight-normal ml-2"><?= date('d M Y', strtotime($log['created_at'])) ?></span></span>
+                                            <p class="text-dark-50 font-weight-normal mb-1">Prof. <?= htmlspecialchars($log['teacher_name']) ?></p>
+                                            <p class="text-dark-50 p-2 <?= $bg2 ?> rounded"><strong><?= htmlspecialchars($log['nombre']) ?>:</strong> <?= !empty($log['observacion']) ? htmlspecialchars($log['observacion']) : 'Sin observación.' ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; else: ?>
+                                <div class="text-center text-muted p-10">Sin actividad registrada en T2.</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                </div><!-- /tab-pane T2 -->
+
+                <!-- ══ T3: incidencia_registro phase 3 — por maestro ══ -->
+                <div class="tab-pane fade" id="gb_t3_<?= $student_id ?>">
+                <?php
+                $ts_t3  = $teacher_stats_t3 ?? [];
+                $tl_t3  = $timeline_t3 ?? [];
+                $gpos3  = $global_positiva_t3 ?? 0;
+                $gneg3  = $global_negativa_t3 ?? 0;
+                ?>
+                <!-- Resumen Global T3 -->
+                <div class="row mb-5">
+                    <div class="col-lg-6">
+                        <div class="card card-custom bg-light-success card-stretch gutter-b">
+                            <div class="card-body">
+                                <h3 class="card-title font-weight-bolder text-success">
+                                    <i class="flaticon-star text-success icon-xl mr-2"></i> Acciones Positivas
+                                </h3>
+                                <div class="text-dark font-weight-bold font-size-h1"><?= $gpos3 ?></div>
+                                <div class="text-muted font-weight-bold font-size-lg mt-1">Total de buenas acciones registradas</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card card-custom bg-light-danger card-stretch gutter-b">
+                            <div class="card-body">
+                                <h3 class="card-title font-weight-bolder text-danger">
+                                    <i class="flaticon2-warning text-danger icon-xl mr-2"></i> Llamadas de Atención
+                                </h3>
+                                <div class="text-dark font-weight-bold font-size-h1"><?= $gneg3 ?></div>
+                                <div class="text-muted font-weight-bold font-size-lg mt-1">Total de incidencias acumuladas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Desglose por Maestro T3 -->
+                <h4 class="font-weight-bold text-dark mb-4 mt-6">Desglose por Maestros</h4>
+                <div class="card card-custom gutter-b shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <?php if (!empty($ts_t3)): ?>
+                            <?php foreach ($ts_t3 as $tkey => $ts): ?>
+                                <?php
+                                $nota3      = (float) $ts['nota'];
+                                $sc3        = ($nota3 >= 8) ? 'success' : (($nota3 >= 5) ? 'warning' : 'danger');
+                                $isLast3    = ($tkey === array_key_last($ts_t3));
+                                if ($nota3 <= 1)      $ab3 = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta Crítica</span>';
+                                elseif ($nota3 <= 5)  $ab3 = '<span class="badge badge-danger font-weight-bold px-3 py-1 mt-1" style="background:#c0392b;"><i class="flaticon2-warning text-white icon-xs mr-1"></i> Alerta 2 enviada</span>';
+                                elseif ($nota3 <= 7)  $ab3 = '<span class="badge badge-warning font-weight-bold px-3 py-1 mt-1"><i class="flaticon2-warning text-dark icon-xs mr-1"></i> Alerta 1 enviada</span>';
+                                else $ab3 = '';
+                                ?>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between <?= !$isLast3 ? 'mb-4 pb-4 border-bottom' : '' ?>">
+                                    <div class="d-flex align-items-center w-100 w-md-50 mb-3 mb-md-0">
+                                        <div class="symbol symbol-40 symbol-light-<?= $sc3 ?> mr-3">
+                                            <span class="symbol-label font-size-h5 font-weight-boldest text-<?= $sc3 ?>"><?= $nota3 ?></span>
+                                        </div>
+                                        <div class="d-flex flex-column">
+                                            <span class="text-dark-75 font-weight-bold font-size-lg mb-0"><?= htmlspecialchars($ts['teacher_name']) ?></span>
+                                            <span class="text-muted font-size-sm"><?= htmlspecialchars($ts['subjects']) ?></span>
+                                            <?= $ab3 ?>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between justify-content-md-end w-100 w-md-50">
+                                        <div class="d-flex mr-5">
+                                            <div class="d-flex align-items-center mr-4">
+                                                <i class="flaticon-star text-success icon-md mr-1"></i>
+                                                <span class="font-weight-bolder text-dark-75 font-size-lg"><?= $ts['positiva'] ?></span>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="flaticon2-warning text-danger icon-md mr-1"></i>
+                                                <span class="font-weight-bolder text-dark-75 font-size-lg mr-1"><?= $ts['negativa'] ?></span>
+                                                <span class="text-muted font-size-sm font-weight-bold">Incidencias</span>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-light-primary font-weight-bolder px-3 py-1"
+                                            data-toggle="modal" data-target="#modal_t3_<?= $ts['teacher_id'] ?>">
+                                            <i class="flaticon-eye icon-sm mr-1"></i> Detalles
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="modal fade" id="modal_t3_<?= $ts['teacher_id'] ?>" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header d-flex justify-content-between align-items-center border-0 pb-0">
+                                                <h4 class="modal-title font-weight-bolder text-dark">T3 — <?= htmlspecialchars($ts['teacher_name']) ?></h4>
+                                                <button type="button" class="close" data-dismiss="modal"><i class="ki ki-close"></i></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="timeline timeline-6 mt-3 p-5">
+                                                    <?php $hasLogs3 = false; foreach ($tl_t3 as $log): if ((int)$log['teacher_id'] !== (int)$ts['teacher_id']) continue; $hasLogs3 = true;
+                                                        $ic3 = $log['tipo'] == 'positiva' ? 'text-success' : 'text-danger';
+                                                        $bg3 = $log['tipo'] == 'positiva' ? 'bg-light-success' : 'bg-light-danger'; ?>
+                                                        <div class="timeline-item align-items-start">
+                                                            <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg"><?= date('d M', strtotime($log['created_at'])) ?></div>
+                                                            <div class="timeline-badge"><i class="fa fa-genderless <?= $ic3 ?> icon-xl"></i></div>
+                                                            <div class="timeline-content d-flex">
+                                                                <span class="mr-3 <?= $ic3 ?> font-size-h3 font-weight-bolder"><?= $log['tipo'] == 'positiva' ? '+' : '-' ?></span>
+                                                                <div class="d-flex flex-column w-100">
+                                                                    <span class="font-weight-bolder text-dark-75"><?= htmlspecialchars($log['nombre']) ?></span>
+                                                                    <span class="text-muted font-size-sm"><?= htmlspecialchars($log['subject_name']) ?> &bull; <?= date('H:i', strtotime($log['created_at'])) ?></span>
+                                                                    <p class="text-dark-50 p-3 <?= $bg3 ?> rounded mt-1 mb-0"><?= !empty($log['observacion']) ? htmlspecialchars($log['observacion']) : 'Sin observación.' ?></p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; if (!$hasLogs3): ?>
+                                                        <div class="text-center text-muted p-10 font-weight-bold">Sin incidencias con este maestro.</div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0">
+                                                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Cerrar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="text-center text-muted p-5">Sin incidencias registradas en T3.</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <!-- Muro T3 -->
+                <div class="card card-custom gutter-b">
+                    <div class="card-header align-items-center border-0 mt-4">
+                        <h3 class="card-title align-items-start flex-column">
+                            <span class="font-weight-bolder text-dark">Muro de Actividad — T3</span>
+                            <span class="text-muted mt-3 font-weight-bold font-size-sm">Registro cronológico incidencia_registro</span>
+                        </h3>
+                    </div>
+                    <div class="card-body pt-4">
+                        <div class="timeline timeline-6 mt-3">
+                            <?php if (!empty($tl_t3)): foreach ($tl_t3 as $log):
+                                $ic3 = $log['tipo'] == 'positiva' ? 'text-success' : 'text-danger';
+                                $bg3 = $log['tipo'] == 'positiva' ? 'bg-light-success' : 'bg-light-danger'; ?>
+                                <div class="timeline-item align-items-start">
+                                    <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg"><?= date('H:i', strtotime($log['created_at'])) ?></div>
+                                    <div class="timeline-badge"><i class="fa fa-genderless <?= $ic3 ?> icon-xl"></i></div>
+                                    <div class="timeline-content d-flex">
+                                        <span class="mr-2 <?= $ic3 ?> font-size-h3 font-weight-bolder"><?= $log['tipo'] == 'positiva' ? '+' : '-' ?></span>
+                                        <div class="d-flex flex-column">
+                                            <span class="font-weight-bolder text-dark-75 font-size-lg"><?= htmlspecialchars($log['subject_name']) ?> <span class="text-muted font-size-sm font-weight-normal ml-2"><?= date('d M Y', strtotime($log['created_at'])) ?></span></span>
+                                            <p class="text-dark-50 font-weight-normal mb-1">Prof. <?= htmlspecialchars($log['teacher_name']) ?></p>
+                                            <p class="text-dark-50 p-2 <?= $bg3 ?> rounded"><strong><?= htmlspecialchars($log['nombre']) ?>:</strong> <?= !empty($log['observacion']) ? htmlspecialchars($log['observacion']) : 'Sin observación.' ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; else: ?>
+                                <div class="text-center text-muted p-10">Sin actividad registrada en T3.</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                </div><!-- /tab-pane T3 -->
+
+                        </div><!-- /tab-content -->
+                    </div><!-- /card-body -->
+                </div><!-- /card tabs -->
 
             </div>
             <!--end::Content-->

@@ -202,6 +202,187 @@ class IncidenciaModel extends Model
             ->update(['observacion' => $observacion]);
     }
 
+    // ── Métodos por maestro (Primaria 3ro-6to) ──────────────────────────────
+
+    /**
+     * Returns subject_ids taught by $teacher_id in $section_id.
+     */
+    public function getSubjectIdsByTeacher($teacher_id, $section_id): array
+    {
+        $rows = $this->db->query(
+            "SELECT subject_id FROM tiqui0_tiquiasis26.subject
+             WHERE teacher_id = ? AND section_id = ?",
+            [$teacher_id, $section_id]
+        )->getResultArray();
+        return array_column($rows, 'subject_id');
+    }
+
+    /**
+     * Like getConteos() but aggregates across all subjects of teacher in that section.
+     */
+    public function getConteosByTeacher($student_id, $teacher_id, $section_id, $phase_id): array
+    {
+        $subject_ids = $this->getSubjectIdsByTeacher($teacher_id, $section_id);
+
+        $c = ['negativa' => 0, 'positiva' => 0, 'neutral' => 0];
+
+        if (!empty($subject_ids)) {
+            $rows = $this->db->table('incidencia_registro ir')
+                ->select('it.tipo, COUNT(*) as total')
+                ->join('incidencia_tipos it', 'it.id = ir.incidencia_tipo_id')
+                ->where('ir.student_id', $student_id)
+                ->whereIn('ir.subject_id', $subject_ids)
+                ->where('ir.phase_id', $phase_id)
+                ->groupBy('it.tipo')
+                ->get()->getResultArray();
+
+            foreach ($rows as $row) {
+                if (isset($c[$row['tipo']])) {
+                    $c[$row['tipo']] = (int) $row['total'];
+                }
+            }
+        }
+
+        // Boletas: aula sumada por todas las materias del maestro + recreo (una vez)
+        $boletasPts = 0;
+        if (!empty($subject_ids)) {
+            $aula = (int) $this->db->query(
+                "SELECT COUNT(*) as total FROM tiqui0_tiquisaat26.boletas_registro
+                 WHERE student_id = ? AND subject_id IN (" . implode(',', array_map('intval', $subject_ids)) . ")
+                   AND phase_id = ? AND tipo = 'aula'",
+                [$student_id, $phase_id]
+            )->getRowArray()['total'];
+
+            $recreo = (int) $this->db->query(
+                "SELECT COUNT(*) as total FROM tiqui0_tiquisaat26.boletas_registro
+                 WHERE student_id = ? AND phase_id = ? AND tipo = 'recreo'",
+                [$student_id, $phase_id]
+            )->getRowArray()['total'];
+
+            $boletasPts = ($aula + $recreo) * 3;
+        }
+
+        $c['boletas'] = (int)($boletasPts / 3);
+        $c['nota'] = max(0, min(10, round(10 - $c['negativa'] * 0.5 + $c['positiva'] * 0.5 - $boletasPts, 1)));
+        return $c;
+    }
+
+    /**
+     * Bulk version of getConteosByTeacher — uses 3 queries total regardless of class size.
+     */
+    public function getConteosBulkByTeacher(array $student_ids, $teacher_id, $section_id, $phase_id): array
+    {
+        if (empty($student_ids)) return [];
+
+        $subject_ids = $this->getSubjectIdsByTeacher($teacher_id, $section_id);
+
+        $result = [];
+        foreach ($student_ids as $sid) {
+            $result[$sid] = ['negativa' => 0, 'positiva' => 0, 'neutral' => 0];
+        }
+
+        if (!empty($subject_ids)) {
+            // Query 1: incidencias por tipo para todos los alumnos
+            $rows = $this->db->table('incidencia_registro ir')
+                ->select('ir.student_id, it.tipo, COUNT(*) as total')
+                ->join('incidencia_tipos it', 'it.id = ir.incidencia_tipo_id')
+                ->whereIn('ir.student_id', $student_ids)
+                ->whereIn('ir.subject_id', $subject_ids)
+                ->where('ir.phase_id', $phase_id)
+                ->groupBy('ir.student_id, it.tipo')
+                ->get()->getResultArray();
+
+            foreach ($rows as $row) {
+                $sid = $row['student_id'];
+                if (isset($result[$sid][$row['tipo']])) {
+                    $result[$sid][$row['tipo']] = (int) $row['total'];
+                }
+            }
+
+            // Query 2: boletas aula para todas las materias del maestro (bulk)
+            $sidList     = implode(',', array_map('intval', $student_ids));
+            $subList     = implode(',', array_map('intval', $subject_ids));
+            $aulaRows    = $this->db->query(
+                "SELECT student_id, COUNT(*) as total FROM tiqui0_tiquisaat26.boletas_registro
+                 WHERE student_id IN ($sidList) AND subject_id IN ($subList)
+                   AND phase_id = ? AND tipo = 'aula'
+                 GROUP BY student_id",
+                [$phase_id]
+            )->getResultArray();
+
+            // Query 3: boletas recreo (afectan todas las materias)
+            $recreoRows  = $this->db->query(
+                "SELECT student_id, COUNT(*) as total FROM tiqui0_tiquisaat26.boletas_registro
+                 WHERE student_id IN ($sidList) AND phase_id = ? AND tipo = 'recreo'
+                 GROUP BY student_id",
+                [$phase_id]
+            )->getResultArray();
+
+            $boletasMap = [];
+            foreach ($aulaRows as $r)  { $boletasMap[$r['student_id']] = ($boletasMap[$r['student_id']] ?? 0) + (int)$r['total']; }
+            foreach ($recreoRows as $r) { $boletasMap[$r['student_id']] = ($boletasMap[$r['student_id']] ?? 0) + (int)$r['total']; }
+        }
+
+        foreach ($student_ids as $sid) {
+            $c          = $result[$sid];
+            $boletasCnt = isset($boletasMap) ? ($boletasMap[$sid] ?? 0) : 0;
+            $boletasPts = $boletasCnt * 3;
+            $result[$sid]['boletas'] = $boletasCnt;
+            $result[$sid]['nota']    = max(0, min(10, round(10 - $c['negativa'] * 0.5 + $c['positiva'] * 0.5 - $boletasPts, 1)));
+        }
+
+        return $result;
+    }
+
+    /**
+     * Check if a teacher-level compromiso (acta de reunión) exists.
+     */
+    public function tieneCompromisoByTeacher($student_id, $teacher_id, $phase_id): bool
+    {
+        return (bool) $this->db->table('incidencia_compromisos')
+            ->where('student_id', $student_id)
+            ->where('teacher_id', $teacher_id)
+            ->where('phase_id', $phase_id)
+            ->where('subject_id IS NULL', null, false)
+            ->countAllResults();
+    }
+
+    /**
+     * Returns all incidencias for a student in the subjects taught by a specific teacher — used by student_profile for primaria 3-6.
+     */
+    public function getRegistroEstudianteByTeacher($student_id, $teacher_id, $section_id, $phase_id): array
+    {
+        $subject_ids = $this->getSubjectIdsByTeacher($teacher_id, $section_id);
+        if (empty($subject_ids)) return [];
+
+        return $this->db->table('incidencia_registro ir')
+            ->select('ir.*, it.nombre, it.icono, it.tipo, sub.name as subject_name')
+            ->join('incidencia_tipos it', 'it.id = ir.incidencia_tipo_id')
+            ->join('tiqui0_tiquiasis26.subject sub', 'sub.subject_id = ir.subject_id')
+            ->where('ir.student_id', $student_id)
+            ->whereIn('ir.subject_id', $subject_ids)
+            ->where('ir.phase_id', $phase_id)
+            ->orderBy('ir.created_at', 'DESC')
+            ->get()->getResultArray();
+    }
+
+    /**
+     * Like getRegistroEstudiante but also returns teacher name — used by parent view for primaria 3-6.
+     */
+    public function getRegistroEstudianteConMaestro($student_id, $phase_id): array
+    {
+        return $this->db->table('incidencia_registro ir')
+            ->select('ir.*, it.nombre, it.icono, it.tipo, sub.name as subject_name, t.name as teacher_name, t.teacher_id as teacher_id')
+            ->join('incidencia_tipos it', 'it.id = ir.incidencia_tipo_id')
+            ->join('tiqui0_tiquiasis26.subject sub', 'sub.subject_id = ir.subject_id')
+            ->join('tiqui0_tiquisaat26.teacher t', 't.teacher_id = sub.teacher_id')
+            ->where('ir.student_id', $student_id)
+            ->where('ir.phase_id', $phase_id)
+            ->whereIn('it.tipo', ['negativa', 'positiva'])
+            ->orderBy('ir.created_at', 'DESC')
+            ->get()->getResultArray();
+    }
+
     public function getLogisticasHoy($student_id, $date, $phase_id)
     {
         return $this->db->table('incidencia_registro ir')

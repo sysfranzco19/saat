@@ -274,24 +274,40 @@ class LicenciaModel extends Model
     }
     public function licencias_fecha($section_id, $fecha)
     {
-        $sql = "SELECT 
-                    l.student_id,
-                    CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
-                    mo.motivo AS detalle
-                FROM t_licencias l
-                INNER JOIN t_licencias_dia ld ON ld.licencias_id = l.licencias_id
-                INNER JOIN t_student s ON l.student_id = s.student_id
-                INNER JOIN t_motivos mo ON l.motivo_id = mo.motivo_id
-                WHERE ld.fecha_inicio <= ?
-                AND ld.fecha_fin >= ?
-                AND s.section_id = ?";
+        if ($section_id > 400 ) {
+            $sql = "SELECT 
+                        l.student_id,
+                        CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
+                        mo.motivo AS detalle
+                    FROM t_licencias l
+                    INNER JOIN t_licencias_dia ld ON ld.licencias_id = l.licencias_id
+                    INNER JOIN t_student s ON l.student_id = s.student_id
+                    INNER JOIN t_motivos mo ON l.motivo_id = mo.motivo_id
+                    WHERE ld.fecha_inicio <= ?
+                    AND ld.fecha_fin >= ?
+                    AND s.nit_id = ?";
 
+        } else {
+            $sql = "SELECT 
+                        l.student_id,
+                        CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
+                        CONCAT(m.motivo, ' - ', l.detalle) AS detalle
+                    FROM t_licencias l
+                    INNER JOIN t_licencias_dia ld 
+                        ON ld.licencias_id = l.licencias_id
+                    INNER JOIN t_student s 
+                        ON l.student_id = s.student_id
+                    INNER JOIN t_motivos m 
+                        ON l.motivo_id = m.motivo_id
+                    WHERE ld.fecha_inicio <= ? AND ld.fecha_fin >= ? AND s.section_id = ?";
+        }
         $query = $this->db->query($sql, [$fecha, $fecha, $section_id]);
-
         return $query->getResultArray();
+
     }
     public function licencias_periodo($section_id, $fecha, $periodo_id)
     {
+        if ($section_id > 400 ) {
         $sql = "SELECT 
                     l.student_id,
                     CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
@@ -305,10 +321,23 @@ class LicenciaModel extends Model
                     ON l.motivo_id = mo.motivo_id
                 WHERE lp.fecha = ?
                 AND lp.periodo_id = ?
-                AND s.section_id = ?";
+                AND s.nit_id = ?";
+        } else {
+            $sql = "SELECT 
+                    l.student_id,
+                    CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
+                    mo.motivo AS detalle
+                FROM t_licencias l
+                INNER JOIN t_licencias_periodo lp 
+                    ON lp.licencias_id = l.licencias_id
+                INNER JOIN t_student s 
+                    ON l.student_id = s.student_id
+                INNER JOIN t_motivos mo 
+                    ON l.motivo_id = mo.motivo_id
+                WHERE lp.fecha = ? AND lp.periodo_id = ? AND s.section_id = ?";
+        }
 
         $query = $this->db->query($sql, [$fecha, $periodo_id, $section_id]);
-
         return $query->getResultArray();
     }
     public function licencias_tipo_fecha($fecha, $section_ini, $section_fin)

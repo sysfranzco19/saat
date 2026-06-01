@@ -315,6 +315,7 @@ $routes->get('parents/gamified_behavior', 'Parents::gamified_behavior');
 $routes->get('parents/gamified_behavior/(:any)', 'Parents::gamified_behavior/$1');
 $routes->get('parents/behaviors_child/(:any)', 'Parents::behaviors_child/$1');
 $routes->get('parents/report_half/(:any)', 'Parents::report_half/$1');
+$routes->get('parents/reportcards', 'Parents::reportcards');
 $routes->get('parents/report_card/(:any)', 'Parents::report_card/$1');
 $routes->get('parents/virtual_library_prim', 'Parents::virtual_library_prim');
 $routes->get('parents/virtual_library_sec', 'Parents::virtual_library_sec');
@@ -336,6 +337,8 @@ $routes->post('parents/license_save', 'Parents::license_save');
 $routes->post('parents/license_save_dia', 'Parents::license_save_dia');
 $routes->post('parents/license_save_periodo', 'Parents::license_save_periodo');
 $routes->get('parents/interviews', 'Parents::interviews');
+$routes->post('parents/profile_update', 'Parents::profile_update');
+$routes->post('parents/password_update', 'Parents::password_update');
 
 //***************************** STUDENTS ************************/
 $routes->get('student/dashboard', 'Student::dashboard');
@@ -374,6 +377,7 @@ $routes->get('teacher/behavior_add/(:any)', 'Teacher::behavior_add/$1');
 $routes->post('teacher/behavior_save', 'Teacher::behavior_save');
 $routes->get('teacher/content_letter', 'Teacher::content_letter');
 $routes->post('teacher/upfile_letter/(:num)', 'Teacher::upfile_letter/$1');
+$routes->post('teacher/upfile_letter_trim/(:any)', 'Teacher::upfile_letter_trim/$1');
 $routes->get('teacher/pdcs', 'Teacher::pdcs');
 $routes->post('teacher/upfile_pdcs/(:num)', 'Teacher::upfile_pdcs/$1');
 

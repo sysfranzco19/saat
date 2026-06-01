@@ -355,6 +355,64 @@ class Parents extends BaseController
             return view('backend/index', $page_data);
         }
     }
+    function reportcards()
+    {
+        $session = session();
+        $family_id = $session->get('family_id');
+        if ($session->get('login_type') != 'parents')
+            return redirect()->to(base_url());
+        //Settings
+        $Setting = new SettingModel();
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        //HIJOS
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->students_family($family_id);
+        //MORA — bloqueamos si algún hijo es deudor
+        $mo = new MoraModel();
+        foreach ($students as $stu) {
+            $mora = $mo->get_mora(["mora_id" => $stu['student_id']]);
+            if (count($mora) == 1) {
+                //BLOQUEAMOS PAGINA A MOROSOS
+                $page_data['student_id'] = $stu['student_id'];
+                $page_data['student'] = $stu['student'];
+                $page_data['completo'] = $stu['completo'];
+                $page_data['account_type'] = 'parents';
+                $page_data['page_name']    = 'error_6';
+                $page_data['page_title']   = 'Boletines de Notas';
+                return view('backend/index', $page_data);
+            }
+        }
+        // Construir info de PDFs por estudiante
+        $students_pdf = [];
+        foreach ($students as $stu) {
+            $sid  = $stu['student_id'];
+            $pdfs = [];
+            for ($t = 1; $t <= 3; $t++) {
+                $archivo = 'RepT' . $t . strval(60900045 + $sid) . '.pdf';
+                $pdfs[$t] = [
+                    'archivo' => $archivo,
+                    'exists'  => file_exists(FCPATH . 'uploads/t1/' . $archivo),
+                    'url'     => base_url('uploads/t1/' . $archivo),
+                ];
+            }
+            $students_pdf[] = [
+                'student_id' => $sid,
+                'student'    => $stu['student'],
+                'completo'   => $stu['completo'],
+                'pdfs'       => $pdfs,
+            ];
+        }
+        $page_data['students_pdf'] = $students_pdf;
+        //VISTA
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['account_type'] = 'parents';
+        $page_data['page_name'] = 'reportcards';
+        $page_data['page_title'] = 'Boletines de Notas';
+        return view('backend/index', $page_data);
+    }
     function report_half($student_id = '')
     {
         $session = session();
@@ -435,6 +493,7 @@ class Parents extends BaseController
 
     public function gamified_behavior($student_id = '')
     {
+        helper('grade');
         $session = session();
         $family_id = $session->get('family_id');
         if ($session->get('login_type') != 'parents') {
@@ -473,84 +532,110 @@ class Parents extends BaseController
         $page_data['student_name'] = $current_student['student'];
         $page_data['curso'] = $current_student['completo'];
 
-        // Modelos
         $SubjectMod = new SubjectModel();
+        $subjects   = $SubjectMod->subjects_student($current_student['section_id'], $current_student['sex']);
+        $section_id_p = (int) $current_student['section_id'];
+
+        // ── T1 (phase 1): behavior_log — desglose por materia ──────────────
         $BehaviorMod = new BehaviorModel();
-        $ScoreMod = new ScoreModel();
+        $ScoreMod    = new ScoreModel();
 
-        // Materias
-        $subjects = $SubjectMod->subjects_student($current_student['section_id'], $current_student['sex']);
-
-        $subjectStats = [];
-        $globalPositive = 0;
-        $globalNegative = 0;
-        $allLogs = [];
-
-        $rawBehaviors = $BehaviorMod->getBehaviors();
-        $page_data['behaviors'] = $rawBehaviors;
-
-        $recentDate = \Config\Database::connect('asistencia')->table('attendance_dates')
-            ->where('phase_id', $page_data['phase_id'])
+        $recentDate_t1 = \Config\Database::connect('asistencia')->table('attendance_dates')
+            ->where('phase_id', 1)
             ->orderBy('date_class', 'DESC')
-            ->limit(1)
-            ->get()
-            ->getRowArray();
-        $currentDateId = $recentDate ? $recentDate['date_id'] : null;
+            ->limit(1)->get()->getRowArray();
+        $currentDateId_t1 = $recentDate_t1 ? $recentDate_t1['date_id'] : null;
+
+        $subjectStats_t1   = [];
+        $globalPositive_t1 = 0;
+        $globalNegative_t1 = 0;
+        $timeline_t1       = [];
 
         foreach ($subjects as $sub) {
             $subjId = $sub['subject_id'];
+            $logs   = $BehaviorMod->getStudentLog($student_id, null, $subjId, 1);
 
-            $logs = $BehaviorMod->getStudentLog($student_id, null, $subjId, $page_data['phase_id']);
-
-            $pos = count(array_filter($logs, function ($l) {
-                return $l['type'] == 'positive';
-            }));
-            $neg = count(array_filter($logs, function ($l) {
-                return $l['type'] == 'negative';
-            }));
-
-            $globalPositive += $pos;
-            $globalNegative += $neg;
+            $pos = count(array_filter($logs, fn($l) => $l['type'] == 'positive'));
+            $neg = count(array_filter($logs, fn($l) => $l['type'] == 'negative'));
+            $globalPositive_t1 += $pos;
+            $globalNegative_t1 += $neg;
 
             foreach ($logs as &$log) {
                 $log['subject_name'] = $sub['name'];
                 $log['teacher_name'] = $sub['profe'];
             }
-            $allLogs = array_merge($allLogs, $logs);
+            unset($log);
+            $timeline_t1 = array_merge($timeline_t1, $logs);
 
             $puntosDelSer = 10;
-            if ($currentDateId) {
-                $cumulativeScore = $ScoreMod->getDailyScore($student_id, $currentDateId, $subjId);
-                $scaled = ($cumulativeScore / 100) * 10;
-                $puntosDelSer = round($scaled, 1);
-                if ($puntosDelSer > 10)
-                    $puntosDelSer = 10;
-                if ($puntosDelSer < 0)
-                    $puntosDelSer = 0;
+            if ($currentDateId_t1) {
+                $scaled = ($ScoreMod->getDailyScore($student_id, $currentDateId_t1, $subjId) / 100) * 10;
+                $puntosDelSer = max(0, min(10, round($scaled, 1)));
             }
 
-            $subjectStats[] = [
-                'subject_id' => $subjId,
-                'name' => $sub['name'],
-                'teacher' => $sub['profe'],
+            $subjectStats_t1[] = [
+                'subject_id'     => $subjId,
+                'name'           => $sub['name'],
+                'teacher'        => $sub['profe'],
                 'positive_count' => $pos,
                 'negative_count' => $neg,
-                'ser_score' => $puntosDelSer
+                'ser_score'      => $puntosDelSer,
             ];
         }
+        usort($timeline_t1, fn($a, $b) => strtotime($b['created_at']) <=> strtotime($a['created_at']));
 
-        usort($allLogs, function ($a, $b) {
-            return strtotime($b['created_at']) <=> strtotime($a['created_at']);
-        });
+        $page_data['subject_stats_t1']   = $subjectStats_t1;
+        $page_data['global_positive_t1'] = $globalPositive_t1;
+        $page_data['global_negative_t1'] = $globalNegative_t1;
+        $page_data['timeline_t1']        = $timeline_t1;
 
-        $page_data['subject_stats'] = $subjectStats;
-        $page_data['global_positive'] = $globalPositive;
-        $page_data['global_negative'] = $globalNegative;
-        $page_data['timeline_logs'] = $allLogs;
-        $page_data['student_id'] = $student_id;
+        // ── T2 y T3 (phase 2, 3): incidencia_registro — desglose por maestro
+        $IncidenciaMod = new \App\Models\IncidenciaModel();
+
+        // Agrupar materias por maestro (una sola vez)
+        $teacherMap = [];
+        foreach ($subjects as $sub) {
+            $tid = (int) $sub['teacher_id'];
+            if (!isset($teacherMap[$tid])) {
+                $teacherMap[$tid] = [
+                    'teacher_id'   => $tid,
+                    'teacher_name' => $sub['profe'],
+                    'subjects'     => [],
+                ];
+            }
+            $teacherMap[$tid]['subjects'][] = $sub['name'];
+        }
+
+        foreach ([2 => 't2', 3 => 't3'] as $phase => $suffix) {
+            $teacher_stats  = [];
+            $globalNegativa = 0;
+            $globalPositiva = 0;
+
+            foreach ($teacherMap as $tid => $tdata) {
+                $conteos = $IncidenciaMod->getConteosByTeacher($student_id, $tid, $section_id_p, $phase);
+                $globalNegativa += $conteos['negativa'];
+                $globalPositiva += $conteos['positiva'];
+                $teacher_stats[] = [
+                    'teacher_id'   => $tid,
+                    'teacher_name' => $tdata['teacher_name'],
+                    'subjects'     => implode(', ', $tdata['subjects']),
+                    'negativa'     => $conteos['negativa'],
+                    'positiva'     => $conteos['positiva'],
+                    'nota'         => $conteos['nota'],
+                ];
+            }
+            usort($teacher_stats, fn($a, $b) => $a['nota'] <=> $b['nota']);
+
+            $page_data["teacher_stats_{$suffix}"]   = $teacher_stats;
+            $page_data["timeline_{$suffix}"]        = $IncidenciaMod->getRegistroEstudianteConMaestro($student_id, $phase);
+            $page_data["global_negativa_{$suffix}"] = $globalNegativa;
+            $page_data["global_positiva_{$suffix}"] = $globalPositiva;
+        }
+
+        $page_data['student_id']   = $student_id;
         $page_data['account_type'] = 'parents';
-        $page_data['page_name'] = 'gamified_behavior';
-        $page_data['page_title'] = 'Historial de Comportamiento';
+        $page_data['page_name']    = 'gamified_behavior';
+        $page_data['page_title']   = 'Historial de Comportamiento';
         return view('backend/index', $page_data);
     }
     /***************************METODOS DE PAGO*****************/
@@ -702,14 +787,20 @@ class Parents extends BaseController
             return redirect()->to(base_url());
         $Setting = new SettingModel();
         $page_data['login_type'] = $session->get('login_type');
-        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_id']   = $Setting->get_phase_id();
         $page_data['phase_name'] = $Setting->get_phase_name();
         $page_data['system_title'] = $Setting->get_system_title();
-        $page_data['system_name'] = $Setting->get_system_name();
-
+        $page_data['system_name']  = $Setting->get_system_name();
+        // Datos del padre logueado
+        $ParentMod = new \App\Models\ParentModel();
+        $parent = $ParentMod->get_parent(['parent_id' => $session->get('parent_id')]);
+        $page_data['parent'] = $parent[0] ?? [];
+        // Lugares de nacimiento
+        $PlaceMod = new \App\Models\PlaceModel();
+        $page_data['places'] = $PlaceMod->get_places();
         $page_data['account_type'] = 'parents';
-        $page_data['page_name'] = 'error_5';
-        $page_data['page_title'] = 'Pagina en Contruccion';
+        $page_data['page_name']    = 'profile';
+        $page_data['page_title']   = 'Mi Perfil';
         return view('backend/index', $page_data);
     }
     function infractions()
@@ -1400,4 +1491,84 @@ class Parents extends BaseController
         return view('backend/index', $page_data);
     }
     /*********************************OPCIONES ESTUDIANTE ******************/
+
+    /****ACTUALIZAR PERFIL****/
+    public function profile_update()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'parents')
+            return redirect()->to(base_url());
+
+        $parent_id = $this->request->getPost('parent_id');
+
+        $datos = [
+            'name'               => $this->request->getPost('name'),
+            'lastname1'          => $this->request->getPost('lastname1'),
+            'lastname2'          => $this->request->getPost('lastname2'),
+            'birthday'           => $this->request->getPost('birthday')    ?: null,
+            'place_birth'        => $this->request->getPost('place_birth'),
+            'card'               => $this->request->getPost('card'),
+            'phone'              => $this->request->getPost('phone'),
+            'cellphone'          => $this->request->getPost('cellphone'),
+            'workphone'          => $this->request->getPost('workphone'),
+            'email'              => $this->request->getPost('email'),
+            'personal_email'     => $this->request->getPost('personal_email'),
+            'profession'         => $this->request->getPost('profession'),
+            'occupation'         => $this->request->getPost('occupation'),
+            'business'           => $this->request->getPost('business'),
+            'idiom'              => $this->request->getPost('idiom'),
+            'address'            => $this->request->getPost('address'),
+            'reference'          => $this->request->getPost('reference'),
+        ];
+
+        $ParentMod = new \App\Models\ParentModel();
+        $ParentMod->update_parent($datos, $parent_id);
+
+        $session->set('flash_message', 'Datos actualizados correctamente.');
+        return redirect()->to(base_url() . 'parents/profile');
+    }
+
+    /****ACTUALIZAR CONTRASEÑA****/
+    public function password_update()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'parents')
+            return redirect()->to(base_url());
+
+        $parent_id   = $this->request->getPost('parent_id');
+        $old_password = $this->request->getPost('old_password');
+        $new_password = $this->request->getPost('new_password');
+        $confirm      = $this->request->getPost('confirm_password');
+
+        $ParentMod = new \App\Models\ParentModel();
+        $parent    = $ParentMod->get_parent(['parent_id' => $parent_id]);
+
+        if (empty($parent)) {
+            $session->set('flash_message_error', 'Padre no encontrado.');
+            return redirect()->to(base_url() . 'parents/profile');
+        }
+
+        if ($parent[0]['password'] !== md5($old_password)) {
+            $session->set('flash_message_error', 'La contraseña actual es incorrecta.');
+            return redirect()->to(base_url() . 'parents/profile');
+        }
+
+        if ($new_password !== $confirm) {
+            $session->set('flash_message_error', 'Las contraseñas nuevas no coinciden.');
+            return redirect()->to(base_url() . 'parents/profile');
+        }
+
+        if (strlen($new_password) < 4) {
+            $session->set('flash_message_error', 'La contraseña debe tener al menos 4 caracteres.');
+            return redirect()->to(base_url() . 'parents/profile');
+        }
+
+        $ParentMod->update_parent([
+            'password' => md5($new_password),
+            'code'     => $new_password,
+        ], $parent_id);
+
+        $session->set('flash_message', 'Contraseña actualizada correctamente.');
+        return redirect()->to(base_url() . 'parents/dashboard');
+    }
 }

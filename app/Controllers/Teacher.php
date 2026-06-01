@@ -48,6 +48,12 @@ use App\Models\EhcModel;
 
 class Teacher extends BaseController
 {
+    public function initController(\CodeIgniter\HTTP\RequestInterface $request, \CodeIgniter\HTTP\ResponseInterface $response, \Psr\Log\LoggerInterface $logger)
+    {
+        parent::initController($request, $response, $logger);
+        helper('grade');
+    }
+
     public function index()
     {
         //
@@ -629,23 +635,49 @@ class Teacher extends BaseController
         $StudentMod = new StudentModel();
         $student = $StudentMod->find($student_id);
 
+        // Detect primaria 3-6 for teacher-level profile
+        $asistDbProf = \Config\Database::connect('asistencia');
+        $sectionInfoProf = $asistDbProf->query(
+            "SELECT sec.grade, sec.nick_name FROM t_student s JOIN section sec ON sec.section_id = s.section_id WHERE s.student_id = ?",
+            [$student_id]
+        )->getRowArray();
+        $gradeProf      = $sectionInfoProf['grade'] ?? '';
+        $nickProf       = $sectionInfoProf['nick_name'] ?? '';
+        $esPrimaria36   = isPrimaria36($gradeProf);
+        $sectionIdProf  = (int)($student['section_id'] ?? 0);
+
         // Subject Data
         $SubjectMod = new SubjectModel();
-        if ($subject_id > 0) {
+        if ($esPrimaria36) {
+            // Get teacher name for the title
+            $teacherRow = $asistDbProf->query(
+                "SELECT t.name as teacher_name FROM tiqui0_tiquisaat26.teacher t WHERE t.teacher_id = ?",
+                [$teacher_id]
+            )->getRowArray();
+            $page_data['subject_name'] = 'Todas las materias';
+            $page_data['curso'] = $nickProf . ' — Prof. ' . ($teacherRow['teacher_name'] ?? '');
+        } elseif ($subject_id > 0) {
             $subjects = $SubjectMod->subject_section($subject_id);
             $page_data['subject_name'] = $subjects[0]['name'];
             $page_data['curso'] = $subjects[0]['nick_name'] . " - " . $subjects[0]['name'];
         } else {
             $page_data['subject_name'] = 'Historial General';
-            $page_data['curso'] = $student['lastname'] . ' ' . $student['name']; // Fallback label
+            $page_data['curso'] = $student['lastname'] . ' ' . $student['name'];
         }
 
         $IncidenciaMod = new IncidenciaModel();
-        $logs = $IncidenciaMod->getRegistroEstudiante($student_id, $page_data['phase_id'], $subject_id > 0 ? $subject_id : null);
+
+        if ($esPrimaria36) {
+            $logs = $IncidenciaMod->getRegistroEstudianteByTeacher($student_id, $teacher_id, $sectionIdProf, $page_data['phase_id']);
+        } else {
+            $logs = $IncidenciaMod->getRegistroEstudiante($student_id, $page_data['phase_id'], $subject_id > 0 ? $subject_id : null);
+        }
 
         // Merge boletas as "falta grave" entries
         $BoletaMod = new BoletaModel();
-        $boletas = $BoletaMod->getBoletasEstudiante($student_id, $page_data['phase_id'], $subject_id > 0 ? $subject_id : null);
+        // Para primaria 3-6 traer todas las boletas (recreo + aula de cualquier materia del alumno)
+        $boletaSubjectFilter = ($esPrimaria36 || !($subject_id > 0)) ? null : $subject_id;
+        $boletas = $BoletaMod->getBoletasEstudiante($student_id, $page_data['phase_id'], $boletaSubjectFilter);
         foreach ($boletas as $b) {
             $logs[] = [
                 'id'                  => 'boleta_' . $b['id'],
@@ -670,10 +702,15 @@ class Teacher extends BaseController
         $currentDate = $this->request->getGet('date') ?: date('Y-m-d');
         $page_data['logistics'] = $IncidenciaMod->getLogisticasHoy($student_id, $currentDate, $page_data['phase_id']);
 
-        // Puntos del Ser (calcularNota already includes boleta deductions)
-        $page_data['puntos_del_ser'] = $subject_id > 0
-            ? $IncidenciaMod->calcularNota($student_id, $subject_id, $page_data['phase_id'])
-            : 10;
+        // Puntos del Ser
+        if ($esPrimaria36) {
+            $conteosPerfil = $IncidenciaMod->getConteosByTeacher($student_id, $teacher_id, $sectionIdProf, $page_data['phase_id']);
+            $page_data['puntos_del_ser'] = $conteosPerfil['nota'];
+        } else {
+            $page_data['puntos_del_ser'] = $subject_id > 0
+                ? $IncidenciaMod->calcularNota($student_id, $subject_id, $page_data['phase_id'])
+                : 10;
+        }
 
         // Chart Data
         $behaviorCounts = [];
@@ -719,7 +756,82 @@ class Teacher extends BaseController
         $page_data['grave_incidents']    = $graveCount;
         $page_data['behavior_counts']    = $behaviorCounts;
 
-        $page_data['student'] = $student;
+        // PRIMER TRIMESTRE: datos del sistema antiguo (behavior_log / tiqui0_tiquiweb26)
+        // Para primaria 3-6 no filtramos por materia; para otros niveles filtramos por subject_id
+        $BehaviorMod = new BehaviorModel();
+        $rawLogsT1 = $BehaviorMod->getStudentLog($student_id, null, ($esPrimaria36 || !($subject_id > 0)) ? null : $subject_id);
+
+        $logsT1 = [];
+        foreach ($rawLogsT1 as $log) {
+            $logsT1[] = [
+                'id'                 => $log['id'],
+                'nombre'             => html_entity_decode($log['name'], ENT_QUOTES, 'UTF-8'),
+                'icono'              => html_entity_decode($log['icon'], ENT_QUOTES, 'UTF-8'),
+                'tipo'               => $log['type'] === 'positive' ? 'positiva' : ($log['type'] === 'negative' ? 'negativa' : 'neutral'),
+                'observacion'        => $log['observation'],
+                'subject_name'       => $log['subject_name'],
+                'created_at'         => $log['created_at'],
+                'incidencia_tipo_id' => null,
+                'source'             => 'behavior_log',
+            ];
+        }
+
+        $t1BehaviorCounts = [];
+        $t1Positive = 0;
+        $t1Negative = 0;
+        $t1Neutral  = 0;
+        foreach ($logsT1 as $log) {
+            $key = $log['nombre'];
+            if (!isset($t1BehaviorCounts[$key])) {
+                $t1BehaviorCounts[$key] = ['nombre' => $log['nombre'], 'icono' => $log['icono'], 'count' => 0, 'tipo' => $log['tipo']];
+            }
+            $t1BehaviorCounts[$key]['count']++;
+            if ($log['tipo'] === 'positiva') $t1Positive++;
+            elseif ($log['tipo'] === 'negativa') $t1Negative++;
+            else $t1Neutral++;
+        }
+
+        $page_data['logs_t1']            = $logsT1;
+        $page_data['t1_positive']        = $t1Positive;
+        $page_data['t1_negative']        = $t1Negative;
+        $page_data['t1_neutral']         = $t1Neutral;
+        $page_data['t1_behavior_counts'] = $t1BehaviorCounts;
+        $page_data['active_tab']         = $page_data['phase_id'] >= 2 ? 't2' : 't1';
+
+        // Alertas activas
+        $alertas = [];
+        if ($esPrimaria36) {
+            // Una sola alerta a nivel de maestro
+            $notaProf = $page_data['puntos_del_ser'];
+            if ($notaProf <= 8) {
+                $nivel = $notaProf < 7 ? 'danger' : ($notaProf < 8 ? 'warning' : 'info');
+                $alertas[] = [
+                    'materia'    => 'Todas las materias',
+                    'subject_id' => 0,
+                    'nota'       => $notaProf,
+                    'nivel'      => $nivel,
+                ];
+            }
+        } else {
+            $SubjectMod2 = new SubjectModel();
+            $materias = $SubjectMod2->subjects_student($student['section_id'], $student['sex']);
+            foreach ($materias as $mat) {
+                $nota = $IncidenciaMod->calcularNota($student_id, $mat['subject_id'], $page_data['phase_id']);
+                if ($nota <= 8) {
+                    $nivel = $nota < 7 ? 'danger' : ($nota < 8 ? 'warning' : 'info');
+                    $alertas[] = [
+                        'materia'    => $mat['name'],
+                        'subject_id' => $mat['subject_id'],
+                        'nota'       => $nota,
+                        'nivel'      => $nivel,
+                    ];
+                }
+            }
+            usort($alertas, fn($a, $b) => $a['nota'] <=> $b['nota']);
+        }
+        $page_data['alertas'] = $alertas;
+
+        $page_data['student']    = $student;
         $page_data['subject_id'] = $subject_id;
         $page_data['page_name'] = 'student_profile';
         $page_data['page_title'] = 'Perfil del Estudiante';
@@ -890,6 +1002,60 @@ class Teacher extends BaseController
         $page_data['neutral_incidents'] = $neutralCount;
         $page_data['behavior_counts'] = $behaviorCounts;
         $page_data['logs'] = $logs;
+        $page_data['grave_incidents'] = 0;
+
+        // Primer trimestre (behavior_log)
+        $BehaviorMod2 = new BehaviorModel();
+        $rawLogsT1b = $BehaviorMod2->getStudentLog($student_id, null, $subject_id > 0 ? $subject_id : null);
+        $logsT1b = [];
+        foreach ($rawLogsT1b as $log) {
+            $logsT1b[] = [
+                'id'                 => $log['id'],
+                'nombre'             => html_entity_decode($log['name'], ENT_QUOTES, 'UTF-8'),
+                'icono'              => html_entity_decode($log['icon'], ENT_QUOTES, 'UTF-8'),
+                'tipo'               => $log['type'] === 'positive' ? 'positiva' : ($log['type'] === 'negative' ? 'negativa' : 'neutral'),
+                'observacion'        => $log['observation'],
+                'subject_name'       => $log['subject_name'],
+                'created_at'         => $log['created_at'],
+                'incidencia_tipo_id' => null,
+                'source'             => 'behavior_log',
+            ];
+        }
+        $t1Counts2 = [];
+        $t1Pos2 = 0; $t1Neg2 = 0; $t1Neu2 = 0;
+        foreach ($logsT1b as $log) {
+            $key = $log['nombre'];
+            if (!isset($t1Counts2[$key])) {
+                $t1Counts2[$key] = ['nombre' => $log['nombre'], 'icono' => $log['icono'], 'count' => 0, 'tipo' => $log['tipo']];
+            }
+            $t1Counts2[$key]['count']++;
+            if ($log['tipo'] === 'positiva') $t1Pos2++;
+            elseif ($log['tipo'] === 'negativa') $t1Neg2++;
+            else $t1Neu2++;
+        }
+        $page_data['logs_t1']            = $logsT1b;
+        $page_data['t1_positive']        = $t1Pos2;
+        $page_data['t1_negative']        = $t1Neg2;
+        $page_data['t1_neutral']         = $t1Neu2;
+        $page_data['t1_behavior_counts'] = $t1Counts2;
+        $page_data['active_tab']         = $page_data['phase_id'] >= 2 ? 't2' : 't1';
+
+        // Alertas activas
+        $alertasB = [];
+        if (!empty($student['section_id'])) {
+            $SubjectModB = new SubjectModel();
+            $materiasB = $SubjectModB->subjects_student($student['section_id'], $student['sex']);
+            foreach ($materiasB as $mat) {
+                $nota = $IncidenciaMod->calcularNota($student_id, $mat['subject_id'], $page_data['phase_id']);
+                if ($nota <= 8) {
+                    $nivel = $nota < 7 ? 'danger' : ($nota < 8 ? 'warning' : 'info');
+                    $alertasB[] = ['materia' => $mat['name'], 'subject_id' => $mat['subject_id'], 'nota' => $nota, 'nivel' => $nivel];
+                }
+            }
+            usort($alertasB, fn($a, $b) => $a['nota'] <=> $b['nota']);
+        }
+        $page_data['alertas']   = $alertasB;
+        $page_data['logistics'] = $page_data['logistics'] ?? [];
 
         $page_data['student'] = $student;
         $page_data['student_id'] = $student_id;
@@ -928,17 +1094,39 @@ class Teacher extends BaseController
         $session    = session();
         $teacher_id = $session->get('teacher_id');
 
+        // Detectar si el alumno es de primaria 3ro-6to
+        $asistDbReg   = \Config\Database::connect('asistencia');
+        $studentInfo  = $asistDbReg->query(
+            "SELECT s.section_id, sec.grade FROM t_student s JOIN section sec ON sec.section_id = s.section_id WHERE s.student_id = ?",
+            [$studentId]
+        )->getRowArray();
+        $studentGrade     = $studentInfo['grade'] ?? '';
+        $studentSectionId = (int)($studentInfo['section_id'] ?? 0);
+        $esPrimaria36     = isPrimaria36($studentGrade);
+
         $IncidenciaMod = new IncidenciaModel();
 
         $tipoInfo = $IncidenciaMod->getTipoById($tipoId);
         if ($tipoInfo && $tipoInfo['tipo'] === 'negativa') {
-            $conteos = $IncidenciaMod->getConteos($studentId, $subjectId, $phase_id);
-            if ($conteos['nota'] <= 7 && !$IncidenciaMod->tieneCompromiso($studentId, $subjectId, $phase_id)) {
-                return $this->response->setJSON([
-                    'status'  => 'needs_acta',
-                    'nota'    => $conteos['nota'],
-                    'message' => 'El estudiante tiene ' . $conteos['nota'] . ' pts. Se requiere acta de reunión con el padre/tutor.',
-                ]);
+            if ($esPrimaria36) {
+                $conteos = $IncidenciaMod->getConteosByTeacher($studentId, $teacher_id, $studentSectionId, $phase_id);
+                if ($conteos['nota'] <= 7 && !$IncidenciaMod->tieneCompromisoByTeacher($studentId, $teacher_id, $phase_id)) {
+                    return $this->response->setJSON([
+                        'status'    => 'needs_acta',
+                        'nota'      => $conteos['nota'],
+                        'message'   => 'El estudiante tiene ' . $conteos['nota'] . ' pts. Se requiere acta de reunión con el padre/tutor.',
+                        'teacher_id'=> $teacher_id,
+                    ]);
+                }
+            } else {
+                $conteos = $IncidenciaMod->getConteos($studentId, $subjectId, $phase_id);
+                if ($conteos['nota'] <= 7 && !$IncidenciaMod->tieneCompromiso($studentId, $subjectId, $phase_id)) {
+                    return $this->response->setJSON([
+                        'status'  => 'needs_acta',
+                        'nota'    => $conteos['nota'],
+                        'message' => 'El estudiante tiene ' . $conteos['nota'] . ' pts. Se requiere acta de reunión con el padre/tutor.',
+                    ]);
+                }
             }
         }
 
@@ -955,7 +1143,11 @@ class Teacher extends BaseController
             'registrado_por'    => $teacher_id,
         ]);
 
-        $conteos = $IncidenciaMod->getConteos($studentId, $subjectId, $phase_id);
+        if ($esPrimaria36) {
+            $conteos = $IncidenciaMod->getConteosByTeacher($studentId, $teacher_id, $studentSectionId, $phase_id);
+        } else {
+            $conteos = $IncidenciaMod->getConteos($studentId, $subjectId, $phase_id);
+        }
 
         // Envío de correo de advertencia (solo en producción, no en localhost)
         $host         = $_SERVER['HTTP_HOST'] ?? '';
@@ -1061,11 +1253,24 @@ class Teacher extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Registro no encontrado']);
         }
 
-        $conteos = $IncidenciaMod->getConteos(
-            $registro['student_id'],
-            $registro['subject_id'],
-            $registro['phase_id']
-        );
+        $studentId = $registro['student_id'];
+        $phase_id  = $registro['phase_id'];
+
+        // Detectar si el alumno es de primaria 3ro-6to
+        $asistDbDel  = \Config\Database::connect('asistencia');
+        $stuInfoDel  = $asistDbDel->query(
+            "SELECT s.section_id, sec.grade FROM t_student s JOIN section sec ON sec.section_id = s.section_id WHERE s.student_id = ?",
+            [$studentId]
+        )->getRowArray();
+        $gradeDelDel    = $stuInfoDel['grade'] ?? '';
+        $sectionIdDel   = (int)($stuInfoDel['section_id'] ?? 0);
+        $teacherIdDel   = (int)($registro['registrado_por'] ?? 0);
+
+        if (isPrimaria36($gradeDelDel) && $teacherIdDel) {
+            $conteos = $IncidenciaMod->getConteosByTeacher($studentId, $teacherIdDel, $sectionIdDel, $phase_id);
+        } else {
+            $conteos = $IncidenciaMod->getConteos($studentId, $registro['subject_id'], $phase_id);
+        }
 
         return $this->response->setJSON([
             'status'             => 'success',
@@ -1073,7 +1278,7 @@ class Teacher extends BaseController
             'new_score'          => $conteos['nota'],
             'new_negative_count' => $conteos['negativa'],
             'new_positive_count' => $conteos['positiva'],
-            'student_id'         => $registro['student_id'],
+            'student_id'         => $studentId,
         ]);
     }
 
@@ -1092,9 +1297,24 @@ class Teacher extends BaseController
         $Setting  = new SettingModel();
         $phase_id = $Setting->get_phase_id();
 
-        $IncidenciaMod   = new IncidenciaModel();
-        $conteos         = $IncidenciaMod->getConteos($student_id, $subject_id, $phase_id);
-        $tieneCompromiso = $IncidenciaMod->tieneCompromiso($student_id, $subject_id, $phase_id);
+        $IncidenciaMod = new IncidenciaModel();
+
+        $asistDbScore = \Config\Database::connect('asistencia');
+        $stuInfoScore = $asistDbScore->query(
+            "SELECT s.section_id, sec.grade FROM t_student s JOIN section sec ON sec.section_id = s.section_id WHERE s.student_id = ?",
+            [$student_id]
+        )->getRowArray();
+        $gradeScore     = $stuInfoScore['grade'] ?? '';
+        $sectionIdScore = (int)($stuInfoScore['section_id'] ?? 0);
+        $teacherIdScore = (int) session()->get('teacher_id');
+
+        if (isPrimaria36($gradeScore) && $teacherIdScore) {
+            $conteos         = $IncidenciaMod->getConteosByTeacher($student_id, $teacherIdScore, $sectionIdScore, $phase_id);
+            $tieneCompromiso = $IncidenciaMod->tieneCompromisoByTeacher($student_id, $teacherIdScore, $phase_id);
+        } else {
+            $conteos         = $IncidenciaMod->getConteos($student_id, $subject_id, $phase_id);
+            $tieneCompromiso = $IncidenciaMod->tieneCompromiso($student_id, $subject_id, $phase_id);
+        }
 
         return $this->response->setJSON([
             'status'          => 'success',
@@ -1112,13 +1332,14 @@ class Teacher extends BaseController
         if ($session->get('login_type') != 'teacher')
             return $this->response->setJSON(['status' => 'error', 'message' => 'Sin autorización']);
 
-        $student_id    = $this->request->getPost('student_id');
-        $subject_id    = $this->request->getPost('subject_id');
-        $fecha_reunion = $this->request->getPost('fecha_reunion');
-        $observacion   = $this->request->getPost('observacion');
-        $teacher_id    = $session->get('teacher_id');
+        $student_id      = $this->request->getPost('student_id');
+        $subject_id      = $this->request->getPost('subject_id');
+        $teacher_id_acta = $this->request->getPost('teacher_id_acta'); // solo para primaria 3-6
+        $fecha_reunion   = $this->request->getPost('fecha_reunion');
+        $observacion     = $this->request->getPost('observacion');
+        $teacher_id      = $session->get('teacher_id');
 
-        if (!$student_id || !$subject_id || !$fecha_reunion)
+        if (!$student_id || !$fecha_reunion || (!$subject_id && !$teacher_id_acta))
             return $this->response->setJSON(['status' => 'error', 'message' => 'Faltan datos requeridos']);
 
         $file = $this->request->getFile('acta_file');
@@ -1130,7 +1351,7 @@ class Teacher extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Formato no permitido. Usa PDF, JPG o PNG.']);
 
         if ($file->getSize() > 5 * 1024 * 1024)
-            return $this->response->setJSON(['status' => 'error', 'message' => 'El archivo no debe superar 5MB.']);
+            return $this->response->setJSON(['status' => 'error', 'message' => 'El archivo no debe supesar 5MB.']);
 
         $Setting  = new SettingModel();
         $phase_id = $Setting->get_phase_id();
@@ -1141,19 +1362,35 @@ class Teacher extends BaseController
             file_put_contents($uploadPath . 'index.html', '');
         }
 
-        $newName = 'acta_' . $student_id . '_' . $subject_id . '_' . time() . '.' . $file->getExtension();
+        // Determinar si es compromiso por maestro (primaria 3-6)
+        $esActaMaestro = !empty($teacher_id_acta);
+        $fileKey  = $esActaMaestro ? 'maestro' . $teacher_id_acta : $subject_id;
+        $newName  = 'acta_' . $student_id . '_' . $fileKey . '_' . time() . '.' . $file->getExtension();
         $file->move($uploadPath, $newName);
 
         $IncidenciaMod = new IncidenciaModel();
-        $IncidenciaMod->registrarCompromiso([
-            'student_id'    => $student_id,
-            'subject_id'    => $subject_id,
-            'phase_id'      => $phase_id,
-            'teacher_id'    => $teacher_id,
-            'fecha_reunion' => $fecha_reunion,
-            'observacion'   => $observacion,
-            'archivo'       => $newName,
-        ]);
+
+        if ($esActaMaestro) {
+            $IncidenciaMod->registrarCompromiso([
+                'student_id'    => $student_id,
+                'subject_id'    => null,
+                'teacher_id'    => $teacher_id_acta,
+                'phase_id'      => $phase_id,
+                'fecha_reunion' => $fecha_reunion,
+                'observacion'   => $observacion,
+                'archivo'       => $newName,
+            ]);
+        } else {
+            $IncidenciaMod->registrarCompromiso([
+                'student_id'    => $student_id,
+                'subject_id'    => $subject_id,
+                'phase_id'      => $phase_id,
+                'teacher_id'    => $teacher_id,
+                'fecha_reunion' => $fecha_reunion,
+                'observacion'   => $observacion,
+                'archivo'       => $newName,
+            ]);
+        }
 
         return $this->response->setJSON(['status' => 'success']);
     }
@@ -1272,9 +1509,22 @@ class Teacher extends BaseController
 
         $AssistanceMod = new AssistancesubjectModel();
 
-        // Fetch all per-student data in 2 bulk queries instead of 2×N individual ones
-        $student_ids   = array_column($students, 'student_id');
-        $conteosBulk   = $IncidenciaMod->getConteosBulk($student_ids, $subject_id, $page_data['phase_id']);
+        // Fetch all per-student data in bulk queries instead of N individual ones
+        $student_ids = array_column($students, 'student_id');
+
+        // Para primaria 3ro-6to, el puntaje se calcula por maestro (no por materia)
+        $sectionGrade = \Config\Database::connect('asistencia')
+            ->query("SELECT grade FROM section WHERE section_id = ?", [$page_data['section_id']])
+            ->getRowArray()['grade'] ?? '';
+
+        $esPrimaria36Att = isPrimaria36($sectionGrade);
+        $page_data['is_primaria36'] = $esPrimaria36Att;
+
+        if ($esPrimaria36Att) {
+            $conteosBulk = $IncidenciaMod->getConteosBulkByTeacher($student_ids, $teacher_id, $page_data['section_id'], $page_data['phase_id']);
+        } else {
+            $conteosBulk = $IncidenciaMod->getConteosBulk($student_ids, $subject_id, $page_data['phase_id']);
+        }
         $attendanceBulk = $AssistanceMod->get_assistance_subject_bulk(
             $page_data['date_id'], $subject_id, $student_ids, $periodo
         );
@@ -2719,17 +2969,22 @@ class Teacher extends BaseController
         $StudentMod  = new StudentModel();
         $SelfMod     = new SelfappraisalModel();
         $BehaviorMod = new BehaviorModel();
+        $db_t2_adv   = \Config\Database::connect('tiquipaya');
 
-        $students_data        = [];
-        $selfs_data           = [];
-        $infractions_subject_data = [];  // [{materia, total}] para chips resumen
-        $behavior_by_subject  = [];      // [subject_name => [total, students => [id => [name, total, behaviors]]]]
+        $students_data               = [];
+        $selfs_data                  = [];
+        $selfs_data_by_phase         = [];
+        $infractions_subject_data    = [];  // chips T1
+        $behavior_by_subject         = [];  // T1: subject => [total, students]
+        $infractions_subject_data_t2 = [];  // chips T2
+        $behavior_by_subject_t2      = [];  // T2: subject => [total, students]
+        $alertas_data                = [];  // alertas por sección
 
         foreach ($cursos as $curso) {
             $sid = $curso['section_id'];
             $students_data[$sid] = $StudentMod->studentsSection($sid, 0);
 
-            // Autoevaluaciones indexadas por student_id
+            // Autoevaluaciones indexadas por student_id (fase actual — retrocompatibilidad)
             $selfs_raw = $SelfMod->self_section($sid, $page_data['phase_id']);
             $selfs_indexed = [];
             foreach ($selfs_raw as $s) {
@@ -2737,8 +2992,30 @@ class Teacher extends BaseController
             }
             $selfs_data[$sid] = $selfs_indexed;
 
-            // Incidencias desde behavior_log (solo comportamientos negativos)
-            $logs = $BehaviorMod->getSectionBehaviorLog($sid, $page_data['phase_id']);
+            // Autoevaluaciones por trimestre (T1, T2, T3)
+            $selfs_data_by_phase[$sid] = [];
+            for ($ph = 1; $ph <= 3; $ph++) {
+                $raw = $SelfMod->self_section($sid, $ph);
+                $indexed = [];
+                foreach ($raw as $s) {
+                    $indexed[$s['student_id']] = $s;
+                }
+                $selfs_data_by_phase[$sid][$ph] = $indexed;
+            }
+
+            // T1: todos los registros negativos de behavior_log sin filtro de fase
+            $db_bl = \Config\Database::connect('default');
+            $logs  = $db_bl->query("
+                SELECT bl.student_id, bt.name AS behavior_name, bt.type,
+                       IFNULL(sub.name, '—') AS subject_name,
+                       s.name AS student_name, s.lastname AS student_lastname,
+                       IFNULL(s.lastname2,'') AS student_lastname2
+                FROM tiqui0_tiquiweb26.behavior_log bl
+                JOIN tiqui0_tiquiweb26.behavior_types bt ON bt.id = bl.behavior_type_id AND bt.type = 'negative'
+                JOIN tiqui0_tiquiasis26.t_student s ON s.student_id = bl.student_id AND s.section_id = ?
+                LEFT JOIN tiqui0_tiquiasis26.subject sub ON sub.subject_id = bl.subject_id
+                ORDER BY sub.name, s.lastname, s.name
+            ", [$sid])->getResultArray();
 
             $by_subject   = [];  // [subject_name => [total, students => [...]]]
             $subject_totals = [];
@@ -2790,12 +3067,118 @@ class Teacher extends BaseController
 
             $infractions_subject_data[$sid] = $chips;
             $behavior_by_subject[$sid]       = $ordered_by_subject;
+
+            // ── T2: incidencia_registro (sistema nuevo) ──
+            $logs_t2 = $db_t2_adv->query("
+                SELECT ir.student_id, it.nombre AS behavior_name, it.tipo,
+                       IFNULL(sub.name, '—') AS subject_name,
+                       s.name AS student_name, s.lastname AS student_lastname,
+                       IFNULL(s.lastname2,'') AS student_lastname2
+                FROM incidencia_registro ir
+                JOIN incidencia_tipos it ON ir.incidencia_tipo_id = it.id AND it.tipo = 'negativa'
+                JOIN tiqui0_tiquiasis26.t_student s ON s.student_id = ir.student_id
+                LEFT JOIN tiqui0_tiquiasis26.subject sub ON sub.subject_id = ir.subject_id
+                WHERE s.section_id = ?
+                ORDER BY subject_name, s.lastname, s.name
+            ", [$sid])->getResultArray();
+
+            $by_subject_t2    = [];
+            $subject_totals_t2 = [];
+
+            foreach ($logs_t2 as $log2) {
+                $stid2    = $log2['student_id'];
+                $mat2     = $log2['subject_name'];
+                $bname2   = $log2['behavior_name'];
+                $fname2   = trim($log2['student_lastname'] . ' ' . $log2['student_lastname2'] . ' ' . $log2['student_name']);
+
+                if (!isset($by_subject_t2[$mat2])) {
+                    $by_subject_t2[$mat2] = ['total' => 0, 'students' => []];
+                }
+                if (!isset($by_subject_t2[$mat2]['students'][$stid2])) {
+                    $by_subject_t2[$mat2]['students'][$stid2] = ['name' => $fname2, 'student_id' => $stid2, 'total' => 0, 'behaviors' => []];
+                }
+                if (!isset($by_subject_t2[$mat2]['students'][$stid2]['behaviors'][$bname2])) {
+                    $by_subject_t2[$mat2]['students'][$stid2]['behaviors'][$bname2] = 0;
+                }
+                $by_subject_t2[$mat2]['students'][$stid2]['behaviors'][$bname2]++;
+                $by_subject_t2[$mat2]['students'][$stid2]['total']++;
+                $by_subject_t2[$mat2]['total']++;
+                $subject_totals_t2[$mat2] = ($subject_totals_t2[$mat2] ?? 0) + 1;
+            }
+
+            arsort($subject_totals_t2);
+            $ordered_t2 = [];
+            foreach ($subject_totals_t2 as $mat2 => $tot2) {
+                $ordered_t2[$mat2] = $by_subject_t2[$mat2];
+                uasort($ordered_t2[$mat2]['students'], fn($a, $b) => $b['total'] - $a['total']);
+            }
+
+            $chips_t2 = [];
+            foreach ($subject_totals_t2 as $mat2 => $tot2) {
+                $chips_t2[] = ['materia' => $mat2, 'total' => $tot2];
+            }
+
+            $infractions_subject_data_t2[$sid] = $chips_t2;
+            $behavior_by_subject_t2[$sid]       = $ordered_t2;
+
+            // ── Alertas: estudiantes que superan los umbrales en T1 o T2 ──
+            $levels_rank  = ['info' => 0, 'warning' => 1, 'danger' => 2];
+            $alertas_flat = [];
+
+            // T2: nota del ser aproximada (10 - neg*0.5); alerta si nota <= 8
+            foreach ($ordered_t2 as $mat2n => $mat_data2n) {
+                foreach ($mat_data2n['students'] as $stid2n => $stdata2n) {
+                    $neg2n      = $stdata2n['total'];
+                    $nota_aprox = max(0, round(10 - $neg2n * 0.5, 1));
+                    if ($nota_aprox <= 8) {
+                        $niv2 = $nota_aprox < 7 ? 'danger' : ($nota_aprox < 8 ? 'warning' : 'info');
+                        if (!isset($alertas_flat[$stid2n])) {
+                            $alertas_flat[$stid2n] = ['nombre' => $stdata2n['name'], 'nivel' => 'info', 'detalles' => []];
+                        }
+                        if ($levels_rank[$niv2] > $levels_rank[$alertas_flat[$stid2n]['nivel']]) {
+                            $alertas_flat[$stid2n]['nivel'] = $niv2;
+                        }
+                        $alertas_flat[$stid2n]['detalles'][] = 'T2 · ' . $mat2n . ': ' . $nota_aprox . ' pts';
+                    }
+                }
+            }
+
+            // T1: total de negativos por estudiante; alerta si >= 5
+            $totales_t1_alerta = [];
+            foreach ($ordered_by_subject as $mat1n => $mat_data1n) {
+                foreach ($mat_data1n['students'] as $stid1n => $stdata1n) {
+                    if (!isset($totales_t1_alerta[$stid1n])) {
+                        $totales_t1_alerta[$stid1n] = ['nombre' => $stdata1n['name'], 'total' => 0];
+                    }
+                    $totales_t1_alerta[$stid1n]['total'] += $stdata1n['total'];
+                }
+            }
+            foreach ($totales_t1_alerta as $stid1n => $sta1n) {
+                $t1n = $sta1n['total'];
+                if ($t1n >= 5) {
+                    $niv1 = $t1n >= 10 ? 'danger' : ($t1n >= 7 ? 'warning' : 'info');
+                    if (!isset($alertas_flat[$stid1n])) {
+                        $alertas_flat[$stid1n] = ['nombre' => $sta1n['nombre'], 'nivel' => 'info', 'detalles' => []];
+                    }
+                    if ($levels_rank[$niv1] > $levels_rank[$alertas_flat[$stid1n]['nivel']]) {
+                        $alertas_flat[$stid1n]['nivel'] = $niv1;
+                    }
+                    $alertas_flat[$stid1n]['detalles'][] = 'T1 · ' . $t1n . ' incidencias negativas';
+                }
+            }
+
+            uasort($alertas_flat, fn($a, $b) => $levels_rank[$b['nivel']] <=> $levels_rank[$a['nivel']]);
+            $alertas_data[$sid] = array_values($alertas_flat);
         }
 
-        $page_data['students_data']            = $students_data;
-        $page_data['selfs_data']               = $selfs_data;
-        $page_data['infractions_subject_data'] = $infractions_subject_data;
-        $page_data['behavior_by_subject']      = $behavior_by_subject;
+        $page_data['students_data']               = $students_data;
+        $page_data['selfs_data']                  = $selfs_data;
+        $page_data['selfs_data_by_phase']         = $selfs_data_by_phase;
+        $page_data['infractions_subject_data']    = $infractions_subject_data;
+        $page_data['behavior_by_subject']         = $behavior_by_subject;
+        $page_data['infractions_subject_data_t2'] = $infractions_subject_data_t2;
+        $page_data['alertas_data']                = $alertas_data ?? [];
+        $page_data['behavior_by_subject_t2']      = $behavior_by_subject_t2;
 
         //Vista
         $page_data['page_name'] = 'adviser';
