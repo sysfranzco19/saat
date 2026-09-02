@@ -26,6 +26,13 @@
                         </li>
                         <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
                             aria-haspopup="true">
+                            <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/mis_descargos" class="menu-link">
+                                <span class="menu-text">Mis Descargos</span>
+                                <i class="menu-arrow"></i>
+                            </a>
+                        </li>
+                        <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
+                            aria-haspopup="true">
                             <a href="javascript:;" class="menu-link menu-toggle">
                                 <span class="menu-text">Docentes</span>
                                 <span class="menu-desc"></span>

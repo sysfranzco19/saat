@@ -582,6 +582,27 @@
                                                                     de avance</span>
                                                             </td>
                                                         </tr>
+                                                        <tr>
+                                                            <td class="pl-0 py-5">
+                                                                <div class="symbol symbol-45 symbol-light-danger mr-2">
+                                                                    <span class="symbol-label">
+                                                                        <span
+                                                                            class="svg-icon svg-icon-primary svg-icon-2x"><i
+                                                                                class="fas fa-user-graduate text-danger"
+                                                                                style="font-size:1.4rem;"></i></span>
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td class="pl-0">
+                                                                <a href="#" id="btnAbrirReprobados"
+                                                                    data-toggle="modal" data-target="#modalReprobados"
+                                                                    class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Estudiantes
+                                                                    Reprobados</a>
+                                                                <span
+                                                                    class="text-muted font-weight-bold d-block">Cartas
+                                                                    de aplazados por trimestre</span>
+                                                            </td>
+                                                        </tr>
                                                     </tbody>
                                                     <!--end::Tbody-->
                                                 </table>
@@ -605,3 +626,309 @@
         <!--end::Container-->
     </div>
 </div>
+
+<!--begin::Modal Estudiantes Reprobados-->
+<div class="modal fade" id="modalReprobados" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Estudiantes Reprobados</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row align-items-end mb-4">
+                    <div class="col-md-4">
+                        <label class="font-weight-bold">Trimestre</label>
+                        <select id="reprobados_phase_id" class="form-control"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" id="btnBuscarReprobados" class="btn btn-primary font-weight-bold">
+                            <i class="fas fa-search mr-1"></i> Buscar
+                        </button>
+                    </div>
+                    <div class="col-md-5 text-right">
+                        <button type="button" id="btnEnviarSeleccionados" class="btn btn-success font-weight-bold" disabled>
+                            <i class="fas fa-paper-plane mr-1"></i> Enviar seleccionados
+                        </button>
+                    </div>
+                </div>
+
+                <div id="reprobados_alert"></div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tablaReprobados">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width:36px;"><input type="checkbox" id="chkTodosReprobados"></th>
+                                <th>Estudiante</th>
+                                <th>Curso</th>
+                                <th>Materias y Notas</th>
+                                <th style="width:280px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="5" class="text-center text-muted">Seleccione un trimestre y presione Buscar.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--end::Modal Estudiantes Reprobados-->
+
+<!--begin::Modal Enviar Cartas-->
+<div class="modal fade" id="modalEnviarCartas" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Enviar Cartas por Email</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="enviar_resumen" class="mb-3"></div>
+
+                <div class="alert alert-light-warning font-size-sm py-2">
+                    <i class="fas fa-info-circle text-warning mr-1"></i>
+                    El envío usa <code>mail()</code> del servidor: solo funciona en el servidor de producción.
+                </div>
+
+                <div class="form-group">
+                    <label class="font-weight-bold">Enviar una prueba a</label>
+                    <div class="input-group">
+                        <input type="email" id="enviar_test_email" class="form-control" value="soportetecnico@tiquipaya.edu.bo">
+                        <div class="input-group-append">
+                            <button type="button" id="btnEnviarPrueba" class="btn btn-warning font-weight-bold">
+                                <i class="fas fa-vial mr-1"></i> Enviar Prueba
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted">Envía la(s) carta(s) seleccionada(s) solo a este correo, sin notificar a las familias.</small>
+                </div>
+
+                <div id="enviar_resultados"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnEnviarFamilias" class="btn btn-success font-weight-bold">
+                    <i class="fas fa-paper-plane mr-1"></i> Enviar a las Familias
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--end::Modal Enviar Cartas-->
+
+<script>
+(function () {
+    var reprobadosData = [];
+
+    function fmtMaterias(materias) {
+        return materias.map(function (m) {
+            return m.materia + ': ' + Math.round(m.nota);
+        }).join('<br>');
+    }
+
+    function cargarTrimestres() {
+        $.ajax({
+            url: '<?= base_url('secretary/reprobados_phases') ?>',
+            type: 'GET',
+            dataType: 'json',
+            success: function (resp) {
+                var sel = $('#reprobados_phase_id');
+                sel.empty();
+                if (!resp.status || !resp.phases.length) {
+                    sel.append('<option value="">Sin trimestres disponibles</option>');
+                    return;
+                }
+                resp.phases.forEach(function (p) {
+                    var sel_attr = (parseInt(p.phase_id) === parseInt(resp.phase_actual)) ? 'selected' : '';
+                    sel.append('<option value="' + p.phase_id + '" ' + sel_attr + '>' + p.name + '</option>');
+                });
+            }
+        });
+    }
+
+    function renderTabla() {
+        var tbody = $('#tablaReprobados tbody');
+        tbody.empty();
+
+        if (!reprobadosData.length) {
+            tbody.append('<tr><td colspan="5" class="text-center text-muted">No hay estudiantes reprobados en este trimestre.</td></tr>');
+            $('#btnEnviarSeleccionados').prop('disabled', true);
+            return;
+        }
+
+        reprobadosData.forEach(function (al) {
+            var accionHtml = '';
+            if (al.carta_generada) {
+                accionHtml =
+                    '<a href="<?= base_url('uploads/cartas_reprobados/') ?>' + al.student_id + '.pdf" target="_blank" class="btn btn-sm btn-light-primary font-weight-bold mr-1"><i class="fas fa-eye"></i> Ver</a>' +
+                    '<button type="button" class="btn btn-sm btn-light-secondary font-weight-bold mr-1 btnRegenerar" data-id="' + al.student_id + '"><i class="fas fa-sync"></i></button>' +
+                    '<button type="button" class="btn btn-sm btn-success font-weight-bold btnEnviarUno" data-id="' + al.student_id + '"><i class="fas fa-paper-plane"></i> Enviar</button>';
+            } else {
+                accionHtml =
+                    '<button type="button" class="btn btn-sm btn-warning font-weight-bold btnGenerar" data-id="' + al.student_id + '"><i class="fas fa-file-alt"></i> Generar Carta</button>';
+            }
+
+            var row = $('<tr>').attr('data-id', al.student_id);
+            row.append($('<td>').html('<input type="checkbox" class="chkReprobado" value="' + al.student_id + '">'));
+            row.append($('<td>').addClass('font-weight-bold').text(al.student));
+            row.append($('<td>').text(al.curso));
+            row.append($('<td>').html(fmtMaterias(al.materias)));
+            row.append($('<td>').html(accionHtml));
+            tbody.append(row);
+        });
+
+        actualizarBotonEnviar();
+    }
+
+    function actualizarBotonEnviar() {
+        var n = $('.chkReprobado:checked').length;
+        $('#btnEnviarSeleccionados').prop('disabled', n === 0);
+    }
+
+    function buscarReprobados() {
+        var phase_id = $('#reprobados_phase_id').val();
+        if (!phase_id) return;
+
+        $('#reprobados_alert').empty();
+        $('#tablaReprobados tbody').html('<tr><td colspan="5" class="text-center text-muted"><i class="fas fa-spinner fa-spin mr-1"></i> Cargando...</td></tr>');
+
+        $.ajax({
+            url: '<?= base_url('secretary/reprobados_get_data') ?>',
+            type: 'GET',
+            data: { phase_id: phase_id },
+            dataType: 'json',
+            success: function (resp) {
+                if (!resp.status) {
+                    $('#reprobados_alert').html('<div class="alert alert-light-danger">' + resp.message + '</div>');
+                    $('#tablaReprobados tbody').html('<tr><td colspan="5"></td></tr>');
+                    return;
+                }
+                reprobadosData = resp.data;
+                renderTabla();
+            },
+            error: function () {
+                $('#reprobados_alert').html('<div class="alert alert-light-danger">Error al cargar los datos.</div>');
+            }
+        });
+    }
+
+    function generarCarta(student_id, btn) {
+        var phase_id = $('#reprobados_phase_id').val();
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generando...');
+
+        $.ajax({
+            url: '<?= base_url('secretary/reprobados_generar_carta') ?>',
+            type: 'POST',
+            data: { student_id: student_id, phase_id: phase_id },
+            dataType: 'json',
+            success: function (resp) {
+                if (!resp.status) {
+                    alert(resp.message || 'No se pudo generar la carta.');
+                    btn.prop('disabled', false).html('<i class="fas fa-file-alt"></i> Generar Carta');
+                    return;
+                }
+                reprobadosData.forEach(function (al) {
+                    if (parseInt(al.student_id) === parseInt(student_id)) al.carta_generada = true;
+                });
+                renderTabla();
+            },
+            error: function () {
+                alert('Error al generar la carta.');
+                btn.prop('disabled', false).html('<i class="fas fa-file-alt"></i> Generar Carta');
+            }
+        });
+    }
+
+    function abrirModalEnvio(studentIds) {
+        var alumnos = reprobadosData.filter(function (al) {
+            return studentIds.indexOf(String(al.student_id)) !== -1 || studentIds.indexOf(al.student_id) !== -1;
+        });
+
+        var resumen = '<p class="font-weight-bold mb-2">Se enviará la carta a ' + alumnos.length + ' estudiante(s):</p><ul>';
+        alumnos.forEach(function (al) {
+            var emails = [al.email1, al.email2].filter(function (e) { return e; }).join(', ') || '<span class="text-danger">Sin email registrado</span>';
+            resumen += '<li>' + al.student + ' — ' + emails + '</li>';
+        });
+        resumen += '</ul>';
+
+        $('#enviar_resumen').html(resumen);
+        $('#enviar_resultados').empty();
+        $('#modalEnviarCartas').data('student_ids', studentIds).modal('show');
+    }
+
+    function enviarCartas(studentIds, testEmail) {
+        var phase_id = $('#reprobados_phase_id').val();
+        $('#enviar_resultados').html('<div class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i> Enviando...</div>');
+
+        $.ajax({
+            url: '<?= base_url('secretary/reprobados_enviar_carta') ?>',
+            type: 'POST',
+            data: { phase_id: phase_id, student_ids: studentIds, test_email: testEmail || '' },
+            dataType: 'json',
+            success: function (resp) {
+                if (!resp.status) {
+                    $('#enviar_resultados').html('<div class="alert alert-light-danger">' + (resp.message || 'Error al enviar.') + '</div>');
+                    return;
+                }
+                var html = '<ul class="list-unstyled mb-0">';
+                resp.resultados.forEach(function (r) {
+                    var al = reprobadosData.find(function (a) { return parseInt(a.student_id) === parseInt(r.student_id); });
+                    var nombre = al ? al.student : ('Estudiante #' + r.student_id);
+                    html += '<li class="' + (r.ok ? 'text-success' : 'text-danger') + '"><i class="fas ' + (r.ok ? 'fa-check' : 'fa-times') + ' mr-1"></i>' + nombre + ': ' + r.message + '</li>';
+                });
+                html += '</ul>';
+                $('#enviar_resultados').html(html);
+            },
+            error: function () {
+                $('#enviar_resultados').html('<div class="alert alert-light-danger">Error al enviar los correos.</div>');
+            }
+        });
+    }
+
+    $('#modalReprobados').on('show.bs.modal', function () {
+        if (!$('#reprobados_phase_id').children().length) cargarTrimestres();
+    });
+
+    $('#btnBuscarReprobados').on('click', buscarReprobados);
+
+    $('#chkTodosReprobados').on('change', function () {
+        $('.chkReprobado').prop('checked', $(this).is(':checked'));
+        actualizarBotonEnviar();
+    });
+
+    $(document).on('change', '.chkReprobado', actualizarBotonEnviar);
+
+    $(document).on('click', '.btnGenerar, .btnRegenerar', function () {
+        generarCarta($(this).data('id'), $(this));
+    });
+
+    $(document).on('click', '.btnEnviarUno', function () {
+        abrirModalEnvio([String($(this).data('id'))]);
+    });
+
+    $('#btnEnviarSeleccionados').on('click', function () {
+        var ids = $('.chkReprobado:checked').map(function () { return $(this).val(); }).get();
+        if (!ids.length) return;
+        abrirModalEnvio(ids);
+    });
+
+    $('#btnEnviarPrueba').on('click', function () {
+        var ids = $('#modalEnviarCartas').data('student_ids') || [];
+        var testEmail = $('#enviar_test_email').val().trim();
+        if (!testEmail) { alert('Ingrese un correo de prueba.'); return; }
+        enviarCartas(ids, testEmail);
+    });
+
+    $('#btnEnviarFamilias').on('click', function () {
+        var ids = $('#modalEnviarCartas').data('student_ids') || [];
+        if (!confirm('¿Confirma el envío de la carta a las familias seleccionadas?')) return;
+        enviarCartas(ids, '');
+    });
+})();
+</script>

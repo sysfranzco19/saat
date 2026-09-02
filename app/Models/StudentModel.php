@@ -157,7 +157,7 @@ class StudentModel extends Model
     }
     public function student_manager($manager_id)
     {
-        $sql = "SELECT s.student_id, s.lastname, s.lastname2, s.name, c.nick_name FROM t_student as s INNER JOIN section as c ON(s.section_id=c.section_id) 
+        $sql = "SELECT s.student_id, s.lastname, s.lastname2, s.name, c.nick_name, c.section_id FROM t_student as s INNER JOIN section as c ON(s.section_id=c.section_id) 
                 WHERE s.activo=1 AND s.matricula<>0 ORDER BY s.lastname, s.lastname2, s.name";
         //return $student->get()->getResultArray();
         $student = $this->db->query($sql);
@@ -228,6 +228,42 @@ class StudentModel extends Model
                 WHERE t1.activo=1 AND t1.section_id IN ($ids) AND t1.lastname LIKE '%" . $sel . "%' ORDER BY t1.lastname";
         $student = $this->db->query($sql);
         return $student->getResultArray();
+    }
+    public function next_student_id()
+    {
+        $sql = "SELECT IFNULL(MAX(student_id), 0) + 1 AS next_id FROM t_student";
+        $res = $this->db->query($sql)->getRowArray();
+        return (int) $res['next_id'];
+    }
+    public function delete_student($student_id)
+    {
+        $Student = $this->db->table('t_student');
+        $Student->where('student_id', $student_id);
+        return $Student->delete();
+    }
+    public function count_students_admin($buscar = '')
+    {
+        $sql = "SELECT COUNT(*) AS total FROM t_student AS t1 WHERE 1=1";
+        if ($buscar !== '') {
+            $buscar_esc = $this->db->escapeLikeString($buscar);
+            $sql .= " AND (t1.lastname LIKE '%{$buscar_esc}%' ESCAPE '!' OR t1.lastname2 LIKE '%{$buscar_esc}%' ESCAPE '!')";
+        }
+        $res = $this->db->query($sql)->getRowArray();
+        return (int) $res['total'];
+    }
+    public function list_students_admin($buscar = '', $limit = 50, $offset = 0)
+    {
+        $sql = "SELECT t1.student_id, t1.roll, t1.code, t1.name, t1.lastname, t1.lastname2,
+                t1.activo, t1.matricula, t1.section_id, t2.completo
+                FROM t_student AS t1
+                LEFT JOIN section AS t2 ON (t1.section_id = t2.section_id)
+                WHERE 1=1";
+        if ($buscar !== '') {
+            $buscar_esc = $this->db->escapeLikeString($buscar);
+            $sql .= " AND (t1.lastname LIKE '%{$buscar_esc}%' ESCAPE '!' OR t1.lastname2 LIKE '%{$buscar_esc}%' ESCAPE '!')";
+        }
+        $sql .= " ORDER BY t1.lastname, t1.lastname2, t1.name LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
+        return $this->db->query($sql)->getResultArray();
     }
     public function getStudentsFamily($family_id)
     {

@@ -31,6 +31,7 @@
         </div>
         <!--end::Notice-->
         <?php foreach ($students as $row): ?>
+            <?php if ($row['section_id'] >= 231 && $row['section_id'] < 271) continue; // Primaria: licencias por otra vista (prim_licencias) ?>
             <!--begin::Card-->
             <div class="card card-custom gutter-b">
                 <div class="card-header">
@@ -38,7 +39,8 @@
                         <h3 class="card-label">Licencias de: <?php echo $row['student']; ?> <small class="text-muted">(<?php echo $row['completo']; ?>)</small></h3>
                     </div>
                     <div class="card-toolbar">
-                        <?php if ($row['section_id'] >= 231) { ?>
+                        <!--   -->
+                        <?php if ($row['section_id'] >= 271) { ?>
                             <!--begin::Button-->
                             <button type="button" id="licenseButton" class="btn btn-primary btn-sm"
                                 onclick="showAjaxModal('<?php echo base_url(); ?>/modal/popup/student_license_modal_dia/<?php echo $row['student_id']; ?>/<?php echo $row['student']; ?>/<?php echo $row['family_id']; ?>/0');">
@@ -54,6 +56,7 @@
                                 Solicitud no habilitada para este nivel (Inicial/1ro y 2do Primaria)
                             </span>
                         <?php } ?>
+
                     </div>
                 </div>
                 <div class="card-body">

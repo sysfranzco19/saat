@@ -21,6 +21,12 @@
                         $total_pendientes += ($curso_data['total'] - $curso_data['con_auto']);
                     }
                     ?>
+                    <div class="custom-control custom-switch mr-4" style="padding-top:2px;">
+                        <input type="checkbox" class="custom-control-input" id="switchSoloPendientes">
+                        <label class="custom-control-label font-weight-bold" for="switchSoloPendientes" style="cursor:pointer;">
+                            Ver solo pendientes
+                        </label>
+                    </div>
                     <span class="badge badge-pill badge-<?php echo $total_pendientes > 0 ? 'danger' : 'success'; ?> font-size-sm px-4 py-2 mr-2">
                         <?php echo $total_pendientes; ?> pendiente<?php echo $total_pendientes != 1 ? 's' : ''; ?>
                     </span>
@@ -44,7 +50,7 @@
                         $estudiantes = $curso_data['estudiantes'];
                         $pendientes  = $curso_data['total'] - $curso_data['con_auto'];
                         ?>
-                        <div class="mb-8">
+                        <div class="mb-8 curso-block" data-pendientes="<?php echo $pendientes; ?>">
                             <!-- Encabezado del curso -->
                             <div class="d-flex align-items-center mb-3">
                                 <span class="bullet bullet-bar <?php echo $pendientes > 0 ? 'bg-warning' : 'bg-success'; ?> align-self-stretch mr-3" style="width:4px;border-radius:4px;"></span>
@@ -74,7 +80,7 @@
                                     </thead>
                                     <tbody>
                                         <?php foreach ($estudiantes as $i => $row): ?>
-                                            <tr>
+                                            <tr class="fila-estudiante" data-pendiente="<?php echo $row['tiene_auto'] ? '0' : '1'; ?>">
                                                 <td class="text-muted font-size-sm py-3"><?php echo $i + 1; ?></td>
                                                 <td class="font-weight-bold text-dark py-3">
                                                     <?php echo htmlspecialchars($row['student']); ?>
@@ -100,6 +106,12 @@
                             </div>
                         </div>
                     <?php endforeach; ?>
+                    <div id="sinPendientesMsg" class="d-flex flex-column align-items-center py-10 text-center" style="display:none !important;">
+                        <i class="flaticon2-check-mark text-success" style="font-size:3rem;"></i>
+                        <p class="text-success font-weight-bold mt-4 mb-0">
+                            No hay pendientes &mdash; todos los cursos tienen sus autoevaluaciones registradas.
+                        </p>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -107,3 +119,38 @@
     </div>
 </div>
 <!--end::Entry-->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var switchPendientes = document.getElementById('switchSoloPendientes');
+    if (!switchPendientes) return;
+
+    var cursoBlocks   = document.querySelectorAll('.curso-block');
+    var sinPendientes = document.getElementById('sinPendientesMsg');
+
+    function aplicarFiltro() {
+        var soloPendientes  = switchPendientes.checked;
+        var algunCursoVisible = false;
+
+        cursoBlocks.forEach(function (bloque) {
+            var filas = bloque.querySelectorAll('.fila-estudiante');
+            var cursoTienePendientes = bloque.getAttribute('data-pendientes') !== '0';
+
+            filas.forEach(function (fila) {
+                var esPendiente = fila.getAttribute('data-pendiente') === '1';
+                fila.style.display = (soloPendientes && !esPendiente) ? 'none' : '';
+            });
+
+            var ocultarCurso = soloPendientes && !cursoTienePendientes;
+            bloque.style.display = ocultarCurso ? 'none' : '';
+            if (!ocultarCurso) algunCursoVisible = true;
+        });
+
+        if (sinPendientes) {
+            sinPendientes.style.setProperty('display', (soloPendientes && !algunCursoVisible) ? 'flex' : 'none', 'important');
+        }
+    }
+
+    switchPendientes.addEventListener('change', aplicarFiltro);
+});
+</script>

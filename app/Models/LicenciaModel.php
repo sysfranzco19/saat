@@ -47,11 +47,10 @@ class LicenciaModel extends Model
         LEFT JOIN t_licencias_dia ld ON ld.licencias_id=l.licencias_id
         LEFT JOIN t_licencias_periodo lp ON lp.licencias_id=l.licencias_id
         LEFT JOIN periodo p ON p.periodo_id=lp.periodo_id
-        WHERE c.section_id>=" . $section_ini . " AND c.section_id<=" . $section_fin . "
+        WHERE c.section_id >= ? AND c.section_id <= ?
         GROUP BY l.licencias_id, l.student_id, tl.tipo, e.lastname, e.lastname2, e.name, m.motivo, l.detalle, ld.fecha_inicio, ld.fecha_fin, c.nick_name, l.enviado, l.fecha_solicitud
         ORDER BY l.fecha_solicitud DESC LIMIT 1000";
-        $Licencias = $this->db->query($sql);
-        return $Licencias->getResult();
+        return $this->db->query($sql, [(int)$section_ini, (int)$section_fin])->getResult();
     }
     public function vistaLicencias2($secretary_id)
     {
@@ -69,11 +68,10 @@ class LicenciaModel extends Model
         LEFT JOIN t_licencias_dia ld ON ld.licencias_id=l.licencias_id
         LEFT JOIN t_licencias_periodo lp ON lp.licencias_id=l.licencias_id
         LEFT JOIN periodo p ON p.periodo_id=lp.periodo_id
-        WHERE c.secretary_id=" . $secretary_id . "
+        WHERE c.secretary_id = ?
         GROUP BY l.licencias_id, l.student_id, tl.tipo, e.lastname, e.lastname2, e.name, m.motivo, l.detalle, ld.fecha_inicio, ld.fecha_fin, c.nick_name, l.enviado, l.fecha_solicitud
         ORDER BY l.fecha_solicitud DESC";
-        $Licencias = $this->db->query($sql);
-        return $Licencias->getResult();
+        return $this->db->query($sql, [(int)$secretary_id])->getResult();
     }
     public function licencias_auth($section_ini, $section_fin)
     {
@@ -91,11 +89,10 @@ class LicenciaModel extends Model
         LEFT JOIN t_licencias_dia ld ON ld.licencias_id=l.licencias_id
         LEFT JOIN t_licencias_periodo lp ON lp.licencias_id=l.licencias_id
         LEFT JOIN periodo p ON p.periodo_id=lp.periodo_id
-        WHERE c.section_id>=" . $section_ini . " AND c.section_id<=" . $section_fin . " AND l.medio_id=10 AND l.enviado=0
+        WHERE c.section_id >= ? AND c.section_id <= ? AND l.medio_id=10 AND l.enviado=0
         GROUP BY l.licencias_id, l.fecha_solicitud, l.student_id, tl.tipo, l.solicitante, e.lastname, e.lastname2, e.name, m.motivo, l.detalle, ld.fecha_inicio, ld.fecha_fin, c.nick_name, l.enviado
         ORDER BY l.fecha_solicitud DESC";
-        $Licencias = $this->db->query($sql);
-        return $Licencias->getResult();
+        return $this->db->query($sql, [(int)$section_ini, (int)$section_fin])->getResult();
     }
     public function licencias_all($section_ini, $section_fin)
     {
@@ -113,11 +110,10 @@ class LicenciaModel extends Model
         LEFT JOIN t_licencias_dia ld ON ld.licencias_id=l.licencias_id
         LEFT JOIN t_licencias_periodo lp ON lp.licencias_id=l.licencias_id
         LEFT JOIN periodo p ON p.periodo_id=lp.periodo_id
-        WHERE c.section_id>=" . $section_ini . " AND c.section_id<=" . $section_fin . "
+        WHERE c.section_id >= ? AND c.section_id <= ?
         GROUP BY l.licencias_id, l.fecha_solicitud, l.student_id, tl.tipo, l.solicitante, e.lastname, e.lastname2, e.name, m.motivo, l.detalle, ld.fecha_inicio, ld.fecha_fin, c.nick_name, l.enviado
         ORDER BY l.fecha_solicitud";
-        $Licencias = $this->db->query($sql);
-        return $Licencias->getResult();
+        return $this->db->query($sql, [(int)$section_ini, (int)$section_fin])->getResult();
     }
 
     public function licencias_todas_data($section_ini, $section_fin, $secretary_id, $search, $start, $length, $order_col, $order_dir)
@@ -209,10 +205,9 @@ class LicenciaModel extends Model
         LEFT JOIN t_licencias_dia ld ON ld.licencias_id=l.licencias_id
         LEFT JOIN t_licencias_periodo lp ON lp.licencias_id=l.licencias_id
         LEFT JOIN periodo p ON p.periodo_id=lp.periodo_id
-        WHERE l.fecha_solicitud LIKE '" . $fecha . "%'
+        WHERE l.fecha_solicitud LIKE ?
         GROUP BY l.licencias_id, tl.tipo, e.lastname, e.lastname2, e.name, l.fecha_solicitud, m.motivo, l.detalle, s.nick_name, ld.fecha_inicio, ld.fecha_fin";
-        $Licencias = $this->db->query($sql);
-        return $Licencias->getResult();
+        return $this->db->query($sql, [$fecha . '%'])->getResult();
     }
     public function getLicencia($licencia_id)
     {
@@ -234,13 +229,12 @@ class LicenciaModel extends Model
         LEFT JOIN t_licencias_dia ld ON ld.licencias_id=l.licencias_id
         LEFT JOIN t_licencias_periodo lp ON lp.licencias_id=l.licencias_id
         LEFT JOIN periodo p ON p.periodo_id=lp.periodo_id
-        WHERE l.licencias_id=" . $licencia_id . "
+        WHERE l.licencias_id = ?
         GROUP BY l.licencias_id, l.student_id, l.tipo_id, l.motivo_id, l.medio_id, l.solicitante, l.detalle, l.enviado, l.fecha_solicitud,
             e.lastname, e.lastname2, e.name, e.email, e.family_id,
             s.completo, s.section_id, s.nick_name, tm.medio, m.motivo,
             ld.fecha_inicio, ld.fecha_fin, ld.cantidad_dias";
-        $Licencias = $this->db->query($sql);
-        return $Licencias->getResultArray();
+        return $this->db->query($sql, [(int)$licencia_id])->getResultArray();
     }
     public function get_licencia($data)
     {
@@ -288,16 +282,16 @@ class LicenciaModel extends Model
                     AND s.nit_id = ?";
 
         } else {
-            $sql = "SELECT 
+            $sql = "SELECT
                         l.student_id,
                         CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
                         CONCAT(m.motivo, ' - ', l.detalle) AS detalle
                     FROM t_licencias l
-                    INNER JOIN t_licencias_dia ld 
+                    INNER JOIN t_licencias_dia ld
                         ON ld.licencias_id = l.licencias_id
-                    INNER JOIN t_student s 
+                    INNER JOIN t_student s
                         ON l.student_id = s.student_id
-                    INNER JOIN t_motivos m 
+                    INNER JOIN t_motivos m
                         ON l.motivo_id = m.motivo_id
                     WHERE ld.fecha_inicio <= ? AND ld.fecha_fin >= ? AND s.section_id = ?";
         }
@@ -323,16 +317,16 @@ class LicenciaModel extends Model
                 AND lp.periodo_id = ?
                 AND s.nit_id = ?";
         } else {
-            $sql = "SELECT 
+            $sql = "SELECT
                     l.student_id,
                     CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
                     mo.motivo AS detalle
                 FROM t_licencias l
-                INNER JOIN t_licencias_periodo lp 
+                INNER JOIN t_licencias_periodo lp
                     ON lp.licencias_id = l.licencias_id
-                INNER JOIN t_student s 
+                INNER JOIN t_student s
                     ON l.student_id = s.student_id
-                INNER JOIN t_motivos mo 
+                INNER JOIN t_motivos mo
                     ON l.motivo_id = mo.motivo_id
                 WHERE lp.fecha = ? AND lp.periodo_id = ? AND s.section_id = ?";
         }
@@ -359,12 +353,11 @@ class LicenciaModel extends Model
         LEFT JOIN t_licencias_dia ld ON ld.licencias_id=l.licencias_id
         LEFT JOIN t_licencias_periodo lp ON lp.licencias_id=l.licencias_id
         LEFT JOIN periodo p ON p.periodo_id=lp.periodo_id
-        WHERE c.section_id>=" . $section_ini . " AND c.section_id<=" . $section_fin . " AND l.fecha_solicitud LIKE '" . $fecha . "%'
+        WHERE c.section_id >= ? AND c.section_id <= ? AND l.fecha_solicitud LIKE ?
         GROUP BY l.licencias_id, l.student_id, l.tipo_id, tl.tipo,
             s.lastname, s.lastname2, s.name, c.completo, par.parentesco, mo.motivo, me.medio,
             l.detalle, ld.fecha_inicio, ld.fecha_fin, l.enviado, l.fecha_solicitud";
-        $student = $this->db->query($sql);
-        return $student->getResultArray();
+        return $this->db->query($sql, [(int)$section_ini, (int)$section_fin, $fecha . '%'])->getResultArray();
     }
     public function licencias_tipo_fecha2($fecha, $secretary_id)
     {
@@ -385,12 +378,11 @@ class LicenciaModel extends Model
         LEFT JOIN t_licencias_dia ld ON ld.licencias_id=l.licencias_id
         LEFT JOIN t_licencias_periodo lp ON lp.licencias_id=l.licencias_id
         LEFT JOIN periodo p ON p.periodo_id=lp.periodo_id
-        WHERE c.secretary_id=" . $secretary_id . " AND l.fecha_solicitud LIKE '" . $fecha . "%'
+        WHERE c.secretary_id = ? AND l.fecha_solicitud LIKE ?
         GROUP BY l.licencias_id, l.student_id, l.tipo_id, tl.tipo,
             s.lastname, s.lastname2, s.name, c.completo, par.parentesco, mo.motivo, me.medio,
             l.detalle, ld.fecha_inicio, ld.fecha_fin, l.enviado, l.fecha_solicitud";
-        $student = $this->db->query($sql);
-        return $student->getResultArray();
+        return $this->db->query($sql, [(int)$secretary_id, $fecha . '%'])->getResultArray();
     }
 
     public function licencias_curso_suma($fechaIni, $fechaFin, $cursoIni, $cursoFin)
@@ -404,11 +396,10 @@ class LicenciaModel extends Model
         INNER JOIN t_student e ON l.student_id=e.student_id
         INNER JOIN section c ON e.section_id=c.section_id
         LEFT JOIN t_ausencias a ON e.student_id=a.student_id
-        WHERE l.tipo_id=1 AND e.section_id>=" . $cursoIni . " AND e.section_id<=" . $cursoFin . "
-        AND ld.fecha_inicio>='" . $fechaIni . "' AND ld.fecha_fin<='" . $fechaFin . "'
+        WHERE l.tipo_id=1 AND e.section_id >= ? AND e.section_id <= ?
+        AND ld.fecha_inicio >= ? AND ld.fecha_fin <= ?
         GROUP BY e.student_id";
-        $student = $this->db->query($sql);
-        return $student->getResultArray();
+        return $this->db->query($sql, [(int)$cursoIni, (int)$cursoFin, $fechaIni, $fechaFin])->getResultArray();
     }
 
     public function licenciasStudent($student_id)
@@ -478,15 +469,14 @@ class LicenciaModel extends Model
         LEFT JOIN t_licencias_dia ld ON ld.licencias_id=l.licencias_id
         LEFT JOIN t_licencias_periodo lp ON lp.licencias_id=l.licencias_id
         LEFT JOIN periodo p ON p.periodo_id=lp.periodo_id
-        WHERE e.section_id>=" . $cursoIni . " AND e.section_id<=" . $cursoFin . "
+        WHERE e.section_id >= ? AND e.section_id <= ?
         AND (
-            (l.tipo_id = 1 AND ld.fecha_inicio >= '" . $fechaIni . "' AND ld.fecha_fin <= '" . $fechaFin . "')
+            (l.tipo_id = 1 AND ld.fecha_inicio >= ? AND ld.fecha_fin <= ?)
             OR
-            (l.tipo_id = 2 AND lp.fecha >= '" . $fechaIni . "' AND lp.fecha <= '" . $fechaFin . "')
+            (l.tipo_id = 2 AND lp.fecha >= ? AND lp.fecha <= ?)
         )
         GROUP BY l.licencias_id, l.student_id, l.tipo_id, tl.tipo, e.lastname, e.lastname2, e.name, c.completo, par.parentesco, me.medio, m.motivo, l.detalle, l.solicitante, ld.fecha_inicio, ld.fecha_fin, l.enviado, l.fecha_solicitud
         ORDER BY l.fecha_solicitud DESC";
-        $student = $this->db->query($sql);
-        return $student->getResultArray();
+        return $this->db->query($sql, [(int)$cursoIni, (int)$cursoFin, $fechaIni, $fechaFin, $fechaIni, $fechaFin])->getResultArray();
     }
 }

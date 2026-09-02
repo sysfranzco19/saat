@@ -434,6 +434,140 @@
                         <?php
                         }
                         ?>
+                        <!-- ===== MENÚ ASISTENCIA PRIMARIA 3ro–6to ===== -->
+                        <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click" aria-haspopup="true">
+                            <a href="javascript:;" class="menu-link menu-toggle">
+                                <span class="menu-text" style="color:#3699ff; font-weight:700;">
+                                    📚 Asistencia Primaria
+                                </span>
+                                <i class="menu-arrow"></i>
+                            </a>
+                            <div class="menu-submenu menu-submenu-classic menu-submenu-left">
+                                <ul class="menu-subnav">
+
+                                    <!-- Panel General -->
+                                    <li class="menu-item" aria-haspopup="true">
+                                        <a href="<?= base_url('manager/prim_dashboard') ?>" class="menu-link">
+                                            <span class="svg-icon menu-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                                    <g fill="none" fill-rule="evenodd">
+                                                        <rect x="0" y="0" width="24" height="24"/>
+                                                        <path d="M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zm7 4a1 1 0 00-1 1v6a1 1 0 002 0V8a1 1 0 00-1-1zm-4 4a1 1 0 00-1 1v2a1 1 0 002 0v-2a1 1 0 00-1-1zm8-2a1 1 0 00-1 1v4a1 1 0 002 0v-4a1 1 0 00-1-1z" fill="#3699ff"/>
+                                                    </g>
+                                                </svg>
+                                            </span>
+                                            <span class="menu-text">Panel General</span>
+                                        </a>
+                                    </li>
+
+                                    <!-- Gestión de Asistencia -->
+                                    <li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
+                                        <a href="javascript:;" class="menu-link menu-toggle">
+                                            <span class="svg-icon menu-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                                    <g fill="none" fill-rule="evenodd">
+                                                        <rect x="0" y="0" width="24" height="24"/>
+                                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="#3699ff"/>
+                                                    </g>
+                                                </svg>
+                                            </span>
+                                            <span class="menu-text">Gestión de Asistencia</span>
+                                            <i class="menu-arrow"></i>
+                                        </a>
+                                        <div class="menu-submenu menu-submenu-classic menu-submenu-right">
+                                            <ul class="menu-subnav">
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="<?= base_url('manager/prim_asistencia') ?>" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                                        <span class="menu-text">Asistencia del Día</span>
+                                                    </a>
+                                                </li>
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="<?= base_url('manager/prim_ausencias') ?>" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                                        <span class="menu-text">Ausencias sin Licencia</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </li>
+
+                                    <!-- Gestión de Licencias -->
+                                    <li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
+                                        <a href="javascript:;" class="menu-link menu-toggle">
+                                            <span class="svg-icon menu-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                                    <g fill="none" fill-rule="evenodd">
+                                                        <polygon points="0 0 24 0 24 24 0 24"/>
+                                                        <path d="M5.857 2h7.88c.354 0 .697.126.968.355l4.763 4.029c.337.285.532.704.532 1.145V20.083C20 21.874 19.98 22 18.143 22H5.857C4.02 22 4 21.874 4 20.083V3.917C4 2.126 4.02 2 5.857 2z" fill="#000" fill-rule="nonzero" opacity=".3"/>
+                                                        <rect fill="#000" x="6" y="11" width="9" height="2" rx="1"/>
+                                                        <rect fill="#000" x="6" y="15" width="5" height="2" rx="1"/>
+                                                    </g>
+                                                </svg>
+                                            </span>
+                                            <span class="menu-text">Gestión de Licencias</span>
+                                            <i class="menu-arrow"></i>
+                                        </a>
+                                        <div class="menu-submenu menu-submenu-classic menu-submenu-right">
+                                            <ul class="menu-subnav">
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="<?= base_url('manager/prim_licencias') ?>" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                                        <span class="menu-text">Ver / Autorizar / Registrar Licencias</span>
+                                                    </a>
+                                                </li>
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="<?= base_url('manager/prim_cambio_recojo') ?>" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                                        <span class="menu-text">Cambio de Recojo</span>
+                                                    </a>
+                                                </li>
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="<?= base_url('manager/prim_ausencias?todos=1') ?>" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                                        <span class="menu-text">Cupo Trimestral (Todos)</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </li>
+
+                                    <!-- Retrasos -->
+                                    <li class="menu-item" aria-haspopup="true">
+                                        <a href="<?= base_url('manager/prim_retrasos') ?>" class="menu-link">
+                                            <span class="svg-icon menu-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                                    <g fill="none" fill-rule="evenodd">
+                                                        <rect x="0" y="0" width="24" height="24"/>
+                                                        <path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 2a8 8 0 100 16A8 8 0 0012 4zm1 3v5.414l3.293 3.293-1.414 1.414L11 15.586V7h2z" fill="#8950fc"/>
+                                                    </g>
+                                                </svg>
+                                            </span>
+                                            <span class="menu-text">Retrasos</span>
+                                        </a>
+                                    </li>
+
+                                    <!-- Reportes -->
+                                    <li class="menu-item" aria-haspopup="true">
+                                        <a href="<?= base_url('manager/prim_reportes') ?>" class="menu-link">
+                                            <span class="svg-icon menu-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                                    <g fill="none" fill-rule="evenodd">
+                                                        <polygon points="0 0 24 0 24 24 0 24"/>
+                                                        <path d="M5.857 2h7.88c.354 0 .697.126.968.355l4.763 4.029c.337.285.532.704.532 1.145V20.083C20 21.874 19.98 22 18.143 22H5.857C4.02 22 4 21.874 4 20.083V3.917C4 2.126 4.02 2 5.857 2z" fill="#1bc5bd" fill-rule="nonzero" opacity=".3"/>
+                                                        <rect fill="#1bc5bd" x="6" y="11" width="9" height="2" rx="1"/>
+                                                        <rect fill="#1bc5bd" x="6" y="15" width="5" height="2" rx="1"/>
+                                                    </g>
+                                                </svg>
+                                            </span>
+                                            <span class="menu-text">Reportes</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        </li>
+                        <!-- ===== FIN MENÚ ASISTENCIA PRIMARIA ===== -->
                         <?php
                         $session = session();
                         if ($session->get('level') == 1) {
@@ -572,7 +706,6 @@
                                     </ul>
                                 </div>
                             </li>
-
 
                             <?php
                         }

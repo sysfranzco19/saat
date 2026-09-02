@@ -39,6 +39,29 @@ class BoletaModel extends Model
             ->get()->getResultArray();
     }
 
+    // Returns [section_id => cantidad de boletas] for a list of sections in a phase
+    public function getConteoPorSeccion(array $section_ids, $phase_id)
+    {
+        if (empty($section_ids)) return [];
+
+        $rows = $this->db->table('boletas_registro br')
+            ->select('st.section_id, COUNT(*) AS total')
+            ->join('t_student st', 'st.student_id = br.student_id')
+            ->whereIn('st.section_id', $section_ids)
+            ->where('br.phase_id', $phase_id)
+            ->groupBy('st.section_id')
+            ->get()->getResultArray();
+
+        $result = [];
+        foreach ($section_ids as $sid) {
+            $result[$sid] = 0;
+        }
+        foreach ($rows as $row) {
+            $result[$row['section_id']] = (int) $row['total'];
+        }
+        return $result;
+    }
+
     public function getBoletasEstudiante($student_id, $phase_id, $subject_id = null)
     {
         $builder = $this->db->table('boletas_registro br')

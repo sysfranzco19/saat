@@ -202,7 +202,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('index.php/student/report_card') ?>"
+                                                    <a href="<?= base_url('student/report_card') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Boletín
                                                         de Notas</a>
                                                     <span
@@ -235,7 +235,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="pl-0">
-                                                    <a href="<?= base_url('index.php/student/evaluation_report') ?>"
+                                                    <a href="<?= base_url('student/evaluation_report') ?>"
                                                         class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Reporte
                                                         de Evaluaciones</a>
                                                     <span class="text-muted font-weight-bold d-block">Saber y

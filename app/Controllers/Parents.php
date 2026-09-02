@@ -24,6 +24,12 @@ use App\Models\BehaviorModel;
 
 class Parents extends BaseController
 {
+    public function initController(\CodeIgniter\HTTP\RequestInterface $request, \CodeIgniter\HTTP\ResponseInterface $response, \Psr\Log\LoggerInterface $logger)
+    {
+        parent::initController($request, $response, $logger);
+        helper('grade');
+    }
+
     public function dashboard()
     {
         $session = session();
@@ -49,6 +55,11 @@ class Parents extends BaseController
         $page_data['page_title'] = "Dashboard";
         $page_data['account_type'] = 'parents';
         $page_data['page_name'] = "dashboard";
+
+        $all_children = (new StudentModel())->students_family($family_id);
+        $page_data['has_primaria']   = !empty(array_filter($all_children, fn($c) => isPrimaria36($c['grade'])));
+        $page_data['has_secundaria'] = !empty(array_filter($all_children, fn($c) => !isPrimaria36($c['grade']) && ($c['section_id'] ?? 0) >= 231));
+
         return view('backend/index', $page_data);
     }
     public function family_data()
@@ -798,6 +809,10 @@ class Parents extends BaseController
         // Lugares de nacimiento
         $PlaceMod = new \App\Models\PlaceModel();
         $page_data['places'] = $PlaceMod->get_places();
+        // Detectar si tiene hijos en primaria 3ro-6to para mostrar botón de licencias
+        $family_id = $session->get('family_id');
+        $all_children = (new StudentModel())->students_family($family_id);
+        $page_data['has_primaria'] = !empty(array_filter($all_children, fn($c) => isPrimaria36($c['grade'])));
         $page_data['account_type'] = 'parents';
         $page_data['page_name']    = 'profile';
         $page_data['page_title']   = 'Mi Perfil';
@@ -900,8 +915,14 @@ class Parents extends BaseController
         $Licencia   = new LicenciaModel();
         $StudentMod = new StudentModel();
 
-        $students   = $StudentMod->datosStudent($_POST['student_id']);
-        $student_id = $_POST['student_id'];
+        $student_id = (int) ($_POST['student_id'] ?? 0);
+        $students   = $StudentMod->datosStudent($student_id);
+
+        if (empty($students) || (int) $students[0]->family_id !== (int) $session->get('family_id')) {
+            $session->set('flash_message_error', 'No tiene permiso para solicitar licencias para este alumno.');
+            return redirect()->to(base_url() . 'parents/licenses/');
+        }
+
         $section_id = $students[0]->section_id;
 
         if ($section_id < 231) {
@@ -912,11 +933,65 @@ class Parents extends BaseController
         $inicio = date("Y-m-d", strtotime($_POST['fecha_inicio']));
         $fin    = date("Y-m-d", strtotime($_POST['fecha_fin']));
 
-        // Verificar si ya existe una licencia igual registrada hoy (evita doble envío)
+        // Calcular días y fraccion_cupo
+        $cantidad_dias = (int) round((strtotime($fin) - strtotime($inicio)) / 86400) + 1;
+
+// Determinar si el motivo es excepción
         $db       = db_connect('asistencia');
+        $motivoRow = $db->query(
+            "SELECT es_excepcion FROM t_motivos WHERE motivo_id = ? LIMIT 1",
+            [(int)$_POST['motivo_id']]
+        )->getRowArray();
+        $es_excepcion = ($motivoRow && $motivoRow['es_excepcion']) ? 1 : 0;
+        $fraccion_cupo = $es_excepcion ? 0.0 : (float)$cantidad_dias;
+
+        // Primaria 3ro-6to usa tablas prim_*, el resto usa t_licencias
+        $esPrimaria36 = ($section_id >= 231 && $section_id <= 263);
+        $tabla_lic    = $esPrimaria36 ? 'prim_licencias'     : 't_licencias';
+        $tabla_dia    = $esPrimaria36 ? 'prim_licencias_dia' : 't_licencias_dia';
+
+        // Hora de cierre (solo primaria 3-6, solo padres): no se puede pedir
+        // por la plataforma una licencia que empiece hoy después de esta hora.
+        if ($esPrimaria36 && $inicio === date('Y-m-d')) {
+            $horaCierre = (new \Config\PrimReglas())->horaCierre;
+            if (date('H:i') > $horaCierre) {
+                $horaCierreTexto = date('g:i a', strtotime($horaCierre));
+                $session->set('flash_message_error', '⚠️ El horario para solicitar licencias del mismo día cerró a las ' . $horaCierreTexto . '. Por favor comuníquese con la secretaría de su nivel para coordinar.');
+                return redirect()->to(base_url('parents/prim_licencias?student_id=' . $student_id . '&form=dia'));
+            }
+        }
+
+        // Cupo trimestral (solo primaria 3-6): si el alumno ya está en el límite
+        // de 9 días, no se permite registrar más licencias salvo excepción.
+        if ($esPrimaria36 && !$es_excepcion) {
+            $Setting  = new SettingModel();
+            $phaseRow = \Config\Database::connect('tiquipaya')
+                ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$Setting->get_phase_id()])
+                ->getRowArray();
+            if ($phaseRow) {
+                $cupoActual = (new \App\Models\PrimCupoModel())->calcularCupo(
+                    $student_id, $phaseRow['inicio'], $phaseRow['fin']
+                );
+                if ($cupoActual['limite9']) {
+                    $session->set('flash_message_error', '⚠️ Este alumno ya alcanzó el límite de 9 días de licencia para este trimestre y no podrá solicitar más licencias durante el resto del trimestre. Las actividades académicas no serán reprogramadas. Si tiene dudas, puede comunicarse con la secretaría de su nivel.');
+                    return redirect()->to(base_url('parents/prim_licencias?student_id=' . $student_id . '&form=dia'));
+                }
+            }
+        }
+
+        // Más de 3 días: exige carta de solicitud adjunta (primaria)
+        if ($esPrimaria36 && $cantidad_dias > 3) {
+            $cartaFile = $this->request->getFile('carta_solicitud');
+            if (!$cartaFile || !$cartaFile->isValid() || $cartaFile->hasMoved()) {
+                $session->set('flash_message_error', 'Para licencias de más de 3 días debe adjuntar la carta de solicitud.');
+                return redirect()->to(base_url('parents/prim_licencias?student_id=' . $student_id . '&form=dia'));
+            }
+        }
+
+        // Evitar doble envío
         $existing = $db->query(
-            "SELECT l.licencias_id FROM t_licencias l
-             INNER JOIN t_licencias_dia ld ON ld.licencias_id = l.licencias_id
+            "SELECT l.licencias_id FROM {$tabla_lic} l
+             INNER JOIN {$tabla_dia} ld ON ld.licencias_id = l.licencias_id
              WHERE l.student_id = ? AND l.tipo_id = 1
                AND DATE(l.fecha_solicitud) = CURDATE()
                AND ld.fecha_inicio = ? AND ld.fecha_fin = ?
@@ -927,30 +1002,41 @@ class Parents extends BaseController
         if ($existing) {
             $licencias_id = $existing->licencias_id;
         } else {
+            $doc_pendiente = (!empty($_POST['doc_pendiente']) && $_POST['doc_pendiente'] == '1') ? 1 : 0;
+
             $datosLicencia = [
-                "student_id"    => $student_id,
-                "tipo_id"       => 1,
+                "student_id"      => $student_id,
+                "tipo_id"         => 1,
                 "fecha_solicitud" => date("Y-m-d H:i:s"),
-                "solicitante"   => trim($_POST['parent_text']),
-                "parentesco_id" => $_POST['parents'],
-                "motivo_id"     => $_POST['motivo_id'],
-                "detalle"       => trim($_POST['detalle']),
-                "medio_id"      => 10,
-                "enviado"       => 0
+                "solicitante"     => trim($_POST['parent_text']),
+                "parentesco_id"   => $_POST['parents'],
+                "motivo_id"       => $_POST['motivo_id'],
+                "detalle"         => trim($_POST['detalle']),
+                "medio_id"        => 10,
+                "enviado"         => 0,
+                "es_excepcion"    => $es_excepcion,
+                "fraccion_cupo"   => $fraccion_cupo,
+                "doc_pendiente"   => $doc_pendiente,
             ];
-            $licencias_id = $Licencia->insert($datosLicencia);
+
+            if ($esPrimaria36) {
+                $db->table($tabla_lic)->insert($datosLicencia);
+                $licencias_id = $db->insertID();
+            } else {
+                $licencias_id = $Licencia->insert($datosLicencia);
+            }
 
             if ($licencias_id) {
-                $db->table('t_licencias_dia')->insert([
+                $db->table($tabla_dia)->insert([
                     "licencias_id"  => $licencias_id,
                     "fecha_inicio"  => $inicio,
                     "fecha_fin"     => $fin,
-                    "cantidad_dias" => 0
+                    "cantidad_dias" => $cantidad_dias,
                 ]);
             }
         }
 
-        // Subir o reemplazar comprobante médico en el registro (nuevo o existente)
+        // Subir comprobante médico
         if ($licencias_id) {
             $fileInput = $this->request->getFile('comprobante_medico');
             if ($fileInput && $fileInput->isValid() && !$fileInput->hasMoved()) {
@@ -959,19 +1045,53 @@ class Parents extends BaseController
                 $uploadDir         = FCPATH . 'uploads/comprobantes_medicos';
 
                 if (in_array($extension, $allowedExtensions) && $fileInput->getSize() <= 5 * 1024 * 1024) {
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
-                    }
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
                     $newName = 'comprobante_' . $licencias_id . '.' . $extension;
                     if ($fileInput->move($uploadDir, $newName)) {
-                        $Licencia->updateLicencia(['comprobante_medico' => $newName], $licencias_id);
+                        if ($esPrimaria36) {
+                            $db->table($tabla_lic)->where('licencias_id', $licencias_id)->update(['comprobante_medico' => $newName]);
+                        } else {
+                            $Licencia->updateLicencia(['comprobante_medico' => $newName], $licencias_id);
+                        }
                     }
                 }
             }
         }
 
+        // Subir carta de solicitud (obligatoria si > 3 días, primaria)
+        if ($licencias_id && $esPrimaria36 && $cantidad_dias > 3) {
+            $cartaFile = $this->request->getFile('carta_solicitud');
+            if ($cartaFile && $cartaFile->isValid() && !$cartaFile->hasMoved()) {
+                $extension         = strtolower($cartaFile->getClientExtension());
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                $uploadDir         = FCPATH . 'uploads/cartas_solicitud';
+
+                if (in_array($extension, $allowedExtensions) && $cartaFile->getSize() <= 5 * 1024 * 1024) {
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                    $newName = 'carta_' . $licencias_id . '.' . $extension;
+                    if ($cartaFile->move($uploadDir, $newName)) {
+                        $db->table($tabla_lic)->where('licencias_id', $licencias_id)->update(['carta_solicitud' => $newName]);
+                    }
+                }
+            }
+        }
+
+        // Verificar/generar alertas de cupo (6 y 9 días) tras la solicitud
+        if ($licencias_id && $esPrimaria36) {
+            $SettingAlerta = new SettingModel();
+            $phaseAlerta   = \Config\Database::connect('tiquipaya')
+                ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$SettingAlerta->get_phase_id()])
+                ->getRowArray();
+            if ($phaseAlerta) {
+                (new \App\Models\PrimCupoModel())->verificarYGenerarAlertas(
+                    $student_id, $SettingAlerta->get_phase_id(), $phaseAlerta['inicio'], $phaseAlerta['fin']
+                );
+            }
+        }
+
         $session->set('flash_message', 'Se guardó la licencia correctamente.');
-        return redirect()->to(base_url() . 'parents/licenses/');
+        $dest = $esPrimaria36 ? 'parents/prim_licencias?student_id=' . $student_id : 'parents/licenses/';
+        return redirect()->to(base_url() . $dest);
     }
     public function license_save_periodo()
     {
@@ -984,8 +1104,14 @@ class Parents extends BaseController
         $Licencia   = new LicenciaModel();
         $StudentMod = new StudentModel();
 
-        $students   = $StudentMod->datosStudent($_POST['student_id']);
-        $student_id = $_POST['student_id'];
+        $student_id = (int) ($_POST['student_id'] ?? 0);
+        $students   = $StudentMod->datosStudent($student_id);
+
+        if (empty($students) || (int) $students[0]->family_id !== (int) $session->get('family_id')) {
+            $session->set('flash_message_error', 'No tiene permiso para solicitar licencias para este alumno.');
+            return redirect()->to(base_url() . 'parents/licenses/');
+        }
+
         $section_id = $students[0]->section_id;
 
         if ($section_id < 231) {
@@ -993,14 +1119,63 @@ class Parents extends BaseController
             return redirect()->to(base_url() . 'parents/licenses/');
         }
 
-        $fecha   = date("Y-m-d", strtotime($_POST['fecha']));
-        $periodos = $_POST['periodos']; // array de periodos
+        $fecha    = date("Y-m-d", strtotime($_POST['fecha']));
+        $periodos = $_POST['periodos']; // array de periodo_ids
+        $hora_salida     = $_POST['hora_salida']     ?? null;
+        $hora_fin_clases = $_POST['hora_fin_clases'] ?? null;
 
-        // Verificar si ya existe una licencia igual registrada hoy (evita doble envío)
-        $db       = db_connect('asistencia');
+        $db = db_connect('asistencia');
+
+        // Calcular fraccion_cupo según cuántos períodos se marcaron, contando cada
+        // período como 1 hora: más de 2 períodos (>2 horas) = 1 día completo.
+        $fraccion_cupo = (is_array($periodos) && count($periodos) > 2) ? 1.0 : 0.5;
+
+        // Determinar si el motivo es excepción
+        $motivoRow = $db->query(
+            "SELECT es_excepcion FROM t_motivos WHERE motivo_id = ? LIMIT 1",
+            [(int)$_POST['motivo_id']]
+        )->getRowArray();
+        $es_excepcion = ($motivoRow && $motivoRow['es_excepcion']) ? 1 : 0;
+        if ($es_excepcion) $fraccion_cupo = 0.0;
+
+        // Primaria 3ro-6to usa tablas prim_*
+        $esPrimaria36   = ($section_id >= 231 && $section_id <= 263);
+        $tabla_lic      = $esPrimaria36 ? 'prim_licencias'          : 't_licencias';
+        $tabla_periodo  = $esPrimaria36 ? 'prim_licencias_periodo'  : 't_licencias_periodo';
+
+        // Hora de cierre (solo primaria 3-6, solo padres): no se puede pedir
+        // por la plataforma una licencia por período para hoy después de esta hora.
+        if ($esPrimaria36 && $fecha === date('Y-m-d')) {
+            $horaCierre = (new \Config\PrimReglas())->horaCierre;
+            if (date('H:i') > $horaCierre) {
+                $horaCierreTexto = date('g:i a', strtotime($horaCierre));
+                $session->set('flash_message_error', '⚠️ El horario para solicitar licencias por período del mismo día cerró a las ' . $horaCierreTexto . '. Por favor comuníquese con la secretaría de su nivel para coordinar.');
+                return redirect()->to(base_url('parents/prim_licencias?student_id=' . $student_id . '&form=sal'));
+            }
+        }
+
+        // Cupo trimestral (solo primaria 3-6): si el alumno ya está en el límite
+        // de 9 días, no se permite registrar más licencias salvo excepción.
+        if ($esPrimaria36 && !$es_excepcion) {
+            $Setting  = new SettingModel();
+            $phaseRow = \Config\Database::connect('tiquipaya')
+                ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$Setting->get_phase_id()])
+                ->getRowArray();
+            if ($phaseRow) {
+                $cupoActual = (new \App\Models\PrimCupoModel())->calcularCupo(
+                    $student_id, $phaseRow['inicio'], $phaseRow['fin']
+                );
+                if ($cupoActual['limite9']) {
+                    $session->set('flash_message_error', '⚠️ Este alumno ya alcanzó el límite de 9 días de licencia para este trimestre y no podrá solicitar más licencias durante el resto del trimestre. Las actividades académicas no serán reprogramadas. Si tiene dudas, puede comunicarse con la secretaría de su nivel.');
+                    return redirect()->to(base_url('parents/prim_licencias?student_id=' . $student_id . '&form=sal'));
+                }
+            }
+        }
+
+        // Evitar doble envío
         $existing = $db->query(
-            "SELECT l.licencias_id FROM t_licencias l
-             INNER JOIN t_licencias_periodo lp ON lp.licencias_id = l.licencias_id
+            "SELECT l.licencias_id FROM {$tabla_lic} l
+             INNER JOIN {$tabla_periodo} lp ON lp.licencias_id = l.licencias_id
              WHERE l.student_id = ? AND l.tipo_id = 2
                AND DATE(l.fecha_solicitud) = CURDATE()
                AND lp.fecha = ?
@@ -1011,31 +1186,47 @@ class Parents extends BaseController
         if ($existing) {
             $licencias_id = $existing->licencias_id;
         } else {
+            $doc_pendiente = (!empty($_POST['doc_pendiente']) && $_POST['doc_pendiente'] == '1') ? 1 : 0;
+
             $datosLicencia = [
-                "student_id"    => $student_id,
-                "tipo_id"       => 2,
+                "student_id"      => $student_id,
+                "tipo_id"         => 2,
                 "fecha_solicitud" => date("Y-m-d H:i:s"),
-                "solicitante"   => trim($_POST['parent_text']),
-                "parentesco_id" => $_POST['parents'],
-                "motivo_id"     => $_POST['motivo_id'],
-                "detalle"       => trim($_POST['detalle']),
-                "medio_id"      => 10,
-                "enviado"       => 0
+                "hora_salida"     => $hora_salida,
+                "hora_fin_clases" => $hora_fin_clases,
+                "solicitante"     => trim($_POST['parent_text']),
+                "parentesco_id"   => $_POST['parents'],
+                "motivo_id"       => $_POST['motivo_id'],
+                "detalle"         => trim($_POST['detalle']),
+                "medio_id"        => 10,
+                "enviado"         => 0,
+                "es_excepcion"    => $es_excepcion,
+                "fraccion_cupo"   => $fraccion_cupo,
+                "doc_pendiente"   => $doc_pendiente,
             ];
-            $licencias_id = $Licencia->insert($datosLicencia);
+
+            if ($esPrimaria36) {
+                $datosLicencia['recoge_nombre']        = trim($_POST['recoge_nombre'] ?? '');
+                $datosLicencia['recoge_parentesco_id'] = (int)($_POST['recoge_parentesco_id'] ?? 0) ?: null;
+                $datosLicencia['se_reincorpora']        = !empty($_POST['se_reincorpora']) ? 1 : 0;
+                $db->table($tabla_lic)->insert($datosLicencia);
+                $licencias_id = $db->insertID();
+            } else {
+                $licencias_id = $Licencia->insert($datosLicencia);
+            }
 
             if ($licencias_id) {
                 foreach ($periodos as $periodo_id) {
-                    $db->table('t_licencias_periodo')->insert([
+                    $db->table($tabla_periodo)->insert([
                         "licencias_id" => $licencias_id,
                         "fecha"        => $fecha,
-                        "periodo_id"   => $periodo_id
+                        "periodo_id"   => (int)$periodo_id,
                     ]);
                 }
             }
         }
 
-        // Subir o reemplazar comprobante médico en el registro (nuevo o existente)
+        // Subir comprobante médico
         if ($licencias_id) {
             $fileInput = $this->request->getFile('comprobante_medico');
             if ($fileInput && $fileInput->isValid() && !$fileInput->hasMoved()) {
@@ -1044,20 +1235,126 @@ class Parents extends BaseController
                 $uploadDir         = FCPATH . 'uploads/comprobantes_medicos';
 
                 if (in_array($extension, $allowedExtensions) && $fileInput->getSize() <= 5 * 1024 * 1024) {
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
-                    }
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
                     $newName = 'comprobante_' . $licencias_id . '.' . $extension;
                     if ($fileInput->move($uploadDir, $newName)) {
-                        $Licencia->updateLicencia(['comprobante_medico' => $newName], $licencias_id);
+                        if ($esPrimaria36) {
+                            $db->table($tabla_lic)->where('licencias_id', $licencias_id)->update(['comprobante_medico' => $newName]);
+                        } else {
+                            $Licencia->updateLicencia(['comprobante_medico' => $newName], $licencias_id);
+                        }
                     }
                 }
             }
         }
 
-        $session->set('flash_message', 'Se guardó la licencia por periodo correctamente.');
-        return redirect()->to(base_url() . 'parents/licenses/');
+        // Verificar/generar alertas de cupo (6 y 9 días) tras la solicitud
+        if ($licencias_id && $esPrimaria36) {
+            $SettingAlerta = new SettingModel();
+            $phaseAlerta   = \Config\Database::connect('tiquipaya')
+                ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$SettingAlerta->get_phase_id()])
+                ->getRowArray();
+            if ($phaseAlerta) {
+                (new \App\Models\PrimCupoModel())->verificarYGenerarAlertas(
+                    $student_id, $SettingAlerta->get_phase_id(), $phaseAlerta['inicio'], $phaseAlerta['fin']
+                );
+            }
+        }
+
+        $session->set('flash_message', 'Se guardó la licencia por periodos correctamente.');
+        $dest = $esPrimaria36 ? 'parents/prim_licencias?student_id=' . $student_id : 'parents/licenses/';
+        return redirect()->to(base_url() . $dest);
     }
+
+    public function prim_upload_comprobante()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'parents')
+            return $this->response->setJSON(['ok' => false, 'msg' => 'No autorizado']);
+
+        $licencias_id = (int)($this->request->getPost('licencias_id') ?? 0);
+        $student_id   = (int)($this->request->getPost('student_id')   ?? 0);
+        if (!$licencias_id || !$student_id)
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Datos incompletos']);
+
+        $db = db_connect('asistencia');
+
+        // Verificar que la licencia pertenece a un hijo de este padre
+        $family_id = $session->get('family_id');
+        $check = $db->query(
+            "SELECT l.licencias_id FROM prim_licencias l
+             INNER JOIN t_student s ON s.student_id = l.student_id
+             WHERE l.licencias_id = ? AND l.student_id = ? AND s.family_id = ?
+             LIMIT 1",
+            [$licencias_id, $student_id, $family_id]
+        )->getRow();
+
+        if (!$check)
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Licencia no encontrada']);
+
+        $fileInput = $this->request->getFile('comprobante_medico');
+        if (!$fileInput || !$fileInput->isValid() || $fileInput->hasMoved())
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Archivo no válido']);
+
+        $extension         = strtolower($fileInput->getClientExtension());
+        $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+        $uploadDir         = FCPATH . 'uploads/comprobantes_medicos';
+
+        if (!in_array($extension, $allowedExtensions))
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Formato no permitido (pdf, jpg, png)']);
+        if ($fileInput->getSize() > 5 * 1024 * 1024)
+            return $this->response->setJSON(['ok' => false, 'msg' => 'El archivo supera los 5 MB']);
+
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+        $newName = 'comprobante_' . $licencias_id . '.' . $extension;
+
+        if (!$fileInput->move($uploadDir, $newName, true))
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Error al guardar el archivo']);
+
+        $db->table('prim_licencias')
+           ->where('licencias_id', $licencias_id)
+           ->update(['comprobante_medico' => $newName, 'doc_pendiente' => 0]);
+
+        return $this->response->setJSON(['ok' => true, 'archivo' => $newName]);
+    }
+
+    /**
+     * Permite al padre cancelar (soft-delete) una solicitud de licencia propia
+     * mientras siga pendiente. Una vez aprobada/rechazada, solo secretaría puede eliminarla.
+     */
+    public function prim_licencia_delete()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'parents')
+            return $this->response->setJSON(['ok' => false, 'msg' => 'No autorizado']);
+
+        $licencias_id = (int)($this->request->getPost('licencias_id') ?? 0);
+        if (!$licencias_id)
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Datos incompletos']);
+
+        $family_id = $session->get('family_id');
+        $db = db_connect('asistencia');
+
+        $lic = $db->query(
+            "SELECT l.licencias_id, l.enviado FROM prim_licencias l
+             INNER JOIN t_student s ON s.student_id = l.student_id
+             WHERE l.licencias_id = ? AND s.family_id = ?
+             LIMIT 1",
+            [$licencias_id, $family_id]
+        )->getRowArray();
+
+        if (!$lic)
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Licencia no encontrada']);
+
+        if ((int)$lic['enviado'] !== 0)
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Solo puede cancelar solicitudes que aún están pendientes. Para casos ya resueltos, comuníquese con secretaría de nivel.']);
+
+        // Se deja registrado que la canceló el propio padre/madre, para que secretaría
+        // lo distinga de una eliminación hecha por el colegio al revisar el historial.
+        (new \App\Models\PrimLicenciaModel())->eliminarLicencia($licencias_id, 'Cancelada por el padre/madre de familia.');
+        return $this->response->setJSON(['ok' => true]);
+    }
+
     public function license_save()
     {
         date_default_timezone_set('America/La_Paz');
@@ -1528,6 +1825,159 @@ class Parents extends BaseController
         return redirect()->to(base_url() . 'parents/profile');
     }
 
+    /****LICENCIAS PRIMARIA ****/
+    public function prim_licencias()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'parents')
+            return redirect()->to(base_url());
+
+        $family_id = $session->get('family_id');
+        $Setting   = new SettingModel();
+
+        $page_data['phase_id']     = $Setting->get_phase_id();
+        $page_data['phase_name']   = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name']  = $Setting->get_system_name();
+
+        // Hijos de la familia que sean primaria 3ro-6to
+        $all_children  = (new StudentModel())->students_family($family_id);
+        $children_prim = array_values(array_filter($all_children, fn($c) => isPrimaria36($c['grade'])));
+        $page_data['children_prim'] = $children_prim;
+
+        // Alumno seleccionado (GET param o primero por defecto)
+        $selected_id = (int)($this->request->getGet('student_id') ?? 0);
+        $selected    = null;
+        foreach ($children_prim as $c) {
+            if ($c['student_id'] == $selected_id) { $selected = $c; break; }
+        }
+        if (!$selected && !empty($children_prim)) {
+            $selected    = $children_prim[0];
+            $selected_id = $selected['student_id'];
+        }
+        $page_data['selected']    = $selected;
+        $page_data['selected_id'] = $selected_id;
+
+        // Historial de licencias del alumno seleccionado
+        $page_data['licencias'] = $selected
+            ? (new \App\Models\PrimLicenciaModel())->licenciasStudent($selected_id)
+            : [];
+
+        // Historial de avisos de cambio de recojo del alumno seleccionado
+        $page_data['historial_recojo'] = $selected
+            ? (new \App\Models\PrimCambioRecojoModel())->listarPorEstudiante($selected_id)
+            : [];
+
+        // Datos para los formularios
+        $page_data['parentescos']       = (new \App\Models\ParentescoModel())->listarPadreMadre();
+        $page_data['parentescos_todos'] = (new \App\Models\ParentescoModel())->listarParentescos();
+        $page_data['motivos']           = (new \App\Models\MotivoModel())->listarMotivos();
+        $page_data['family_id']         = $family_id;
+
+        $page_data['account_type'] = 'parents';
+        $page_data['page_name']    = 'prim_licencias';
+        $page_data['page_title']   = 'Licencias Primaria';
+        return view('backend/index', $page_data);
+    }
+
+    public function prim_cupo_estudiante()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'parents')
+            return $this->response->setStatusCode(403);
+
+        $student_id = (int)$this->request->getPost('student_id');
+        $family_id  = $session->get('family_id');
+
+        $ok = \Config\Database::connect('asistencia')
+            ->query("SELECT 1 FROM t_student WHERE student_id = ? AND family_id = ?", [$student_id, $family_id])
+            ->getRowArray();
+        if (!$ok) return $this->response->setStatusCode(403);
+
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $phaseRow = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$phase_id])
+            ->getRowArray();
+
+        if (!$phaseRow) return $this->response->setJSON(['error' => 'Sin fase activa']);
+
+        $cupo = (new \App\Models\PrimCupoModel())->calcularCupo($student_id, $phaseRow['inicio'], $phaseRow['fin']);
+        return $this->response->setJSON($cupo);
+    }
+
+    // -------------------------------------------------------------------------
+    // CAMBIO DE RECOJO — Primaria 3ro-6to
+    // -------------------------------------------------------------------------
+
+    public function prim_cambio_recojo_create()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'parents')
+            return redirect()->to(base_url());
+
+        $family_id  = $session->get('family_id');
+        $student_id = (int)$this->request->getPost('student_id');
+
+        // Verificar que el alumno pertenece a esta familia y es primaria 3ro-6to
+        $students = (new StudentModel())->students_family($family_id);
+        $student  = null;
+        foreach ($students as $s) {
+            if ((int)$s['student_id'] === $student_id) { $student = $s; break; }
+        }
+        if (!$student || !isPrimaria36($student['grade'])) {
+            return redirect()->to(base_url('parents/enrolled_children'));
+        }
+
+        $redirectBack = base_url('parents/prim_licencias?student_id=' . $student_id . '&form=rec');
+
+        // Hora de cierre (solo padres): cambio de recojo es siempre para hoy.
+        $horaCierre = (new \Config\PrimReglas())->horaCierre;
+        if (date('H:i') > $horaCierre) {
+            $horaCierreTexto = date('g:i a', strtotime($horaCierre));
+            $session->set('flash_message_error', '⚠️ El horario para avisar un cambio de recojo cerró a las ' . $horaCierreTexto . '. Por favor comuníquese con la secretaría de su nivel para coordinar.');
+            return redirect()->to($redirectBack);
+        }
+
+        $tipo                   = (int)$this->request->getPost('tipo');
+        $solicitante            = trim($this->request->getPost('parent_text') ?? '');
+        $parentesco_id          = (int)$this->request->getPost('parents');
+        $persona_nombre         = trim($this->request->getPost('persona_nombre') ?? '');
+        $persona_parentesco_id  = (int)($this->request->getPost('persona_parentesco_id') ?? 0);
+        $persona_parentesco_otro= trim($this->request->getPost('persona_parentesco_otro') ?? '');
+        $detalle                = trim($this->request->getPost('detalle') ?? '');
+
+        if (!in_array($tipo, [1, 2, 3], true) || $solicitante === '' || !$parentesco_id) {
+            $session->set('flash_message_error', 'Complete todos los campos requeridos.');
+            return redirect()->to($redirectBack);
+        }
+        if ($tipo === 1 && ($persona_nombre === '' || (!$persona_parentesco_id && $persona_parentesco_otro === ''))) {
+            $session->set('flash_message_error', 'Indique el nombre y parentesco de la persona que recogerá al estudiante.');
+            return redirect()->to($redirectBack);
+        }
+        if ($tipo === 3 && $detalle === '') {
+            $session->set('flash_message_error', 'Describa el motivo del cambio.');
+            return redirect()->to($redirectBack);
+        }
+
+        (new \App\Models\PrimCambioRecojoModel())->crear([
+            'student_id'             => $student_id,
+            'fecha'                  => date('Y-m-d'),
+            'tipo'                   => $tipo,
+            'solicitante'            => $solicitante,
+            'parentesco_id'          => $parentesco_id,
+            'persona_nombre'         => $tipo === 1 ? $persona_nombre : null,
+            'persona_parentesco_id'  => ($tipo === 1 && $persona_parentesco_id) ? $persona_parentesco_id : null,
+            'persona_parentesco_otro'=> ($tipo === 1 && !$persona_parentesco_id && $persona_parentesco_otro !== '') ? $persona_parentesco_otro : null,
+            'detalle'                => $detalle !== '' ? $detalle : null,
+            'enviado'                => 0,
+            'fecha_solicitud'        => date('Y-m-d H:i:s'),
+        ]);
+
+        $session->set('flash_message', 'Aviso de cambio de recojo registrado. Queda pendiente de aprobación por secretaría.');
+        return redirect()->to($redirectBack);
+    }
+
     /****ACTUALIZAR CONTRASEÑA****/
     public function password_update()
     {
@@ -1571,4 +2021,5 @@ class Parents extends BaseController
         $session->set('flash_message', 'Contraseña actualizada correctamente.');
         return redirect()->to(base_url() . 'parents/dashboard');
     }
+
 }

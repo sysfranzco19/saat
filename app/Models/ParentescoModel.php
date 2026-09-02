@@ -12,6 +12,13 @@ class ParentescoModel extends Model
         $Parentescos = $this->db->query("SELECT * FROM t_parentesco");
         return $Parentescos->getResult();
     }
+
+    public function listarPadreMadre()
+    {
+        return $this->db->table('t_parentesco')
+            ->whereIn('parentesco_id', [1, 2])
+            ->get()->getResult();
+    }
     public function getParentesco($data){
         $Parentescos = $this->db->table('t_parentesco');
         $Parentescos->where($data);

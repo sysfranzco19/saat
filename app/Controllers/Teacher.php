@@ -32,6 +32,9 @@ use App\Models\TeacherModel;
 use App\Models\SelfappraisalModel;
 use App\Models\MoraModel;
 use App\Models\LicenciaModel;
+use App\Models\PrimLicenciaModel;
+use App\Models\PrimAssistancesubjectModel;
+use App\Models\PrimCupoModel;
 use App\Models\AbsenceModel;
 use App\Models\IinfractionModel;
 use App\Models\IcriteriaModel;
@@ -45,6 +48,7 @@ use App\Models\BoletaModel;
 use App\Models\InterviewModel;
 use App\Models\EvaluationModel;
 use App\Models\EhcModel;
+use App\Models\NotaDescargoModel;
 
 class Teacher extends BaseController
 {
@@ -580,6 +584,9 @@ class Teacher extends BaseController
 
         $SubjectMod = new SubjectModel();
         $subjects = $SubjectMod->subject_section($subject_id);
+        if (empty($subjects) || (int)$subjects[0]['teacher_id'] !== (int)$teacher_id) {
+            return redirect()->to(base_url());
+        }
         $page_data['curso'] = $subjects[0]['nick_name'] . " - " . $subjects[0]['name'];
         $page_data['subject_id'] = $subject_id;
         $section_id = $subjects[0]['section_id'];
@@ -1471,6 +1478,9 @@ class Teacher extends BaseController
         if (empty($subjects)) {
             return redirect()->back()->with('error', 'Materia no encontrada');
         }
+        if ((int)$subjects[0]['teacher_id'] !== (int)$teacher_id) {
+            return redirect()->to(base_url());
+        }
 
         $page_data['curso'] = $subjects[0]['nick_name'] . " - " . $subjects[0]['name'];
         $page_data['section_id'] = $subjects[0]['section_id'];
@@ -1507,8 +1517,6 @@ class Teacher extends BaseController
         $page_data['tipos_positiva'] = $tiposGrouped['positiva'];
         $page_data['tipos_neutral']  = $tiposGrouped['neutral'];
 
-        $AssistanceMod = new AssistancesubjectModel();
-
         // Fetch all per-student data in bulk queries instead of N individual ones
         $student_ids = array_column($students, 'student_id');
 
@@ -1521,9 +1529,13 @@ class Teacher extends BaseController
         $page_data['is_primaria36'] = $esPrimaria36Att;
 
         if ($esPrimaria36Att) {
-            $conteosBulk = $IncidenciaMod->getConteosBulkByTeacher($student_ids, $teacher_id, $page_data['section_id'], $page_data['phase_id']);
+            $AssistanceMod = new PrimAssistancesubjectModel();
+            $LicenciaMod   = new PrimLicenciaModel();
+            $conteosBulk   = $IncidenciaMod->getConteosBulkByTeacher($student_ids, $teacher_id, $page_data['section_id'], $page_data['phase_id']);
         } else {
-            $conteosBulk = $IncidenciaMod->getConteosBulk($student_ids, $subject_id, $page_data['phase_id']);
+            $AssistanceMod = new AssistancesubjectModel();
+            $LicenciaMod   = new LicenciaModel();
+            $conteosBulk   = $IncidenciaMod->getConteosBulk($student_ids, $subject_id, $page_data['phase_id']);
         }
         $attendanceBulk = $AssistanceMod->get_assistance_subject_bulk(
             $page_data['date_id'], $subject_id, $student_ids, $periodo
@@ -1551,8 +1563,7 @@ class Teacher extends BaseController
         }
         $page_data['students'] = $students;
 
-        // Licencias Fechas
-        $LicenciaMod = new LicenciaModel();
+        // Licencias Fechas ($LicenciaMod ya fue instanciado arriba según nivel)
         $page_data['licencias'] = $LicenciaMod->licencias_fecha($page_data['section_id'], $page_data['date']);
 
         // Convertir número de periodo (1-8) al periodo_id real de la BD
@@ -1574,6 +1585,25 @@ class Teacher extends BaseController
             $prev_attendance[$pa['student_id']] = $pa['status'];
         }
         $page_data['prev_attendance'] = $prev_attendance;
+
+        // Para primaria 3ro-6to: cargar cupo trimestral de cada alumno
+        $page_data['cupos_map'] = [];
+        if ($esPrimaria36Att) {
+            $phaseRow = \Config\Database::connect('tiquipaya')
+                ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$page_data['phase_id']])
+                ->getRowArray();
+            if ($phaseRow) {
+                $CupoMod = new PrimCupoModel();
+                $filas   = $CupoMod->resumenSeccion(
+                    (int)$page_data['section_id'],
+                    $phaseRow['inicio'],
+                    $phaseRow['fin']
+                );
+                foreach ($filas as $f) {
+                    $page_data['cupos_map'][$f['student_id']] = $f;
+                }
+            }
+        }
 
         // View
         $page_data['has_existing_data'] = $has_existing;
@@ -1652,12 +1682,17 @@ class Teacher extends BaseController
         //Parametros
         $page_data['teacher_id'] = $teacher_id;
         $page_data['subject_id'] = $_POST['subject_id'];
-        $page_data['section_id'] = $_POST['section_id'];
         $page_data['date_id'] = $_POST['date_id'];
         $periodo = $_POST['periodos'];
         //Subject
         $SubjectMod = new SubjectModel();
         $subjects = $SubjectMod->subject_section($page_data['subject_id']);
+        if (empty($subjects) || (int)$subjects[0]['teacher_id'] !== (int)$teacher_id) {
+            return redirect()->to(base_url());
+        }
+        // section_id se deriva de la materia verificada, no del POST directamente
+        // (evita que se pueda enviar un section_id distinto al de esa materia).
+        $page_data['section_id'] = $subjects[0]['section_id'];
         $page_data['curso'] = $subjects[0]['nick_name'] . " - " . $subjects[0]['name'];
 
         //Students
@@ -1669,63 +1704,188 @@ class Teacher extends BaseController
         $DatesMod = new DatesModel();
         $dateRow = $DatesMod->get_attendance_dates(['date_id' => $page_data['date_id']]);
         $dateClass = isset($dateRow[0]['date_class']) ? $dateRow[0]['date_class'] : date('Y-m-d');
-        $AssisMod   = new AssistanceModel();
-        $AssistanceMod = new AssistancesubjectModel();
 
-        // Bulk fetch: registros existentes de ambas tablas en 2 queries
+        // Detectar si es primaria 3ro-6to para usar tablas prim_
+        $sectionGradeSave = \Config\Database::connect('asistencia')
+            ->query("SELECT grade FROM section WHERE section_id = ?", [$page_data['section_id']])
+            ->getRowArray()['grade'] ?? '';
+        $esPrimaria36Save = isPrimaria36($sectionGradeSave);
+
         $student_ids = array_column($students, 'student_id');
 
-        $existingSubject = $AssistanceMod->get_assistance_subject_bulk(
-            $page_data['date_id'], $page_data['subject_id'], $student_ids, $periodo
-        );
+        if ($esPrimaria36Save) {
+            // --- PRIMARIA 3ro-6to: tablas prim_, registro diario siempre upsert ---
+            $PrimMod = new PrimAssistancesubjectModel();
 
-        $existingGeneralMap = $AssisMod->get_by_students_date($student_ids, $dateClass);
+            // Construir set de alumnos con licencia aprobada para este día/período
+            // para que el docente no pueda cambiar su estado
+            $LicSaveMod   = new PrimLicenciaModel();
+            $PeriodoSave  = new \App\Models\PeriodoModel();
+            $periodosSave = $PeriodoSave->listar_periodos_section($page_data['section_id']);
+            $periodo_real_save = $periodo;
+            foreach ($periodosSave as $i => $p) {
+                if (($i + 1) == (int)$periodo) { $periodo_real_save = $p['periodo_id']; break; }
+            }
+            $lic_dia_save = $LicSaveMod->licencias_fecha($page_data['section_id'], $dateClass);
+            $lic_per_save = $LicSaveMod->licencias_periodo($page_data['section_id'], $dateClass, $periodo_real_save);
+            $licensed_save = [];
+            foreach ($lic_dia_save as $l) $licensed_save[$l['student_id']] = true;
+            foreach ($lic_per_save as $l) $licensed_save[$l['student_id']] = true;
 
-        $toUpdate = [];
-        $toInsert = [];
-        $toInsertGeneral = [];
+            $existingSubject = $PrimMod->get_assistance_subject_bulk(
+                $page_data['date_id'], $page_data['subject_id'], $student_ids, $periodo
+            );
 
-        foreach ($students as $row):
-            $sid       = $row['student_id'];
-            $statusVal = isset($_POST['check_' . $sid]) ? $_POST['check_' . $sid] : 1;
-            $textVal   = isset($_POST['text_' . $sid])  ? $_POST['text_' . $sid]  : '';
-
-            if (isset($existingSubject[$sid])) {
-                $toUpdate[] = [
-                    'assistance_subject_id' => $existingSubject[$sid]['assistance_subject_id'],
-                    'status'                => $statusVal,
-                    'indiscipline'          => $textVal,
-                ];
-            } else {
-                $toInsert[] = [
-                    'status'      => $statusVal,
-                    'indiscipline' => $textVal,
-                    'date_id'     => $page_data['date_id'],
-                    'subject_id'  => $page_data['subject_id'],
-                    'student_id'  => $sid,
-                    'periodos'    => $periodo,
-                ];
+            // Una falta registrada por OTRA materia ese mismo día no debe borrarse
+            // porque esta materia marque Presente — cada materia es una observación
+            // independiente (ej. Educación Física puede marcar Ausente aunque el
+            // alumno haya estado en el resto de las clases). Solo protegemos contra
+            // materias DISTINTAS: si es la misma materia corrigiéndose a sí misma,
+            // el cambio sí se aplica con normalidad.
+            $yaAusenteOtraMateria = [];
+            if (!empty($student_ids)) {
+                $idsAlumnos    = implode(',', array_map('intval', $student_ids));
+                $filasAusentes = \Config\Database::connect('asistencia')->query(
+                    "SELECT DISTINCT student_id FROM prim_assistance_subject
+                     WHERE date_id = ? AND status = 0 AND subject_id != ?
+                       AND student_id IN ({$idsAlumnos})",
+                    [$page_data['date_id'], $page_data['subject_id']]
+                )->getResultArray();
+                foreach ($filasAusentes as $fa) $yaAusenteOtraMateria[$fa['student_id']] = true;
             }
 
-            if (!isset($existingGeneralMap[$sid])) {
-                $toInsertGeneral[] = [
-                    'student_id'    => $sid,
-                    'date'          => $dateClass,
-                    'status'        => $statusVal,
-                    'observation'   => $textVal ?: null,
-                    'registered_by' => $teacher_id,
-                ];
-            }
-        endforeach;
+            $toUpdate = [];
+            $toInsert = [];
+            $dailyUpsert = [];
 
-        if (!empty($toUpdate)) {
-            $AssistanceMod->update_assistance_subject_batch($toUpdate);
-        }
-        if (!empty($toInsert)) {
-            $AssistanceMod->insert_assistance_subject_batch($toInsert);
-        }
-        if (!empty($toInsertGeneral)) {
-            $AssisMod->db->table('assistance')->insertBatch($toInsertGeneral);
+            foreach ($students as $row):
+                $sid       = $row['student_id'];
+                // Licencia aprobada: el servidor fuerza status=2 sin importar el POST
+                $statusVal = isset($licensed_save[$sid]) ? 2 : (isset($_POST['check_' . $sid]) ? (int)$_POST['check_' . $sid] : 1);
+                $textVal   = isset($_POST['text_' . $sid])  ? $_POST['text_' . $sid]  : '';
+
+                if (isset($existingSubject[$sid])) {
+                    $toUpdate[] = [
+                        'assistance_subject_id' => $existingSubject[$sid]['assistance_subject_id'],
+                        'status'                => $statusVal,
+                        'indiscipline'          => $textVal,
+                    ];
+                } else {
+                    $toInsert[] = [
+                        'status'       => $statusVal,
+                        'indiscipline' => $textVal,
+                        'date_id'      => $page_data['date_id'],
+                        'subject_id'   => $page_data['subject_id'],
+                        'student_id'   => $sid,
+                        'periodos'     => $periodo,
+                    ];
+                }
+                // Diario consolidado: se actualiza con lo que se guardó, salvo que ya
+                // exista una falta de otra materia y esta materia diga "Presente" —
+                // en ese caso se respeta la falta.
+                $dailyUpsert[$sid] = (isset($yaAusenteOtraMateria[$sid]) && $statusVal == 1) ? 0 : $statusVal;
+            endforeach;
+
+            if (!empty($toUpdate)) $PrimMod->update_assistance_subject_batch($toUpdate);
+            if (!empty($toInsert)) $PrimMod->insert_assistance_subject_batch($toInsert);
+            $PrimMod->upsert_daily($dailyUpsert, $dateClass, $teacher_id, $session->get('name'), 'Docente');
+
+            // Réplica automática: si este mismo maestro dicta otras materias en este
+            // curso, se les copia el mismo resultado para que no tenga que volver a
+            // pasar lista por cada una. Si alguna materia hermana ya tiene su propio
+            // registro para ese día/período (porque el maestro sí entró a tomarla a
+            // mano), no se pisa — se respeta lo que ya haya quedado ahí.
+            $dbAsisRep = \Config\Database::connect('asistencia');
+            $materiasHermanas = $dbAsisRep->query(
+                "SELECT subject_id FROM subject WHERE section_id = ? AND teacher_id = ? AND subject_id != ?",
+                [$page_data['section_id'], $teacher_id, $page_data['subject_id']]
+            )->getResultArray();
+
+            foreach ($materiasHermanas as $mh) {
+                $siblingId       = (int) $mh['subject_id'];
+                $existingSibling = $PrimMod->get_assistance_subject_bulk(
+                    $page_data['date_id'], $siblingId, $student_ids, $periodo
+                );
+
+                $siblingInsert = [];
+                foreach ($dailyUpsert as $sidRep => $statusValRep) {
+                    if (isset($existingSibling[$sidRep])) continue;
+                    $siblingInsert[] = [
+                        'status'       => $statusValRep,
+                        'indiscipline' => '',
+                        'date_id'      => $page_data['date_id'],
+                        'subject_id'   => $siblingId,
+                        'student_id'   => $sidRep,
+                        'periodos'     => $periodo,
+                    ];
+                }
+                if (!empty($siblingInsert)) $PrimMod->insert_assistance_subject_batch($siblingInsert);
+            }
+
+            // Verificar y generar alertas de cupo para todos los alumnos de la sección
+            $phaseRow = \Config\Database::connect('tiquipaya')
+                ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$page_data['phase_id']])
+                ->getRowArray();
+            if ($phaseRow) {
+                $CupoMod = new PrimCupoModel();
+                $CupoMod->verificarSeccion(
+                    (int)$page_data['section_id'],
+                    (int)$page_data['phase_id'],
+                    $phaseRow['inicio'],
+                    $phaseRow['fin']
+                );
+            }
+
+        } else {
+            // --- SECUNDARIA / INICIAL / 1ro-2do PRIM: comportamiento original ---
+            $AssisMod      = new AssistanceModel();
+            $AssistanceMod = new AssistancesubjectModel();
+
+            $existingSubject    = $AssistanceMod->get_assistance_subject_bulk(
+                $page_data['date_id'], $page_data['subject_id'], $student_ids, $periodo
+            );
+            $existingGeneralMap = $AssisMod->get_by_students_date($student_ids, $dateClass);
+
+            $toUpdate        = [];
+            $toInsert        = [];
+            $toInsertGeneral = [];
+
+            foreach ($students as $row):
+                $sid       = $row['student_id'];
+                $statusVal = isset($_POST['check_' . $sid]) ? $_POST['check_' . $sid] : 1;
+                $textVal   = isset($_POST['text_' . $sid])  ? $_POST['text_' . $sid]  : '';
+
+                if (isset($existingSubject[$sid])) {
+                    $toUpdate[] = [
+                        'assistance_subject_id' => $existingSubject[$sid]['assistance_subject_id'],
+                        'status'                => $statusVal,
+                        'indiscipline'          => $textVal,
+                    ];
+                } else {
+                    $toInsert[] = [
+                        'status'       => $statusVal,
+                        'indiscipline' => $textVal,
+                        'date_id'      => $page_data['date_id'],
+                        'subject_id'   => $page_data['subject_id'],
+                        'student_id'   => $sid,
+                        'periodos'     => $periodo,
+                    ];
+                }
+                // Secundaria: el primer registro del día manda, no se sobreescribe
+                if (!isset($existingGeneralMap[$sid])) {
+                    $toInsertGeneral[] = [
+                        'student_id'    => $sid,
+                        'date'          => $dateClass,
+                        'status'        => $statusVal,
+                        'observation'   => $textVal ?: null,
+                        'registered_by' => $teacher_id,
+                    ];
+                }
+            endforeach;
+
+            if (!empty($toUpdate))        $AssistanceMod->update_assistance_subject_batch($toUpdate);
+            if (!empty($toInsert))        $AssistanceMod->insert_assistance_subject_batch($toInsert);
+            if (!empty($toInsertGeneral)) $AssisMod->db->table('assistance')->insertBatch($toInsertGeneral);
         }
 
         return redirect()->to(base_url('teacher/attendance_report/' . $page_data['subject_id']));
@@ -1747,27 +1907,104 @@ class Teacher extends BaseController
         //CURSO-Materia
         $Subject = new SubjectModel();
         $curso = $Subject->subject_section($subject_id);
+        if (empty($curso) || (int)$curso[0]['teacher_id'] !== (int)$teacher_id) {
+            return redirect()->to(base_url());
+        }
         $page_data['section_id'] = $curso[0]['section_id'];
         $page_data['curso'] = $curso[0]['completo'];
         $page_data['subject_id'] = $subject_id;
-        //DIAS de materia
-        $DatesMod = new DatesModel();
-        $dias = $DatesMod->dias_subject($subject_id, $Setting->get_phase_id());
-        $page_data['dias'] = $dias;
         //Students
         $StudentMod = new StudentModel();
         $students = $StudentMod->studentsSection($page_data['section_id'], $teacher_id);
         $page_data['students'] = $students;
 
-        //Asistencias
-        $AssistanceMod = new AssistancesubjectModel();
-        $asis = $AssistanceMod->assis_subject($subject_id, $page_data['phase_id']);
+        // Detectar si es primaria 3ro-6to para leer la tabla correcta
+        $sectionGrade = \Config\Database::connect('asistencia')
+            ->query("SELECT grade FROM section WHERE section_id = ?", [$page_data['section_id']])
+            ->getRowArray()['grade'] ?? '';
+        $esPrimaria36 = isPrimaria36($sectionGrade);
+        $page_data['is_primaria36'] = $esPrimaria36;
+
+        if ($esPrimaria36) {
+            // Primaria 3-6: el estado diario ya viene consolidado entre todas las
+            // materias del maestro (prim_assistance, "última llamada manda"), así
+            // que fechas y estados se leen de ahí en vez de por materia aislada.
+            // Se filtra por teacher_id para que, si el mismo curso tiene otras
+            // materias a cargo de OTRO maestro, sus llamadas no se mezclen aquí.
+            $PrimMod = new PrimAssistancesubjectModel();
+            $dias = $PrimMod->dias_diarios_section((int)$page_data['section_id'], (int)$page_data['phase_id'], (int)$teacher_id);
+            $asis = $PrimMod->asis_diarios_section((int)$page_data['section_id'], (int)$page_data['phase_id'], (int)$teacher_id);
+        } else {
+            $DatesMod = new DatesModel();
+            $dias = $DatesMod->dias_subject($subject_id, $Setting->get_phase_id());
+            $asis = (new AssistancesubjectModel())->assis_subject($subject_id, $page_data['phase_id']);
+        }
+        $page_data['dias'] = $dias;
         $page_data['asis'] = $asis;
 
         $page_data['page_name'] = 'attendance_report';
         $page_data['page_title'] = 'Reporte de Asistencias';
         return view('backend/index', $page_data);
     }
+
+    /**
+     * Corrige/registra un día puntual de asistencia diaria (primaria 3-6) desde
+     * el Reporte de Asistencia. Usa el mismo modelo/regla que Asistencia del Día
+     * de secretaría (prim_assistance, bloqueado si el día ya tiene licencia
+     * aprobada) — a propósito NO toca assistance_edit()/assistance_add(), que
+     * son de secundaria y no deben mezclarse con las tablas prim_.
+     */
+    public function prim_attendance_report_save()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return redirect()->to(base_url());
+
+        $teacher_id = $session->get('teacher_id');
+        $subject_id = $this->request->getPost('subject_id');
+        $student_id = (int) ($this->request->getPost('student_id') ?? 0);
+        $date       = $this->request->getPost('date');
+        $status     = (int) ($this->request->getPost('status') ?? -1);
+        $obs        = trim($this->request->getPost('obs') ?? '') ?: null;
+
+        // Verificar que este maestro efectivamente dicte alguna materia en la
+        // sección del alumno antes de dejarlo corregir su asistencia diaria.
+        $dbCheck = \Config\Database::connect('asistencia');
+        $tieneMateriaAhi = $dbCheck->query(
+            "SELECT 1 FROM t_student s
+             INNER JOIN subject sub ON sub.section_id = s.section_id
+             WHERE s.student_id = ? AND sub.teacher_id = ?
+             LIMIT 1",
+            [$student_id, $teacher_id]
+        )->getRow();
+        if (!$tieneMateriaAhi) {
+            return redirect()->to(base_url());
+        }
+
+        $ok = (new PrimAssistancesubjectModel())->guardarAsistenciaDiaria(
+            $student_id, (string) $date, $status, $obs,
+            $session->get('name'), 'Docente', $teacher_id
+        );
+
+        if ($ok) {
+            $Setting  = new SettingModel();
+            $phase_id = $Setting->get_phase_id();
+            $phaseRow = \Config\Database::connect('tiquipaya')
+                ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$phase_id])
+                ->getRowArray();
+            if ($phaseRow) {
+                (new PrimCupoModel())->verificarYGenerarAlertas(
+                    $student_id, $phase_id, $phaseRow['inicio'], $phaseRow['fin']
+                );
+            }
+            $session->set('flash_message', 'Asistencia actualizada correctamente.');
+        } else {
+            $session->set('flash_message_error', 'No se pudo actualizar: el día ya está cubierto por una licencia aprobada, o el estado no es válido.');
+        }
+
+        return redirect()->to(base_url() . 'teacher/attendance_report/' . $subject_id);
+    }
+
     function assistance_edit($subject_id = '')
     {
         $session = session();
@@ -2774,6 +3011,7 @@ class Teacher extends BaseController
         $rev = array();
         $teacher_id = $session->get('teacher_id');
         $Setting     = new SettingModel();
+        $phase_id    = $Setting->get_phase_id();
         $phase_name  = $Setting->get_phase_name();
         $phase_abrev = $Setting->get_phase();
         $SubjectMod  = new SubjectModel();
@@ -2781,7 +3019,11 @@ class Teacher extends BaseController
         $rev['Periodo Planilla'] = $phase_name;
         $section_id = $subject[0]['section_id'];
         $ApigoogleMod = new ApigoogleModel();
-        $ApigoogleMod->recoverScore($subject[0]['sheet_id'], $subject_id, $phase_abrev, $section_id, $teacher_id);
+        //$phase_id se usa para filtrar los puntos SER (behavior_log/daily_scores)
+        //al trimestre ACTUAL vía attendance_dates.phase_id; $phase_abrev
+        //("1erTRIM"/"2doTRIM"/"3erTRIM") sigue siendo el nombre de la hoja
+        //de Google Sheets donde se escribe el resultado.
+        $ApigoogleMod->recoverScore($subject[0]['sheet_id'], $subject_id, $phase_abrev, $section_id, $teacher_id, $phase_id);
         $rev['Puntos SER'] = 'Recuperados';
         $datos['rev'] = $rev;
         return view('sheet_check', $datos);
@@ -2903,15 +3145,326 @@ class Teacher extends BaseController
             $resp .= "<br /><b>Por favor completar o ponderar la nota de la dimensión a 1.</b>";
             $rev['Revisión de Notas'] = $resp;
         }
-        $page_data['rev'] = $rev;
         //Notas
         $CsamarksMod = new CsamarksModel();
         $csamarks = $CsamarksMod->csamarks_subject($subject_id, $page_data['phase_id']);
         $page_data['csamarks'] = $csamarks;
 
+        //DESCARGO DE APLAZADOS: por cada estudiante con nota final < 51,
+        //debe existir un registro en nota_descargos. Si falta alguno, se
+        //agrega a $rev, lo que deshabilita el botón "Consolidar Notas"
+        //(ver lógica ya existente en review_notes.php). También se valida
+        //en el servidor dentro de consolidate_notes().
+        $NotaDescargoMod = new NotaDescargoModel();
+        $aplazados = [];
+        $faltantes = [];
+        foreach ($csamarks as $nota) {
+            if ($this->_es_aplazado($nota['total_average'])) {
+                $descargo = $NotaDescargoMod->getDescargo($nota['student_id'], $subject_id, $phase_id);
+                $aplazados[] = [
+                    'student_id'    => $nota['student_id'],
+                    'student'       => $nota['student'],
+                    'total_average' => $nota['total_average'],
+                    'descargo'      => $descargo,
+                ];
+                if (!$descargo) {
+                    $faltantes[] = $nota['student'];
+                }
+            }
+        }
+        if (count($faltantes) > 0) {
+            $rev['Descargos de Aplazados'] = "<b>Pendientes - </b><br />" . implode('<br />', $faltantes) .
+                "<br /><br /><b>Debe completar el descargo de cada estudiante aplazado antes de consolidar.</b>";
+        }
+        $page_data['rev'] = $rev;
+        $page_data['aplazados'] = $aplazados;
+
         $page_data['subject_id'] = $subject_id;
         $page_data['page_name'] = 'review_notes';
         $page_data['page_title'] = 'Revisión de Notas';
+        return view('backend/index', $page_data);
+    }
+
+    /**
+     * Un estudiante se considera "aplazado" en una materia/trimestre cuando
+     * su nota final ya está calculada (no es 0/NULL, lo que indicaría notas
+     * incompletas y ya está bloqueado aparte por subject_errors()) y es
+     * menor al mínimo aprobatorio de 51 sobre 100. Mismo umbral usado en
+     * Admin.php (pct_aprobados/pct_reprobados) y en review_notes.php para
+     * pintar la nota en rojo; aplica por igual a todos los niveles/plantillas
+     * (cp12, cp36, cs12, cs34, cs56), ya que csamarks.total_average siempre
+     * está en escala 0-100.
+     */
+    private function _es_aplazado($total_average): bool
+    {
+        return $total_average !== null && (float) $total_average > 0 && (float) $total_average < 51;
+    }
+
+    /**
+     * Guarda (o actualiza) el descargo de un estudiante aplazado en una
+     * materia. Llamado vía AJAX desde review_notes.php.
+     */
+    function save_descargo()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Sin autorización']);
+        $teacher_id = $session->get('teacher_id');
+
+        $student_id     = $this->request->getPost('student_id');
+        $subject_id     = $this->request->getPost('subject_id');
+        $reunion_padres = $this->request->getPost('reunion_padres');
+        $nro_reuniones  = (int) $this->request->getPost('nro_reuniones');
+        $estrategias    = trim((string) $this->request->getPost('estrategias_aplicadas'));
+        $motivo         = trim((string) $this->request->getPost('motivo_aplazo'));
+
+        if (!$student_id || !$subject_id || $reunion_padres === null || $estrategias === '' || $motivo === '')
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Faltan datos requeridos']);
+
+        //Si dijo que SÍ se reunió, debe indicar cuántas veces (al menos 1).
+        //Si dijo que NO, se guarda en 0 sin importar lo que llegue del form.
+        if ($reunion_padres) {
+            if ($nro_reuniones < 1)
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Indique cuántas veces se reunió con los padres de familia']);
+        } else {
+            $nro_reuniones = 0;
+        }
+
+        //Verificamos que la materia pertenezca al docente logueado
+        $SubjectMod = new SubjectModel();
+        $subject = $SubjectMod->subject_section($subject_id);
+        if (empty($subject) || $subject[0]['teacher_id'] != $teacher_id)
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Sin autorización sobre esta materia']);
+
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+
+        //Verificamos que el estudiante esté realmente aplazado en esta materia/trimestre
+        $CsamarksMod = new CsamarksModel();
+        $marks = $CsamarksMod->get_csamarks([
+            'student_id' => $student_id,
+            'subject_id' => $subject_id,
+            'phase_id'   => $phase_id,
+        ]);
+        if (empty($marks) || !$this->_es_aplazado($marks[0]['total_average']))
+            return $this->response->setJSON(['status' => 'error', 'message' => 'El estudiante no está aplazado en esta materia']);
+
+        $datos = [
+            'student_id'            => $student_id,
+            'subject_id'            => $subject_id,
+            'teacher_id'            => $teacher_id,
+            'section_id'            => $subject[0]['section_id'],
+            'phase_id'              => $phase_id,
+            'phase_name'            => $Setting->get_phase_name(),
+            'gestion'               => $Setting->get_gestion(),
+            'nota_final'            => $marks[0]['total_average'],
+            'reunion_padres'        => $reunion_padres ? 1 : 0,
+            'nro_reuniones'         => $nro_reuniones,
+            'estrategias_aplicadas' => $estrategias,
+            'motivo_aplazo'         => $motivo,
+        ];
+
+        $NotaDescargoMod = new NotaDescargoModel();
+        $descargo_id = $NotaDescargoMod->saveDescargo($datos);
+
+        return $this->response->setJSON([
+            'status'      => 'success',
+            'descargo_id' => $descargo_id,
+            'pdf_url'     => base_url() . 'teacher/descargo_pdf/' . $descargo_id,
+        ]);
+    }
+
+    /**
+     * Genera el documento imprimible del descargo (FPDF, mismo patrón que
+     * Secretary::kardex_student_pdf), para que el docente lo imprima y firme.
+     */
+    function descargo_pdf($descargo_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return redirect()->to(base_url());
+        $teacher_id = $session->get('teacher_id');
+
+        $NotaDescargoMod = new NotaDescargoModel();
+        $descargo = $NotaDescargoMod->getForPdf($descargo_id);
+        if (empty($descargo) || $descargo['teacher_id'] != $teacher_id)
+            return redirect()->to(base_url());
+
+        $pdf = $this->_buildDescargoPdf($descargo);
+        $pdf->Output('I', 'descargo_' . $descargo_id . '.pdf');
+        exit;
+    }
+
+    /**
+     * Arma el FPDF de un descargo individual (sin hacer Output). Compartido
+     * por descargo_pdf() (descarga suelta) y descargos_zip() (descarga
+     * masiva), para no duplicar el layout del documento.
+     */
+    private function _buildDescargoPdf(array $descargo): \FPDF
+    {
+        require_once('fpdf184/fpdf.php');
+        $pdf = new \FPDF('P', 'mm', 'Letter');
+        $pdf->AddPage();
+
+        $pdf->SetFont('Arial', 'B', 14);
+        $pdf->Cell(0, 10, utf8_decode('DESCARGO DE ESTUDIANTE APLAZADO'), 0, 1, 'C');
+        $pdf->SetFont('Arial', '', 10);
+        $pdf->Cell(0, 6, utf8_decode('Gestión ' . $descargo['gestion'] . ' - ' . $descargo['phase_name']), 0, 1, 'C');
+        $pdf->Ln(4);
+
+        $pdf->SetFont('Arial', 'B', 12);
+        $pdf->SetFillColor(230, 230, 230);
+        $pdf->Cell(0, 8, utf8_decode('Datos Generales'), 1, 1, 'L', true);
+        $pdf->SetFont('Arial', '', 10);
+
+        $pdf->Cell(45, 7, 'Estudiante:', 0, 0);
+        $pdf->Cell(0, 7, utf8_decode($descargo['student']), 0, 1);
+
+        $pdf->Cell(45, 7, 'Materia:', 0, 0);
+        $pdf->Cell(0, 7, utf8_decode($descargo['subject_name']), 0, 1);
+
+        $pdf->Cell(45, 7, 'Curso:', 0, 0);
+        $pdf->Cell(0, 7, utf8_decode($descargo['curso']), 0, 1);
+
+        $pdf->Cell(45, 7, 'Docente:', 0, 0);
+        $pdf->Cell(0, 7, utf8_decode($descargo['teacher_name']), 0, 1);
+
+        $pdf->Cell(45, 7, utf8_decode('Nota Final Obtenida:'), 0, 0);
+        $pdf->Cell(0, 7, utf8_decode($descargo['nota_final'] . ' / 100 (Mínimo aprobatorio: 51)'), 0, 1);
+
+        $pdf->Ln(4);
+        $pdf->SetFont('Arial', 'B', 12);
+        $pdf->Cell(0, 8, utf8_decode('Descargo del Docente'), 1, 1, 'L', true);
+        $pdf->SetFont('Arial', '', 10);
+        $reunionTexto = $descargo['reunion_padres'] ? 'Sí (' . (int) ($descargo['nro_reuniones'] ?? 0) . ' vez/veces)' : 'No';
+        $pdf->Cell(0, 7, utf8_decode('¿Se reunió con los padres de familia?  ' . $reunionTexto), 0, 1);
+        $pdf->Ln(2);
+
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->Cell(0, 6, utf8_decode('Estrategias aplicadas antes del aplazo:'), 0, 1);
+        $pdf->SetFont('Arial', '', 10);
+        $pdf->MultiCell(0, 6, utf8_decode($descargo['estrategias_aplicadas']), 0);
+        $pdf->Ln(2);
+
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->Cell(0, 6, utf8_decode('Motivo por el que considera que el estudiante se aplazó:'), 0, 1);
+        $pdf->SetFont('Arial', '', 10);
+        $pdf->MultiCell(0, 6, utf8_decode($descargo['motivo_aplazo']), 0);
+
+        $pdf->Ln(18);
+        $y = $pdf->GetY();
+        $pdf->Line(30, $y, 100, $y);
+        $pdf->Line(120, $y, 190, $y);
+        $pdf->SetXY(30, $y + 1);
+        $pdf->Cell(70, 6, utf8_decode('Firma Docente'), 0, 0, 'C');
+        $pdf->SetXY(120, $y + 1);
+        $pdf->Cell(70, 6, 'Fecha: ___/___/______', 0, 1, 'C');
+
+        return $pdf;
+    }
+
+    /**
+     * Descarga masiva: arma un .zip con el PDF de cada descargo del docente
+     * que coincida con los filtros de "Mis Descargos" (mismo phase_id /
+     * subject_id que la lista que se está viendo) y lo entrega para
+     * descargar. Requiere la extensión ZipArchive de PHP.
+     */
+    function descargos_zip()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return redirect()->to(base_url());
+        $teacher_id = $session->get('teacher_id');
+
+        if (!class_exists('ZipArchive')) {
+            $session->set('flash_message_error', 'No se puede generar el ZIP: la extensión ZipArchive no está disponible en el servidor.');
+            return redirect()->to(base_url() . 'teacher/mis_descargos');
+        }
+
+        $filtro_phase_id   = $this->request->getGet('phase_id');
+        $filtro_subject_id = $this->request->getGet('subject_id');
+
+        $NotaDescargoMod = new NotaDescargoModel();
+        $descargos = $NotaDescargoMod->getHistorial($teacher_id, $filtro_phase_id, $filtro_subject_id);
+
+        if (count($descargos) == 0) {
+            $session->set('flash_message_error', 'No tiene descargos guardados con estos filtros.');
+            return redirect()->to(base_url() . 'teacher/mis_descargos');
+        }
+
+        $zipPath = WRITEPATH . 'uploads/descargos_' . $teacher_id . '_' . time() . '.zip';
+        if (!is_dir(WRITEPATH . 'uploads')) {
+            mkdir(WRITEPATH . 'uploads', 0777, true);
+        }
+
+        $zip = new \ZipArchive();
+        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+
+        $usados = [];
+        foreach ($descargos as $d) {
+            $pdf = $this->_buildDescargoPdf($d);
+            $contenido = $pdf->Output('S');
+
+            //Nombre de archivo legible y sin choques si dos descargos generan
+            //el mismo nombre (ej. mismo estudiante en dos materias/trimestres).
+            $base = preg_replace('/[^A-Za-z0-9_\- ]/', '', $d['student'] . '_' . $d['subject_name']);
+            $base = trim(preg_replace('/\s+/', '_', $base));
+            $nombre = $base . '.pdf';
+            $i = 1;
+            while (in_array($nombre, $usados)) {
+                $nombre = $base . '_' . (++$i) . '.pdf';
+            }
+            $usados[] = $nombre;
+
+            $zip->addFromString($nombre, $contenido);
+        }
+        $zip->close();
+
+        //El archivo temporal se borra apenas se termina de enviar la
+        //respuesta, para no acumular zips en writable/uploads.
+        register_shutdown_function(function () use ($zipPath) {
+            if (is_file($zipPath)) {
+                @unlink($zipPath);
+            }
+        });
+
+        return $this->response->download($zipPath, null)->setFileName('mis_descargos.zip');
+    }
+
+    /**
+     * Historial "Mis Descargos" del docente logueado, filtrable por
+     * trimestre y materia. Permite re-descargar el PDF aunque la fase de
+     * revisión ya haya pasado y el estudiante ya no aparezca como aplazado
+     * pendiente en review_notes.
+     */
+    function mis_descargos()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'teacher')
+            return redirect()->to(base_url());
+        $teacher_id = $session->get('teacher_id');
+
+        $Setting = new SettingModel();
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+
+        $filtro_phase_id   = $this->request->getGet('phase_id');
+        $filtro_subject_id = $this->request->getGet('subject_id');
+
+        $NotaDescargoMod = new NotaDescargoModel();
+        $page_data['descargos'] = $NotaDescargoMod->getHistorial($teacher_id, $filtro_phase_id, $filtro_subject_id);
+        $page_data['fases'] = $NotaDescargoMod->getFasesByTeacher($teacher_id);
+
+        $SubjectMod = new SubjectModel();
+        $page_data['materias'] = $SubjectMod->subjects_teacher($teacher_id);
+
+        $page_data['filtro_phase_id'] = $filtro_phase_id;
+        $page_data['filtro_subject_id'] = $filtro_subject_id;
+
+        $page_data['page_name'] = 'mis_descargos';
+        $page_data['page_title'] = 'Mis Descargos';
         return view('backend/index', $page_data);
     }
     public function consolidate_notes()
@@ -2924,15 +3477,47 @@ class Teacher extends BaseController
         //SUJECT
         $SubjectMod = new SubjectModel();
         $subject = $SubjectMod->subject_section($subject_id);
+
+        //VALIDACIÓN SERVER-SIDE: no se puede consolidar si hay estudiantes
+        //aplazados sin su descargo guardado. No basta con deshabilitar el
+        //botón en review_notes.php; se revalida acá.
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $CsamarksMod = new CsamarksModel();
+        $csamarks = $CsamarksMod->csamarks_subject($subject_id, $phase_id);
+        $NotaDescargoMod = new NotaDescargoModel();
+        $faltantes = [];
+        foreach ($csamarks as $nota) {
+            if ($this->_es_aplazado($nota['total_average']) && !$NotaDescargoMod->tieneDescargo($nota['student_id'], $subject_id, $phase_id)) {
+                $faltantes[] = $nota['student'];
+            }
+        }
+        if (count($faltantes) > 0) {
+            $session->set('flash_message_error', 'No se puede consolidar: faltan descargos de estudiantes aplazados: ' . implode(', ', $faltantes));
+            return redirect()->to(base_url() . 'teacher/review_notes/' . $subject_id);
+        }
+
         //Actualizamos Subjects
         $data = ["locked" => 1];
         $respuesta = $SubjectMod->update_subject($data, $subject_id);
 
         if ($respuesta > 0) {
-            //Quitamos permisos DEL LA hOJA 3ER tRIMESTRE EN GOOGLER SHEET
+            //Bloqueamos la hoja del trimestre ACTUAL (1erTRIM/2doTRIM/3erTRIM
+            //según $phase_id) en Google Sheets, para que el docente ya no
+            //pueda seguir editando esa hoja tras consolidar.
             $ApigoogleMod = new ApigoogleModel();
-            $apigoogle = $ApigoogleMod->lockedSheet($subject[0]['sheet_id']);
-            $session->set('flash_message', 'Notas consolidadas Correctamente: ' . $subject[0]['sheet_id']);
+            $apigoogle = $ApigoogleMod->lockedSheetByPhase($subject[0]['sheet_id'], $phase_id);
+
+            $msg = 'Notas consolidadas Correctamente: ' . $subject[0]['sheet_id'];
+            if (!$apigoogle['success']) {
+                //La consolidación en el sistema ya se guardó (no dependemos
+                //de Google Sheets para eso); solo avisamos que la planilla
+                //no quedó protegida, para que el administrador lo revise.
+                $msg .= '. Aviso: no se pudo bloquear la hoja en Google Sheets (' . $apigoogle['message'] . ').';
+            } elseif (!empty($apigoogle['warnings'])) {
+                $msg .= '. La hoja quedó bloqueada, aunque Google Sheets reportó advertencias menores al proteger algunas celdas.';
+            }
+            $session->set('flash_message', $msg);
             return redirect()->to(base_url() . 'teacher/subjects');
         } else {
             $session->set('flash_message_error', 'Error al consolidar Notas');

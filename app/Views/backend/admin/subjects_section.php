@@ -30,7 +30,12 @@
                                 <td><?php echo $subject['docente'];?></td>
                                 <td>
                                 <a href="https://docs.google.com/spreadsheets/d/<?php echo $subject['sheet_id']; ?>/edit" target="_blank" class="btn btn-success btn-sm" >Ir a la Planilla</a>
-                                <a href="<?php echo base_url(); ?>admin/update_notes/<?php echo $subject['subject_id']; ?>" target="_blank" class="btn btn-secondary btn-sm" >Actualizar Notas</a>
+                                <a href="<?php echo base_url(); ?>admin/update_notes/<?php echo $subject['subject_id']; ?>/1" target="_blank" class="btn btn-secondary btn-sm"
+                                    onclick="return confirm('¿Está seguro de actualizar las notas del Trimestre 1 de <?php echo esc($subject['name'], 'js'); ?>?');">Actualizar Notas T1</a>
+                                <a href="<?php echo base_url(); ?>admin/update_notes/<?php echo $subject['subject_id']; ?>/2" target="_blank" class="btn btn-secondary btn-sm"
+                                    onclick="return confirm('¿Está seguro de actualizar las notas del Trimestre 2 de <?php echo esc($subject['name'], 'js'); ?>?');">Actualizar Notas T2</a>
+                                <a href="<?php echo base_url(); ?>admin/update_notes/<?php echo $subject['subject_id']; ?>/3" target="_blank" class="btn btn-secondary btn-sm"
+                                    onclick="return confirm('¿Está seguro de actualizar las notas del Trimestre 3 de <?php echo esc($subject['name'], 'js'); ?>?');">Actualizar Notas T3</a>
                                 </td>
                             </tr>
                         <?php

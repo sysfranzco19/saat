@@ -50,6 +50,39 @@ class SelfappraisalModel extends Model
         WHERE ad.phase_id = " . $phase_id . " AND s.section_id = " . $section_id;
         return $this->db->query($sql)->getResultArray();
     }
+    public function self_admin_counts($phase_id)
+    {
+        $sql = 'SELECT COUNT(*) AS total,
+                SUM(CASE WHEN sa.self_id IS NOT NULL THEN 1 ELSE 0 END) AS con_auto
+        FROM t_student AS t1
+        INNER JOIN section AS t2 ON (t1.section_id = t2.section_id)
+        LEFT JOIN self_appraisal AS sa ON (sa.student_id = t1.student_id AND sa.phase_id = ' . $phase_id . ')
+        WHERE t1.activo = 1 AND t1.matricula <> 0 AND t1.section_id >= 211';
+        $res = $this->db->query($sql)->getRowArray();
+        return [
+            'total'    => (int) ($res['total'] ?? 0),
+            'con_auto' => (int) ($res['con_auto'] ?? 0),
+        ];
+    }
+    public function self_admin($phase_id, $solo_pendientes = false)
+    {
+        $sql = 'SELECT t1.student_id,
+                CONCAT(t1.lastname, " ", t1.lastname2, " ", t1.name) AS student,
+                t1.retirement_date,
+                t2.completo,
+                t2.section_id,
+                CASE WHEN sa.self_id IS NOT NULL THEN 1 ELSE 0 END AS tiene_auto,
+                sa.self_id,
+                sa.autoevaluacion,
+                sa.descripcion
+        FROM t_student AS t1
+        INNER JOIN section AS t2 ON (t1.section_id = t2.section_id)
+        LEFT JOIN self_appraisal AS sa ON (sa.student_id = t1.student_id AND sa.phase_id = ' . $phase_id . ')
+        WHERE t1.activo = 1 AND t1.matricula <> 0 AND t1.section_id >= 211'
+        . ($solo_pendientes ? ' AND sa.self_id IS NULL' : '') . '
+        ORDER BY t2.section_id, t1.lastname, t1.lastname2, t1.name';
+        return $this->db->query($sql)->getResultArray();
+    }
     public function self_director($director_id, $phase_id)
     {
         $sql = 'SELECT t1.student_id,

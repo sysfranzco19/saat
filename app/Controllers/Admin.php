@@ -37,6 +37,8 @@ use App\Models\FeedbackModel;
 use App\Models\NivelModel;
 use App\Models\DirectorModel;
 use App\Models\PeriodoModel;
+use App\Models\PhaseModel;
+use App\Models\PlaceModel;
 
 class Admin extends BaseController
 {
@@ -931,6 +933,519 @@ class Admin extends BaseController
         return redirect()->to(base_url() . '/admin/periodo');
     }
 
+    // Trimestres (phase) CRUD — se replica hacia tiqui0_tiquisaat26 (espejo)
+    public function phase()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $Setting = new SettingModel();
+        $PhaseMod = new PhaseModel();
+
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+
+        $page_data['datos'] = $PhaseMod->listar_phases();
+
+        $page_data['page_name'] = 'phase';
+        $page_data['page_title'] = 'Gestión de Trimestres';
+
+        return view('backend/index', $page_data);
+    }
+
+    public function phase_create()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $PhaseMod = new PhaseModel();
+        $data = [
+            'phase_id'  => $PhaseMod->next_phase_id(),
+            'name'      => $this->request->getPost('name'),
+            'inicio'    => $this->request->getPost('inicio'),
+            'fin'       => $this->request->getPost('fin'),
+            'abreviado' => $this->request->getPost('abreviado'),
+            'activo'    => $this->request->getPost('activo') ? 1 : 0,
+        ];
+        $PhaseMod->insert_phase($data);
+        $PhaseMod->updateTPhase();
+
+        $session->set('flash_message', 'Trimestre creado correctamente');
+        return redirect()->to(base_url() . '/admin/phase');
+    }
+
+    public function phase_get($id)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return $this->response->setStatusCode(403);
+        }
+
+        $PhaseMod = new PhaseModel();
+        $data = ['phase_id' => $id];
+        $phase = $PhaseMod->get_phase($data);
+
+        return $this->response->setJSON($phase[0] ?? []);
+    }
+
+    public function phase_update()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $id = $this->request->getPost('phase_id');
+        $data = [
+            'name'      => $this->request->getPost('name'),
+            'inicio'    => $this->request->getPost('inicio'),
+            'fin'       => $this->request->getPost('fin'),
+            'abreviado' => $this->request->getPost('abreviado'),
+            'activo'    => $this->request->getPost('activo') ? 1 : 0,
+        ];
+
+        $PhaseMod = new PhaseModel();
+        $PhaseMod->update_phase($data, $id);
+        $PhaseMod->updateTPhase();
+
+        $session->set('flash_message', 'Trimestre actualizado correctamente');
+        return redirect()->to(base_url() . '/admin/phase');
+    }
+
+    public function phase_delete()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $id = $this->request->getPost('phase_id');
+        $PhaseMod = new PhaseModel();
+        $PhaseMod->delete_phase($id);
+        $PhaseMod->updateTPhase();
+
+        $session->set('flash_message', 'Trimestre eliminado correctamente');
+        return redirect()->to(base_url() . '/admin/phase');
+    }
+
+    // Autoevaluaciones CRUD
+    public function self_appraisal($phase_id = 0)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+
+        $PhaseMod = new PhaseModel();
+        $phases = $PhaseMod->listar_phases();
+        $page_data['phases'] = $phases;
+
+        // Pestaña activa: la enviada por parámetro, o la fase actual por defecto
+        $phase_id = (int) $phase_id;
+        if ($phase_id <= 0) {
+            $phase_id = (int) $page_data['phase_id'];
+        }
+        $page_data['active_phase_id'] = $phase_id;
+
+        // Filtro de pendientes: por defecto solo se muestran los estudiantes sin autoevaluación
+        $solo_pendientes = $this->request->getGet('ver') !== 'todos';
+        $page_data['solo_pendientes'] = $solo_pendientes;
+
+        $Self = new SelfappraisalModel();
+
+        // Conteos livianos (SUM/COUNT) para el badge de cada pestaña, sin traer el detalle de estudiantes
+        $phase_counts = [];
+        foreach ($phases as $phase) {
+            $phase_counts[$phase['phase_id']] = $Self->self_admin_counts($phase['phase_id']);
+        }
+        $page_data['phase_counts'] = $phase_counts;
+
+        // Detalle completo (agrupado por curso) únicamente de la pestaña activa
+        $rows = $Self->self_admin($phase_id, $solo_pendientes);
+        $por_curso = [];
+        foreach ($rows as $row) {
+            $key = $row['section_id'];
+            if (!isset($por_curso[$key])) {
+                $por_curso[$key] = [
+                    'completo'    => $row['completo'],
+                    'section_id'  => $row['section_id'],
+                    'total'       => 0,
+                    'con_auto'    => 0,
+                    'estudiantes' => []
+                ];
+            }
+            $por_curso[$key]['total']++;
+            if ($row['tiene_auto']) $por_curso[$key]['con_auto']++;
+            $por_curso[$key]['estudiantes'][] = $row;
+        }
+        $page_data['por_curso'] = $por_curso;
+
+        $page_data['page_name'] = 'self_appraisal';
+        $page_data['page_title'] = 'Autoevaluaciones';
+
+        return view('backend/index', $page_data);
+    }
+
+    public function self_appraisal_get($id)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return $this->response->setStatusCode(403);
+        }
+
+        $Self = new SelfappraisalModel();
+        $data = ['self_id' => $id];
+        $self_appraisal = $Self->get_self_appraisal($data);
+
+        return $this->response->setJSON($self_appraisal[0] ?? []);
+    }
+
+    public function self_appraisal_save()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $student_id = (int) $this->request->getPost('student_id');
+        $phase_id = (int) $this->request->getPost('phase_id');
+
+        $suma = 0;
+        $data = [
+            'student_id' => $student_id,
+            'phase_id'   => $phase_id,
+            'descripcion' => $this->request->getPost('descripcion'),
+        ];
+        for ($i = 1; $i <= 10; $i++) {
+            $valor = $this->request->getPost('auto' . $i) ? 1 : 0;
+            $data['auto' . $i] = $valor;
+            $suma += $valor;
+        }
+        // Cada criterio vale 0.5 pts, total sobre 5 pts (mismo criterio usado en la autoevaluación del estudiante)
+        $data['autoevaluacion'] = (int) round($suma * 0.5);
+
+        $Self = new SelfappraisalModel();
+        $existe = $Self->get_self_appraisal([
+            'student_id' => $student_id,
+            'phase_id'   => $phase_id
+        ]);
+
+        if (count($existe) > 0) {
+            $Self->update_self_appraisal($data, $existe[0]['self_id']);
+            $session->set('flash_message', 'Autoevaluación actualizada correctamente');
+        } else {
+            $Self->insert_self_appraisal($data);
+            $session->set('flash_message', 'Autoevaluación registrada correctamente');
+        }
+
+        return redirect()->to(base_url() . '/admin/self_appraisal/' . $phase_id);
+    }
+
+    public function self_appraisal_delete()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $self_id = $this->request->getPost('self_id');
+        $phase_id = (int) $this->request->getPost('phase_id');
+
+        $Self = new SelfappraisalModel();
+        $Self->delete_self_appraisal(['self_id' => $self_id]);
+
+        $session->set('flash_message', 'Autoevaluación eliminada correctamente');
+        return redirect()->to(base_url() . '/admin/self_appraisal/' . $phase_id);
+    }
+
+    // Estudiantes CRUD
+    public function students()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+
+        $buscar = trim((string) $this->request->getGet('buscar'));
+        $page_data['buscar'] = $buscar;
+
+        $page = max(1, (int) $this->request->getGet('page'));
+        $por_pagina = 50;
+        $offset = ($page - 1) * $por_pagina;
+
+        $StudentMod = new StudentModel();
+        $total = $StudentMod->count_students_admin($buscar);
+        $page_data['students'] = $StudentMod->list_students_admin($buscar, $por_pagina, $offset);
+
+        $page_data['page'] = $page;
+        $page_data['total'] = $total;
+        $page_data['total_paginas'] = (int) ceil($total / $por_pagina);
+
+        $page_data['page_name'] = 'students_admin';
+        $page_data['page_title'] = 'Estudiantes';
+
+        return view('backend/index', $page_data);
+    }
+
+    public function students_get($id)
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return $this->response->setStatusCode(403);
+        }
+
+        $StudentMod = new StudentModel();
+        $student = $StudentMod->get_student(['student_id' => $id]);
+
+        return $this->response->setJSON($student[0] ?? []);
+    }
+
+    private function student_post_data()
+    {
+        return [
+            'roll'                  => $this->request->getPost('roll') ?: 0,
+            'code'                  => $this->request->getPost('code'),
+            'name'                  => $this->request->getPost('name'),
+            'lastname'              => $this->request->getPost('lastname'),
+            'lastname2'             => $this->request->getPost('lastname2'),
+            'birthday'              => $this->request->getPost('birthday'),
+            'place_birth'           => $this->request->getPost('place_birth') ?: null,
+            'card'                  => $this->request->getPost('card'),
+            'place_card'            => $this->request->getPost('place_card') ?: null,
+            'expire_card'           => $this->request->getPost('expire_card'),
+            'sex'                   => $this->request->getPost('sex'),
+            'rude'                  => $this->request->getPost('rude'),
+            'address'               => $this->request->getPost('address'),
+            'reference'             => $this->request->getPost('reference'),
+            'phone'                 => $this->request->getPost('phone'),
+            'cellphone'             => $this->request->getPost('cellphone'),
+            'personal_email'        => $this->request->getPost('personal_email'),
+            'origin_school'         => $this->request->getPost('origin_school'),
+            'email'                 => $this->request->getPost('email'),
+            'registration_date'     => $this->request->getPost('registration_date'),
+            'retirement_date'       => $this->request->getPost('retirement_date') ?: null,
+            'activo'                => $this->request->getPost('activo') ?: 0,
+            'activo_administracion' => $this->request->getPost('activo_administracion') ?: 0,
+            'matricula'             => $this->request->getPost('matricula') ?: 0,
+            'section_id'            => $this->request->getPost('section_id'),
+            'family_id'             => $this->request->getPost('family_id') ?: 0,
+            'nit_id'                => $this->request->getPost('nit_id') ?: 0,
+            'ddjj'                  => $this->request->getPost('ddjj') ?: 0,
+        ];
+    }
+
+    public function students_create()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $StudentMod = new StudentModel();
+        $data = $this->student_post_data();
+        $data['student_id'] = $StudentMod->next_student_id();
+        $StudentMod->insertStudent($data);
+
+        // Replicamos t_student completa hacia las bases tiquipaya y asistencia
+        $StudentMod->updateTStudent();
+
+        $session->set('flash_message', 'Estudiante registrado correctamente');
+        return redirect()->to(base_url() . '/admin/students');
+    }
+
+    public function students_update()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $student_id = $this->request->getPost('student_id');
+        $StudentMod = new StudentModel();
+        $StudentMod->updateStudent($student_id, $this->student_post_data());
+
+        // Replicamos t_student completa hacia las bases tiquipaya y asistencia
+        $StudentMod->updateTStudent();
+
+        $session->set('flash_message', 'Estudiante actualizado correctamente');
+        return redirect()->to(base_url() . '/admin/students');
+    }
+
+    public function students_delete()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin') {
+            return redirect()->to(base_url());
+        }
+
+        $student_id = $this->request->getPost('student_id');
+        $StudentMod = new StudentModel();
+        $StudentMod->delete_student($student_id);
+
+        // Replicamos t_student completa hacia las bases tiquipaya y asistencia
+        $StudentMod->updateTStudent();
+
+        $session->set('flash_message', 'Estudiante eliminado correctamente');
+        return redirect()->to(base_url() . '/admin/students');
+    }
+
+    // Entrega de Notas (todos los docentes, todos los niveles, todas las materias)
+    public function delivery_notes()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin')
+            return redirect()->to(base_url());
+
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+
+        $buscar = trim((string) $this->request->getGet('buscar'));
+        $page_data['buscar'] = $buscar;
+
+        // Filtro de estado: por defecto solo materias Abiertas (no consolidadas)
+        $estado = $this->request->getGet('estado') !== null ? $this->request->getGet('estado') : 'abierta';
+        $page_data['estado'] = $estado;
+        $locked = null;
+        if ($estado === 'abierta') {
+            $locked = 0;
+        } elseif ($estado === 'consolidada') {
+            $locked = 1;
+        }
+
+        $SubjectMod = new SubjectModel();
+        $subjects = $SubjectMod->subjects_admin($buscar, $locked);
+
+        // Agrupamos por docente, manteniendo el orden alfabético devuelto por la consulta
+        $por_docente = [];
+        foreach ($subjects as $row) {
+            $key = $row['teacher_id'];
+            if (!isset($por_docente[$key])) {
+                $por_docente[$key] = [
+                    'docente'  => $row['docente'],
+                    'materias' => []
+                ];
+            }
+            $por_docente[$key]['materias'][] = $row;
+        }
+        $page_data['por_docente'] = $por_docente;
+
+        $page_data['page_name'] = 'delivery_notes_list';
+        $page_data['page_title'] = 'Entrega de Notas';
+
+        return view('backend/index', $page_data);
+    }
+
+    public function deliver_notes($subject_id = '')
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin')
+            return redirect()->to(base_url());
+
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $phase = $Setting->get_phase();
+
+        // Materia
+        $SubjectMod = new SubjectModel();
+        $subject = $SubjectMod->subject_section($subject_id);
+        if (count($subject) == 0) {
+            $session->set('flash_message', 'La materia solicitada no existe');
+            return redirect()->to(base_url() . 'admin/delivery_notes');
+        }
+        $page_data['subject'] = $subject[0]['name'];
+        $page_data['curso'] = $subject[0]['completo'];
+        $page_data['docente'] = $subject[0]['docente'];
+        $official_id = $subject[0]['official_id'];
+        $teacher_id = $subject[0]['teacher_id'];
+
+        // Creamos CSAMARKS para STUDENTS (si aún no existen) o actualizamos desde la planilla oficial
+        $CsamarksMod = new CsamarksModel();
+        $csamarks = $CsamarksMod->csamarks_subject($subject_id, $page_data['phase_id']);
+        if (count($csamarks) == 0) {
+            $StudentMod = new StudentModel();
+            $students = $StudentMod->studentsSection($subject[0]['section_id'], $teacher_id);
+            foreach ($students as $stu) {
+                $data_csamarks = [
+                    'student_id' => $stu['student_id'],
+                    'locked'     => 0,
+                    'phase_id'   => $page_data['phase_id'],
+                    'subject_id' => $subject_id,
+                ];
+                $CsamarksMod->insert_csamarks($data_csamarks);
+            }
+        } else {
+            $ApigoogleMod = new ApigoogleModel();
+            $ApigoogleMod->importNotes($subject[0]['sheet_id'], $subject_id, $page_data['phase_id'], $phase);
+        }
+        $csamarks = $CsamarksMod->csamarks_subject($subject_id, $page_data['phase_id']);
+        $page_data['csamarks'] = $csamarks;
+
+        // Detalles
+        $CsamarksdetailsMod = new CsamarksdetailsModel();
+        $page_data['details_ser'] = $CsamarksdetailsMod->csamarks_details_dim($subject_id, $page_data['phase_id'], "ser");
+        $page_data['details_saber'] = $CsamarksdetailsMod->csamarks_details_dim($subject_id, $page_data['phase_id'], "saber");
+        $page_data['details_hacer'] = $CsamarksdetailsMod->csamarks_details_dim($subject_id, $page_data['phase_id'], "hacer");
+
+        $page_data['official_id'] = $official_id;
+        $page_data['subject_id'] = $subject_id;
+        $page_data['page_name'] = 'deliver_notes';
+        $page_data['page_title'] = 'Entrega de Notas';
+
+        return view('backend/index', $page_data);
+    }
+
+    // Docentes sin consolidar Notas (todos los niveles, sin filtro por director)
+    public function teacher_notes()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'admin')
+            return redirect()->to(base_url());
+
+        $Subject = new SubjectModel();
+        $page_data['teachers'] = $Subject->notes_teacher_all();
+        $page_data['subjects'] = $Subject->notes_subject_all();
+
+        $Setting = new SettingModel();
+        $page_data['login_type'] = $session->get('login_type');
+        $page_data['phase_id'] = $Setting->get_phase_id();
+        $page_data['phase_name'] = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name'] = $Setting->get_system_name();
+        $page_data['page_name'] = 'teacher_notes';
+        $page_data['page_title'] = 'Centralizador de Notas';
+
+        return view('backend/index', $page_data);
+    }
+
     function generate_centralizer($section_id = '')
     {
         $session = session();
@@ -1409,7 +1924,7 @@ class Admin extends BaseController
         $writer->save($fileName);
         return $this->response->download($fileName, null);
     }
-    function update_notes($subject_id = '')
+    function update_notes($subject_id = '', $phase_id = '')
     {
         $session = session();
         if ($session->get('login_type') != 'admin')
@@ -1417,11 +1932,17 @@ class Admin extends BaseController
         $rev = array();
         $teacher_id = $session->get('teacher_id');
         $Setting = new SettingModel();
-        $phase_id = $Setting->get_phase_id();
-        $phase_name = $Setting->get_phase_name();
-        $phase = $Setting->get_phase();
-        $page_data['phase_id'] = $Setting->get_phase_id();
-        $page_data['phase_name'] = $Setting->get_phase_name();
+
+        // Si no se especifica phase_id (Trimestre 1, 2 o 3), usamos el trimestre activo por defecto
+        $phase_id = $phase_id !== '' ? (int) $phase_id : (int) $Setting->get_phase_id();
+
+        $PhaseMod = new PhaseModel();
+        $phase_row = $PhaseMod->get_phase(['phase_id' => $phase_id]);
+        $phase_name = $phase_row[0]['name'] ?? $Setting->get_phase_name();
+        $phase = $phase_row[0]['abreviado'] ?? $Setting->get_phase();
+
+        $page_data['phase_id'] = $phase_id;
+        $page_data['phase_name'] = $phase_name;
         $page_data['system_title'] = $Setting->get_system_title();
         $page_data['system_name'] = $Setting->get_system_name();
 

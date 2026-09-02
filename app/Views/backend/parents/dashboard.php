@@ -30,10 +30,10 @@
 
                             <!-- Button 1: Solicitud de Licencias -->
                             <div class="mb-6">
-                                <a href="<?php echo base_url(); ?><?php echo $account_type; ?>/licenses"
+                                <button type="button"
+                                    data-toggle="modal" data-target="#modalTipoLicencia"
                                     class="btn btn-light-primary font-weight-bolder font-size-lg py-5 w-100 d-flex align-items-center px-6 shadow-xs hover-elevate-up">
                                     <span class="svg-icon svg-icon-2x mr-4">
-                                        <!-- Chat6 Icon -->
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                             xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
                                             viewBox="0 0 24 24" version="1.1">
@@ -49,7 +49,7 @@
                                         </svg>
                                     </span>
                                     Solicitud de Licencias
-                                </a>
+                                </button>
                             </div>
 
                             <!-- Button 2: Mis Hijos -->
@@ -494,4 +494,110 @@
         <!--end::Education-->
     </div>
     <!--end::Container-->
+</div>
+
+<!-- Modal selección tipo de licencia -->
+<div class="modal fade" id="modalTipoLicencia" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header" style="background: linear-gradient(135deg,#6254a5 0%,#3a1f8f 100%);">
+                <div>
+                    <h4 class="modal-title text-white font-weight-bolder mb-1">
+                        <i class="fas fa-file-medical-alt text-white mr-2"></i>Solicitud de Licencia
+                    </h4>
+                    <p class="text-white-50 mb-0 font-size-sm">Selecciona el nivel educativo de tu hijo/a</p>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body p-0">
+
+                <!-- Tarjetas de selección -->
+                <div class="p-8">
+                    <p class="text-muted font-size-sm mb-5">¿Para qué nivel es la solicitud?</p>
+                    <div class="row">
+
+                        <?php if (!empty($has_primaria)): ?>
+                        <!-- Primaria -->
+                        <div class="col-md-6 mb-4">
+                            <a href="<?= base_url('parents/prim_licencias') ?>"
+                               class="card card-custom card-stretch border-0 shadow-sm text-decoration-none"
+                               style="border-left:5px solid #6254a5!important; transition:.2s;"
+                               onmouseover="this.style.boxShadow='0 8px 24px rgba(98,84,165,.25)'"
+                               onmouseout="this.style.boxShadow=''">
+                                <div class="card-body d-flex align-items-start p-6">
+                                    <div class="mr-4 mt-1">
+                                        <span class="svg-icon svg-icon-3x svg-icon-primary">
+                                            <i class="fas fa-child" style="font-size:2.2rem;color:#6254a5;"></i>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <div class="font-weight-bolder text-dark font-size-h5 mb-1">Licencias Primaria</div>
+                                        <div class="text-muted font-size-sm mb-2">3ro a 6to de Primaria</div>
+                                        <div class="text-dark-75 font-size-xs">
+                                            Licencia por día completo o licencia por periodos.
+                                            Cupo trimestral de 9 días por estudiante.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer py-4 px-6" style="background:rgba(98,84,165,.07);border:0;">
+                                    <span class="btn btn-primary btn-block font-weight-bolder">
+                                        Ir al formulario &nbsp;<i class="fas fa-arrow-right"></i>
+                                    </span>
+                                </div>
+                            </a>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($has_secundaria)): ?>
+                        <!-- Secundaria -->
+                        <div class="col-md-<?= !empty($has_primaria) ? '6' : '8 offset-md-2' ?> mb-4">
+                            <a href="<?= base_url('parents/licenses') ?>"
+                               class="card card-custom card-stretch border-0 shadow-sm text-decoration-none"
+                               style="border-left:5px solid #3a6999!important; transition:.2s;"
+                               onmouseover="this.style.boxShadow='0 8px 24px rgba(58,105,153,.25)'"
+                               onmouseout="this.style.boxShadow=''">
+                                <div class="card-body d-flex align-items-start p-6">
+                                    <div class="mr-4 mt-1">
+                                        <i class="fas fa-user-graduate" style="font-size:2.2rem;color:#3a6999;"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-weight-bolder text-dark font-size-h5 mb-1">Licencias Secundaria</div>
+                                        <div class="text-muted font-size-sm mb-2">1ro a 6to de Secundaria</div>
+                                        <div class="text-dark-75 font-size-xs">
+                                            Licencia por día completo o salida anticipada por hora de clase.
+                                            Seguimiento de asistencia por materia.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer py-4 px-6" style="background:rgba(58,105,153,.07);border:0;">
+                                    <span class="btn btn-block font-weight-bolder text-white" style="background:#3a6999;">
+                                        Ir al formulario &nbsp;<i class="fas fa-arrow-right"></i>
+                                    </span>
+                                </div>
+                            </a>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (empty($has_primaria) && empty($has_secundaria)): ?>
+                        <div class="col-12 text-center py-6">
+                            <i class="fas fa-info-circle text-muted mb-3" style="font-size:2rem;"></i>
+                            <p class="text-muted">No se encontraron estudiantes registrados en los niveles habilitados para licencias.</p>
+                        </div>
+                        <?php endif; ?>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer py-3">
+                <button type="button" class="btn btn-light font-weight-bold" data-dismiss="modal">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
 </div>

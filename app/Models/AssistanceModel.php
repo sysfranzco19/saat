@@ -86,6 +86,41 @@ class AssistanceModel extends Model
             ->whereIn('student_id', $student_ids)
             ->get()->getResultArray();
     }
+    /**
+     * Asistencia de un curso de Secundaria (section_id 271–343) en una fecha
+     * puntual. Usa LEFT JOIN para mostrar también a los estudiantes sin
+     * registro de asistencia ese día.
+     */
+    public function getAsistenciaCursoFecha($section_id, $fecha)
+    {
+        $sql = "SELECT
+                    e.student_id AS Id,
+                    CONCAT(e.lastname, ' ', e.lastname2, ' ', e.name) AS Estudiante,
+                    c.nick_name AS Curso,
+                    ? AS Fecha,
+                    CASE a.status
+                        WHEN 0 THEN 'Ausente'
+                        WHEN 1 THEN 'Presente'
+                        WHEN 2 THEN 'Licencia'
+                        WHEN 3 THEN 'Retraso'
+                        ELSE 'Sin Registro'
+                    END AS Asistencia
+                FROM t_student e
+                INNER JOIN section c ON e.section_id = c.section_id
+                LEFT JOIN assistance a
+                    ON a.student_id = e.student_id
+                    AND a.date = ?
+                WHERE
+                    c.section_id = ?
+                    AND c.section_id >= 271
+                    AND c.section_id <= 343
+                    AND e.activo = 1
+                    AND e.matricula <> 0
+                ORDER BY e.lastname, e.lastname2, e.name";
+
+        return $this->db->query($sql, [$fecha, $fecha, $section_id])->getResultArray();
+    }
+
     public function studentsAssis($section_id, $teacher_id, $fecha)
     {
         $licSubquery = "SELECT a.student_id FROM assistance a WHERE a.date='" . $fecha . "' AND a.status=2";

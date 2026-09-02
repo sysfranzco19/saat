@@ -66,7 +66,7 @@
                                         <!--end::Symbol-->
                                         <!--begin::Text-->
                                         <div class="d-flex flex-column flex-grow-1">
-                                            <a href="<?php echo base_url(); ?>teacher/student_search/director/0" class="btn btn-secondary font-weight-bolder font-size-sm py-3 px-14" target="_blank" >Estudiantes</a>
+                                            <a href="<?php echo base_url(); ?>admin/students" class="btn btn-secondary font-weight-bolder font-size-sm py-3 px-14" target="_blank" >Estudiantes</a>
                                         </div>
                                         <!--end::Text-->
                                     </div>
@@ -367,8 +367,8 @@
                                                             </div>
                                                         </td>
                                                         <td class="pl-0">
-                                                            <a href="<?php echo base_url(); ?>teacher/behaviors" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Comunicación</a>
-                                                            <span class="text-muted font-weight-bold d-block">con Padres de Familia</span>
+                                                            <a href="<?php echo base_url(); ?>admin/phase" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">Gestionar Fases</a>
+                                                            <span class="text-muted font-weight-bold d-block">Configuración de Fases</span>
                                                         </td>
                                                     </tr>
                                                     <tr>

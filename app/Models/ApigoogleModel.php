@@ -601,7 +601,15 @@ class ApigoogleModel extends Model
             $service->spreadsheets_values->batchUpdate($spreadsheetId, $requestBody);
         }
     }
-    function recoverScore($sheet_id, $subject_id, $abreviado, $section_id, $teacher_id)
+    /**
+     * $phase_id: trimestre ACTUAL (según Settings), usado para que los
+     * puntos SER se calculen solo con datos de behavior_log/daily_scores de
+     * ese trimestre (vía join con asistencia.attendance_dates.phase_id).
+     * Antes no se filtraba por trimestre, así que si el docente no había
+     * cargado nada todavía en el trimestre actual, se recuperaba el último
+     * dato disponible (de un trimestre anterior) en vez de partir de cero.
+     */
+    function recoverScore($sheet_id, $subject_id, $abreviado, $section_id, $teacher_id, $phase_id = null)
     {
         $client = new \Google_Client();
         $client->setApplicationName('Google Sheets and PHP');
@@ -625,35 +633,82 @@ class ApigoogleModel extends Model
             return;
         }
 
-        // 2. Query según nivel: Primaria (section_id < 271) usa behavior_log, Secundaria usa daily_scores
+        // 2. Query según nivel: Primaria usa behavior_log filtrado por trimestre
+        // actual (join con asistencia.attendance_dates.phase_id); Secundaria usa
+        // IncidenciaModel::calcularNota(), el mismo cálculo de "Puntos del Ser"
+        // que Teacher::student_profile(), que ya filtra por phase_id.
+        //
+        // El nivel se determina por section.grade (¿contiene "Secundaria"?), NO
+        // por un umbral numérico de section_id: los section_id de 1ro/2do de
+        // Secundaria (271-290) caen en el mismo rango "2xx" que Primaria, así
+        // que cualquier corte numérico (< 271, < 400, etc.) clasifica mal
+        // alguna sección tarde o temprano. Esto es justamente lo que pasaba:
+        // la sección 311 ("3ro de Secundaria") caía en la rama de Primaria
+        // (que no tiene nada en behavior_log para esa materia) y por eso
+        // TODOS los estudiantes recuperaban el valor por defecto (10).
         $ids = implode(',', array_keys($studentRows));
-        if ((int)$section_id < 271) {
-            // Primaria: score = 100 - puntos negativos de comportamiento, ponderado a 10
-            $scores = $this->db->query(
-                'SELECT bl.student_id,
+        $phaseFilter = $phase_id !== null ? (int) $phase_id : null;
+        $sectionInfo = $this->db->table('section')->select('grade')->where('section_id', $section_id)->get()->getRowArray();
+        $esSecundaria = $sectionInfo && stripos($sectionInfo['grade'], 'secundaria') !== false;
+
+        helper('grade');
+        $esPrimaria36 = $sectionInfo && isPrimaria36($sectionInfo['grade']);
+
+        if ($esPrimaria36) {
+            // Primaria 3ro-6to: MISMO cálculo que Teacher::student_profile()
+            // usa para "Puntos del Ser" en el historial de comportamiento de
+            // primaria (IncidenciaModel::getConteosByTeacher), en vez del
+            // conteo por behavior_log (que es el que usan 1ro/2do de
+            // Primaria e Inicial, sin tocar). Se usa la versión bulk para
+            // no hacer una consulta por estudiante.
+            $scores = [];
+            if ($phaseFilter !== null) {
+                $IncidenciaMod = new IncidenciaModel();
+                $conteos = $IncidenciaMod->getConteosBulkByTeacher(array_keys($studentRows), $teacher_id, $section_id, $phaseFilter);
+                foreach ($conteos as $student_id => $c) {
+                    $scores[] = [
+                        'student_id' => $student_id,
+                        'score'      => max(1, (int) round($c['nota'])),
+                    ];
+                }
+            }
+        } elseif (!$esSecundaria) {
+            // Primaria 1ro/2do e Inicial: score = 100 - puntos negativos de
+            // comportamiento del trimestre actual, ponderado a 10
+            $sql = 'SELECT bl.student_id,
                         GREATEST(1, ROUND(LEAST(100, 100 - COALESCE(SUM(bt.points), 0)) / 10)) AS score
                  FROM tiqui0_tiquiweb26.behavior_log bl
                  INNER JOIN tiqui0_tiquiweb26.behavior_types bt ON bl.behavior_type_id = bt.id
                  INNER JOIN subject s ON bl.subject_id = s.subject_id
+                 INNER JOIN tiqui0_tiquiasis26.attendance_dates ad ON ad.date_id = bl.date_id
                  WHERE s.teacher_id = ' . (int)$teacher_id . '
-                   AND bl.student_id IN (' . $ids . ')
-                 GROUP BY bl.student_id, s.teacher_id'
-            )->getResultArray();
+                   AND bl.subject_id = ' . (int)$subject_id . '
+                   AND bl.student_id IN (' . $ids . ')';
+            if ($phaseFilter !== null) {
+                $sql .= ' AND ad.phase_id = ' . $phaseFilter;
+            }
+            $sql .= ' GROUP BY bl.student_id, s.teacher_id';
+            $scores = $this->db->query($sql)->getResultArray();
         } else {
-            // Secundaria: último score de daily_scores (mayor date_id), ponderado a 10
-            $scores = $this->db->query(
-                'SELECT ds.student_id, GREATEST(1, ROUND(LEAST(100, ds.score) * 10 / 100)) AS score
-                 FROM tiqui0_tiquiweb26.daily_scores ds
-                 INNER JOIN (
-                     SELECT student_id, MAX(date_id) AS max_date_id
-                     FROM tiqui0_tiquiweb26.daily_scores
-                     WHERE subject_id = ' . (int)$subject_id . '
-                       AND student_id IN (' . $ids . ')
-                     GROUP BY student_id
-                 ) latest ON ds.student_id = latest.student_id
-                          AND ds.date_id   = latest.max_date_id
-                 WHERE ds.subject_id = ' . (int)$subject_id
-            )->getResultArray();
+            // Secundaria: mismo cálculo de "Puntos del Ser" que usa
+            // Teacher::student_profile() (IncidenciaModel::calcularNota), en
+            // vez de leer directo de daily_scores (que no se podía acotar de
+            // forma confiable al trimestre actual). calcularNota ya
+            // considera solo incidencias/boletas del $phase_id indicado y
+            // devuelve la nota en la misma escala 1-10 que espera la hoja.
+            $scores = [];
+            if ($phaseFilter !== null) {
+                $IncidenciaMod = new IncidenciaModel();
+                foreach (array_keys($studentRows) as $student_id) {
+                    //calcularNota() devuelve con 1 decimal (ej. 9.5); la
+                    //planilla de Google Sheets solo debe recibir enteros.
+                    $nota = round($IncidenciaMod->calcularNota($student_id, $subject_id, $phaseFilter));
+                    $scores[] = [
+                        'student_id' => $student_id,
+                        'score'      => max(1, (int) $nota),
+                    ];
+                }
+            }
         }
 
         // 3. Construir mapa de scores reales por student_id
@@ -694,285 +749,196 @@ class ApigoogleModel extends Model
         ]);
         $service->spreadsheets_values->batchUpdate($spreadsheetId, $requestBody);
     }
-    function lockedSheet($sheet_id = ''){
+    /**
+     * Bloquea (protege) la hoja de un trimestre en el Google Sheet de una
+     * materia al consolidar notas, para que el docente ya no pueda editarla.
+     * Reemplaza a lockedSheet()/lockedSheet3() (que dejaban abajo, se
+     * mantienen como wrappers de compatibilidad), que solo cubrían el 1er y
+     * 3er trimestre y tenían la hoja hardcodeada ("1erTRIM"/"3erTRIM") sin
+     * importar qué trimestre se estuviera consolidando. Ahora recibe
+     * $phase_id (1, 2 o 3) y usa la hoja correspondiente:
+     * 1 => "1erTRIM", 2 => "2doTRIM", 3 => "3erTRIM".
+     *
+     * IMPORTANTE sobre manejo de errores: los catch(Exception $e) originales
+     * de este archivo NUNCA atrapaban nada, porque este archivo tiene
+     * "namespace App\Models;" sin "use Exception;" — "Exception" a secas se
+     * resuelve como "App\Models\Exception" (que no existe), así que la
+     * excepción real de Google (Google\Service\Exception, p. ej. el 400
+     * "You are trying to edit a protected cell or object" cuando dos
+     * consolidaciones pisan el mismo rango protegido) pasaba de largo sin
+     * capturarse. Acá se captura \Google\Service\Exception explícitamente
+     * (con \Throwable de respaldo) en _batchUpdateSafe(), se registra con
+     * log_message() y se sigue con el resto de las operaciones en vez de
+     * tumbar toda la consolidación.
+     *
+     * @return array{success:bool,message:string,warnings:array<int,string>}
+     */
+    function lockedSheetByPhase($sheet_id = '', $phase_id = 1)
+    {
+        $sheetTitles = [1 => '1erTRIM', 2 => '2doTRIM', 3 => '3erTRIM'];
+        $prefixes    = [1 => '1', 2 => '2', 3 => '3'];
+        $labels      = [1 => '1er Trimestre', 2 => '2do Trimestre', 3 => '3er Trimestre'];
+        $names       = [1 => 'Primero', 2 => 'Segundo', 3 => 'Tercero'];
+
+        $phase_id = (int) $phase_id;
+        if (!isset($sheetTitles[$phase_id])) {
+            return ['success' => false, 'message' => 'Trimestre inválido: ' . $phase_id, 'warnings' => []];
+        }
+        $sheetTitle = $sheetTitles[$phase_id];
+        $prefix     = $prefixes[$phase_id];
+        $label      = $labels[$phase_id];
+        $name       = $names[$phase_id];
+
         //***************NOS CONECTAMOS A GOOGLE SHEETS*************
         $client = new \Google_Client();
         $client->setApplicationName('Google Sheets and PHP');
         $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
         $client->setAccessType('offline');
-        $client->setAuthConfig(APPPATH.'/ThirdParty/api-sheet/Saat-Sheets-f0cf6437dbb7.json');
+        $client->setAuthConfig(APPPATH . '/ThirdParty/api-sheet/Saat-Sheets-f0cf6437dbb7.json');
         $service = new \Google_Service_Sheets($client);
         $spreadsheetId = $sheet_id;
+
+        try {
+            $response = $service->spreadsheets->get($spreadsheetId);
+        } catch (\Google\Service\Exception $e) {
+            log_message('error', 'lockedSheetByPhase: no se pudo leer la planilla ' . $spreadsheetId . ': ' . $e->getMessage());
+            return ['success' => false, 'message' => 'No se pudo conectar con la planilla de Google Sheets: ' . $e->getMessage(), 'warnings' => []];
+        }
+
         //PROCESO DE BLOQUEO DE PERMISOS
-        // Recuperamos el ID de hojas
-        $response = $service->spreadsheets->get($spreadsheetId);
-        $spreadsheetProperties = $response->getProperties();
-        //$sheet =$response->getSheets();
-        //$rev['Conexión con la Planilla'] = '<pre>'.var_export($sheet , true).'</pre>'."\ n";
-        $rangesId=[];
-        $namesId=[];
-        foreach($response->getSheets() as $sheet) {
-            // Properties of sheet SOLO DEL 1ER TRIMESTRE
+        // Recuperamos el ID de la hoja del trimestre correspondiente
+        $pri      = null;
+        $rangesId = [];
+        $namesId  = [];
+        foreach ($response->getSheets() as $sheet) {
             $sheetProperties = $sheet->getProperties();
-            $sheetRangos = $sheet->getProtectedRanges();
-            switch ($sheetProperties->title){
-                case "1erTRIM":
-                    $pri = $sheetProperties->sheetId;
-                    foreach ($sheetRangos as $r){
-                        if($r->protectedRangeId!=NULL){
-                            $rangesId[] = $r->protectedRangeId;
-                        }
-                        if($r->namedRangeId!=NULL){
-                            $namesId[] = $r->namedRangeId;
-                        }
+            if ($sheetProperties->title === $sheetTitle) {
+                $pri = $sheetProperties->sheetId;
+                foreach ($sheet->getProtectedRanges() as $r) {
+                    if ($r->protectedRangeId != null) {
+                        $rangesId[] = $r->protectedRangeId;
                     }
-                    break;
+                    if ($r->namedRangeId != null) {
+                        $namesId[] = $r->namedRangeId;
+                    }
+                }
+                break;
             }
         }
+
+        if ($pri === null) {
+            return ['success' => false, 'message' => 'No se encontró la hoja "' . $sheetTitle . '" en la planilla.', 'warnings' => []];
+        }
+
+        $errores = [];
+
+        //ELIMINAMOS RANGOS Y NOMBRES YA EXISTENTES (de una consolidación
+        //previa, por ejemplo) antes de volver a protegerlos
         foreach ($rangesId as $r) {
-            //$rev['Conexión con la Planilla Ranges'] = '<pre>'.$r.'</pre>'."\ n";
-            //ELIMINAMOS RANGOS
-            $requests = [ 
-                new \Google_Service_Sheets_Request([
-                    "deleteProtectedRange" => [
-                        "protectedRangeId" => $r
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);                    
-            }catch (Exception $e) {
-            }
-            
+            $this->_batchUpdateSafe($service, $spreadsheetId, [
+                new \Google_Service_Sheets_Request(["deleteProtectedRange" => ["protectedRangeId" => $r]]),
+            ], $errores);
         }
         foreach ($namesId as $n) {
-            //$rev['Conexión con la Planilla Names'] = '<pre>'.$n.'</pre>'."\ n";
-            //ELIMINAMOS NAMESID
-            $requests = [ 
-                new \Google_Service_Sheets_Request([
-                    "deleteNamedRange" => [
-                        "namedRangeId" => $n
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);                    
-            }catch (Exception $e) {
-            }
-            
+            $this->_batchUpdateSafe($service, $spreadsheetId, [
+                new \Google_Service_Sheets_Request(["deleteNamedRange" => ["namedRangeId" => $n]]),
+            ], $errores);
         }
-        //PROTEGEMOS 1ER TRIMESTRE
-        $listas = array(0 => array(0,42,0,59));
-        $i=0;
-        foreach($listas as $lista => $detalles)
-            {
+
+        //PROTEGEMOS LA HOJA DEL TRIMESTRE
+        $listas = array(0 => array(0, 42, 0, 59));
+        foreach ($listas as $lista => $detalles) {
             //PROTEGEMOS FINALES
-            $requests = [ 
+            $this->_batchUpdateSafe($service, $spreadsheetId, [
                 new \Google_Service_Sheets_Request([
                     "addProtectedRange" => [
                         "protectedRange" => [
-                            "protectedRangeId" => "1".$lista,
-                            "range" => [ "sheetId" => $pri, "startRowIndex" => $detalles[0], "endRowIndex" => $detalles[1], "startColumnIndex" => $detalles[2], "endColumnIndex" => $detalles[3] ],
-                            "description" => "1er Trimestre ".$lista,
-                            "warningOnly" => true
-                        ]
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);                    
-            }catch (Exception $e) {
-                //$rev['Excepcion Permiso 1.1']= $e->getMessage();
-            }
-            //ADD RANGO en 1ER
-            $requests = [ 
+                            "protectedRangeId" => $prefix . $lista,
+                            "range" => ["sheetId" => $pri, "startRowIndex" => $detalles[0], "endRowIndex" => $detalles[1], "startColumnIndex" => $detalles[2], "endColumnIndex" => $detalles[3]],
+                            "description" => $label . ' ' . $lista,
+                            "warningOnly" => true,
+                        ],
+                    ],
+                ]),
+            ], $errores);
+
+            //ADD RANGO
+            $this->_batchUpdateSafe($service, $spreadsheetId, [
                 new \Google_Service_Sheets_Request([
                     "addNamedRange" => [
                         "namedRange" => [
-                            "namedRangeId" => "111".$lista,
-                            "name" => "Primero".$lista,
-                            "range" => [ "sheetId" => $pri, "startRowIndex" => $detalles[0], "endRowIndex" => $detalles[1], "startColumnIndex" => $detalles[2], "endColumnIndex" => $detalles[3] ]
-                        ]
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);
-            }catch (Exception $e) {
-                //$rev['Excepcion Permiso 1.2']= $e->getMessage();
-            }
-            //DAMOS PERMISOS A ADMINISTRADORES
-            $requests = [ 
-            new \Google_Service_Sheets_Request([
-                "updateProtectedRange" => [
-                    "protectedRange" => [
-                        "protectedRangeId" => "1".$lista,
-                        "namedRangeId" => "111".$lista,
-                        "warningOnly" => false,
-                        "editors" => [
-                            "users" => [ "saat@tiquipaya.edu.bo",
-                                "prueba-cargas@cargararchivos-308920.iam.gserviceaccount.com",
-                                "sheetssaat@saat-sheets.iam.gserviceaccount.com" ]
-                            ]
+                            "namedRangeId" => $prefix . $prefix . $prefix . $lista,
+                            "name" => $name . $lista,
+                            "range" => ["sheetId" => $pri, "startRowIndex" => $detalles[0], "endRowIndex" => $detalles[1], "startColumnIndex" => $detalles[2], "endColumnIndex" => $detalles[3]],
                         ],
-                        "fields" => "namedRangeId,warningOnly,editors"
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);
-            }catch (Exception $e) {
-                
-            }
-        }
-        
+                    ],
+                ]),
+            ], $errores);
 
+            //DAMOS PERMISOS A ADMINISTRADORES
+            $this->_batchUpdateSafe($service, $spreadsheetId, [
+                new \Google_Service_Sheets_Request([
+                    "updateProtectedRange" => [
+                        "protectedRange" => [
+                            "protectedRangeId" => $prefix . $lista,
+                            "namedRangeId" => $prefix . $prefix . $prefix . $lista,
+                            "warningOnly" => false,
+                            "editors" => [
+                                "users" => [
+                                    "saat@tiquipaya.edu.bo",
+                                    "prueba-cargas@cargararchivos-308920.iam.gserviceaccount.com",
+                                    "sheetssaat@saat-sheets.iam.gserviceaccount.com",
+                                ],
+                            ],
+                        ],
+                        "fields" => "namedRangeId,warningOnly,editors",
+                    ],
+                ]),
+            ], $errores);
+        }
+
+        if (count($errores) > 0) {
+            log_message('error', 'lockedSheetByPhase (' . $sheetTitle . ', planilla ' . $spreadsheetId . '): ' . implode(' | ', $errores));
+        }
+
+        return ['success' => true, 'message' => 'Hoja "' . $sheetTitle . '" bloqueada.', 'warnings' => $errores];
     }
-    function lockedSheet3($sheet_id = '', $emailDocente = ''){
-        //***************NOS CONECTAMOS A GOOGLE SHEETS 3er trimestre*************
-        $client = new \Google_Client();
-        $client->setApplicationName('Google Sheets and PHP');
-        $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
-        $client->setAccessType('offline');
-        $client->setAuthConfig(APPPATH.'/ThirdParty/api-sheet/Saat-Sheets-f0cf6437dbb7.json');
-        $service = new \Google_Service_Sheets($client);
-        $spreadsheetId = $sheet_id;
-        //PROCESO DE BLOQUEO DE PERMISOS
-        // Recuperamos el ID de hojas
-        $response = $service->spreadsheets->get($spreadsheetId);
-        $spreadsheetProperties = $response->getProperties();
-        //$sheet =$response->getSheets();
-        //$rev['Conexión con la Planilla'] = '<pre>'.var_export($sheet , true).'</pre>'."\ n";
-        $rangesId=[];
-        $namesId=[];
-        foreach($response->getSheets() as $sheet) {
-            // Properties of sheet SOLO DEL 1ER TRIMESTRE
-            $sheetProperties = $sheet->getProperties();
-            $sheetRangos = $sheet->getProtectedRanges();
-            switch ($sheetProperties->title){
-                case "3erTRIM":
-                    $pri = $sheetProperties->sheetId;
-                    foreach ($sheetRangos as $r){
-                        if($r->protectedRangeId!=NULL){
-                            $rangesId[] = $r->protectedRangeId;
-                        }
-                        if($r->namedRangeId!=NULL){
-                            $namesId[] = $r->namedRangeId;
-                        }
-                    }
-                    break;
-            }
-        }
-        foreach ($rangesId as $r) {
-            //$rev['Conexión con la Planilla Ranges'] = '<pre>'.$r.'</pre>'."\ n";
-            //ELIMINAMOS RANGOS
-            $requests = [ 
-                new \Google_Service_Sheets_Request([
-                    "deleteProtectedRange" => [
-                        "protectedRangeId" => $r
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);                    
-            }catch (Exception $e) {
-            }
-            
-        }
-        foreach ($namesId as $n) {
-            //$rev['Conexión con la Planilla Names'] = '<pre>'.$n.'</pre>'."\ n";
-            //ELIMINAMOS NAMESID
-            $requests = [ 
-                new \Google_Service_Sheets_Request([
-                    "deleteNamedRange" => [
-                        "namedRangeId" => $n
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);                    
-            }catch (Exception $e) {
-            }
-            
-        }
-        
-        //PROTEGEMOS 3ER TRIMESTRE
-        $listas = array(0 => array(0,42,0,59));
-        $i=0;
-        foreach($listas as $lista => $detalles)
-            {
-            //PROTEGEMOS FINALES
-            $requests = [ 
-                new \Google_Service_Sheets_Request([
-                    "addProtectedRange" => [
-                        "protectedRange" => [
-                            "protectedRangeId" => "3".$lista,
-                            "range" => [ "sheetId" => $pri, "startRowIndex" => $detalles[0], "endRowIndex" => $detalles[1], "startColumnIndex" => $detalles[2], "endColumnIndex" => $detalles[3] ],
-                            "description" => "3ro Trimestre ".$lista,
-                            "warningOnly" => true
-                        ]
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);                    
-            }catch (Exception $e) {
-                //$rev['Excepcion Permiso 1.1']= $e->getMessage();
-            }
-            //ADD RANGO en 3ER
-            $requests = [ 
-                new \Google_Service_Sheets_Request([
-                    "addNamedRange" => [
-                        "namedRange" => [
-                            "namedRangeId" => "333".$lista,
-                            "name" => "Tercero".$lista,
-                            "range" => [ "sheetId" => $pri, "startRowIndex" => $detalles[0], "endRowIndex" => $detalles[1], "startColumnIndex" => $detalles[2], "endColumnIndex" => $detalles[3] ]
-                        ]
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);
-            }catch (Exception $e) {
-                //$rev['Excepcion Permiso 1.2']= $e->getMessage();
-            }
-            //DAMOS PERMISOS A ADMINISTRADORES
-            $requests = [ 
-            new \Google_Service_Sheets_Request([
-                "updateProtectedRange" => [
-                    "protectedRange" => [
-                        "protectedRangeId" => "3".$lista,
-                        "namedRangeId" => "333".$lista,
-                        "warningOnly" => false,
-                        "editors" => [
-                            "users" => [ "saat@tiquipaya.edu.bo",
-                                "prueba-cargas@cargararchivos-308920.iam.gserviceaccount.com",
-                                "sheetssaat@saat-sheets.iam.gserviceaccount.com" ]
-                            ]
-                        ],
-                        "fields" => "namedRangeId,warningOnly,editors"
-                    ]
-                ])
-            ];
-            try{
-                $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([ 'requests' => $requests ]);
-                $response = $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);
-            }catch (Exception $e) {
-                
-            }
-        }
-        
-        
 
+    /**
+     * Ejecuta un batchUpdate individual "a prueba de fallos": si Google
+     * responde 400 porque el rango/celda ya está protegido por otro objeto
+     * (p. ej. "You are trying to edit a protected cell or object"), o
+     * cualquier otro error de la API, lo registramos en $errores y seguimos
+     * con las demás operaciones en vez de dejar que tumbe todo el proceso.
+     */
+    private function _batchUpdateSafe($service, $spreadsheetId, array $requests, array &$errores): void
+    {
+        try {
+            $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest(['requests' => $requests]);
+            $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);
+        } catch (\Google\Service\Exception $e) {
+            $errores[] = $e->getMessage();
+        } catch (\Throwable $e) {
+            $errores[] = $e->getMessage();
+        }
+    }
+
+    /**
+     * @deprecated usar lockedSheetByPhase($sheet_id, 1). Se mantiene por si
+     * queda algún otro llamador directo a lockedSheet().
+     */
+    function lockedSheet($sheet_id = '')
+    {
+        return $this->lockedSheetByPhase($sheet_id, 1);
+    }
+
+    /**
+     * @deprecated usar lockedSheetByPhase($sheet_id, 3). Se mantiene por si
+     * queda algún otro llamador directo a lockedSheet3().
+     */
+    function lockedSheet3($sheet_id = '', $emailDocente = '')
+    {
+        return $this->lockedSheetByPhase($sheet_id, 3);
     }
     function enable_sheet_phase($phase_id='', $phase='', $subject_id='', $sheet_id = ''){
         //Habilitamos la Planilla

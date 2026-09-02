@@ -99,7 +99,19 @@ function confirmar_inicio()
                                     <th class="text-warning" ><?php echo $row['hacer_average'];?></th>
 
                                     <th class="text-primary" ><?php echo $row['autoevaluacion'];?></th>
-                                    <th class="text-primary" ><?php echo $row['total_average'];?></th>
+                                    <?php
+                                        $nota_final = round($row['total_average']);
+                                        if ($nota_final >= 85) {
+                                            $nota_color = 'text-info';
+                                        } elseif ($nota_final >= 68) {
+                                            $nota_color = 'text-dark';
+                                        } elseif ($nota_final >= 51) {
+                                            $nota_color = 'text-warning';
+                                        } else {
+                                            $nota_color = 'text-danger';
+                                        }
+                                    ?>
+                                    <th class="<?php echo $nota_color; ?> font-weight-bolder"><?php echo $row['total_average'];?></th>
                                 <tr>
                             <?php endforeach; ?>
                             </tbody>

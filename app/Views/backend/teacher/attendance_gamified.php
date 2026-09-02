@@ -231,29 +231,54 @@
                 <input type="hidden" name="date_id" value="<?= $date_id ?>">
                 <input type="hidden" name="periodos" value="<?= $periodo ?>">
 
-                <!-- Licencias Activas -->
-                <div>
-                    <?php if (!empty($licencias) || !empty($licencias_periodo)): ?>
-                        <p class="mb-2"><strong>Licencias Activas:</strong></p>
-                        <div class="mb-4">
-                            <?php if (!empty($licencias)): ?>
-                                <?php foreach ($licencias as $lic): ?>
-                                    <span class="label label-danger label-pill label-inline mr-2 py-3 px-3 mb-1" title="Licencia (Todo el día)">
-                                        <?= $lic['student'] ?> - <?= $lic['detalle'] ?>
-                                    </span>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                <!-- Licencias Aprobadas Activas (solo primaria 3ro-6to) -->
+                <?php
+                $licencias_dia_map     = !empty($is_primaria36) ? array_column($licencias,        null, 'student_id') : [];
+                $licencias_periodo_map = !empty($is_primaria36) ? array_column($licencias_periodo, null, 'student_id') : [];
+                ?>
+                <?php if (!empty($is_primaria36) && (!empty($licencias) || !empty($licencias_periodo))): ?>
+                <div class="mb-4 rounded" style="border:1px solid #d1e7fd; background:#f0f7ff;">
+                    <div class="px-4 pt-3 pb-1">
+                        <span class="font-weight-bolder text-primary font-size-sm">
+                            <i class="fas fa-shield-alt text-primary mr-1"></i>
+                            Licencias aprobadas — el estado de estos alumnos no puede modificarse
+                        </span>
+                    </div>
+                    <div class="px-4 pb-3 mt-2">
 
-                            <?php if (!empty($licencias_periodo)): ?>
-                                <?php foreach ($licencias_periodo as $lic): ?>
-                                    <span class="label label-warning label-pill label-inline mr-2 py-3 px-3 mb-1" title="Licencia (Solo este periodo)">
-                                        <?= $lic['student'] ?> - <?= $lic['detalle'] ?>
-                                    </span>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                        <?php if (!empty($licencias)): ?>
+                        <div class="mb-2">
+                            <span class="text-muted font-size-xs font-weight-bold text-uppercase mr-2">
+                                <i class="fas fa-calendar-times mr-1"></i>Ausencia completa:
+                            </span>
+                            <?php foreach ($licencias as $lic): ?>
+                                <span class="badge px-3 py-2 mr-1 mb-1 font-size-sm"
+                                      style="background:#e1f0ff; color:#009ef7; border:1px solid #009ef7;">
+                                    <?= esc($lic['student']) ?>
+                                    <span class="font-weight-normal ml-1" style="opacity:.8;">— <?= esc($lic['detalle']) ?></span>
+                                </span>
+                            <?php endforeach; ?>
                         </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
+
+                        <?php if (!empty($licencias_periodo)): ?>
+                        <div>
+                            <span class="text-muted font-size-xs font-weight-bold text-uppercase mr-2">
+                                <i class="fas fa-door-open mr-1"></i>Licencia por periodos (período <?= esc($periodo) ?>):
+                            </span>
+                            <?php foreach ($licencias_periodo as $lic): ?>
+                                <span class="badge px-3 py-2 mr-1 mb-1 font-size-sm"
+                                      style="background:#fff3e0; color:#e65100; border:1px solid #e65100;">
+                                    <?= esc($lic['student']) ?>
+                                    <span class="font-weight-normal ml-1" style="opacity:.8;">— <?= esc($lic['detalle']) ?></span>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+
+                    </div>
                 </div>
+                <?php endif; ?>
 
                 <div class="table-responsive">
                     <table class="table table-head-custom table-vertical-center gamified-table"
@@ -342,10 +367,43 @@
                                                 </div>
                                             </div>
                                             <div>
-                                                <!-- Link to Profile -->
-                                                <!-- Link to Profile -->
                                                 <a href="<?= base_url('index.php/teacher/student_profile/' . $student['student_id'] . '/' . $subject_id) . '?date=' . $date . '&periodo=' . $periodo ?>"
                                                     target="_blank" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg"><?= $student['student'] ?></a>
+
+                                                <?php if (isset($licencias_dia_map[$student['student_id']])): ?>
+                                                    <span class="badge ml-2 font-size-xs py-1 px-2"
+                                                          style="background:#e1f0ff;color:#009ef7;border:1px solid #009ef7;"
+                                                          title="<?= esc($licencias_dia_map[$student['student_id']]['detalle']) ?>">
+                                                        <i class="fas fa-calendar-times mr-1"></i>Licencia
+                                                    </span>
+                                                <?php elseif (isset($licencias_periodo_map[$student['student_id']])): ?>
+                                                    <span class="badge ml-2 font-size-xs py-1 px-2"
+                                                          style="background:#fff3e0;color:#e65100;border:1px solid #e65100;"
+                                                          title="<?= esc($licencias_periodo_map[$student['student_id']]['detalle']) ?>">
+                                                        <i class="fas fa-door-open mr-1"></i>Periodos
+                                                    </span>
+                                                <?php endif; ?>
+
+                                                <?php
+                                                // Badge de cupo trimestral (solo primaria 3ro-6to)
+                                                if (!empty($is_primaria36) && isset($cupos_map[$student['student_id']])):
+                                                    $c = $cupos_map[$student['student_id']];
+                                                    if ($c['total'] >= 9):
+                                                ?>
+                                                    <span class="badge badge-danger ml-2 font-size-xs py-1 px-2" title="Límite de 9 días alcanzado">
+                                                        <i class="fas fa-ban mr-1"></i>Límite <?= number_format($c['total'],1) ?>/9
+                                                    </span>
+                                                <?php elseif ($c['total'] >= 6): ?>
+                                                    <span class="badge badge-warning ml-2 font-size-xs py-1 px-2" title="Alerta: 6 días o más">
+                                                        <i class="fas fa-bell mr-1"></i>Alerta <?= number_format($c['total'],1) ?>/9
+                                                    </span>
+                                                <?php elseif ($c['total'] > 0): ?>
+                                                    <span class="badge badge-light ml-2 font-size-xs py-1 px-2 text-muted" title="Cupo consumido">
+                                                        <?= number_format($c['total'],1) ?>/9 días
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php endif; ?>
+
                                                 <span class="text-muted font-weight-bold d-block font-size-sm mt-1">
                                                     <span class="text-danger">
                                                         <span id="negative-count-<?= $student['student_id'] ?>"><?= isset($student['negative_count']) ? $student['negative_count'] : 0 ?></span> Incidencias

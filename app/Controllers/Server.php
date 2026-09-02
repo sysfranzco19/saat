@@ -279,9 +279,25 @@ class Server extends BaseController
     }
     public function fill_motivos()
     {
-        $MotivoMod = new MotivoModel();
-        $respuesta = $MotivoMod->get_motivos();
-        return $this->response->setJSON($respuesta);
+        $tipo_id = $this->request->getGet('tipo_id');
+        $db = \Config\Database::connect('asistencia');
+
+        if ($tipo_id == 2) {
+            // Salidas anticipadas: motivos 8-12 + excepciones urgentes + Otros
+            $rows = $db->query(
+                "SELECT motivo_id, motivo, es_excepcion FROM t_motivos
+                 WHERE motivo_id IN (8,9,10,11,12,13,17,18,19)
+                 ORDER BY es_excepcion ASC, motivo_id ASC"
+            )->getResultArray();
+        } else {
+            // Licencias por días: excluir salidas anticipadas e ingreso demorado
+            $rows = $db->query(
+                "SELECT motivo_id, motivo, es_excepcion FROM t_motivos
+                 WHERE motivo_id NOT IN (8,9,10,11,12,16)
+                 ORDER BY es_excepcion ASC, motivo_id ASC"
+            )->getResultArray();
+        }
+        return $this->response->setJSON($rows);
     }
     public function fill_periodos()
     {

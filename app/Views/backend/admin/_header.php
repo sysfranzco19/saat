@@ -222,7 +222,7 @@
 										</a>
 									</li>
 									<li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
-										<a href="<?php echo base_url(); ?>index.php/admin/report_delivery_notes" class="menu-link">
+										<a href="<?php echo base_url(); ?>admin/delivery_notes" class="menu-link">
 											<span class="svg-icon menu-icon">
 												<!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Box2.svg-->
 												<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
@@ -236,6 +236,67 @@
 											<span class="menu-text">Informe de entrega de Notas</span>
 										</a>
 									</li>					
+									<li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
+										<a href="<?php echo base_url(); ?>admin/self_appraisal" class="menu-link">
+											<span class="svg-icon menu-icon">
+												<!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Clipboard-check.svg-->
+												<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+													<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+														<rect x="0" y="0" width="24" height="24" />
+														<path d="M8,3 L8,3.5 C8,4.32842712 8.67157288,5 9.5,5 L14.5,5 C15.3284271,5 16,4.32842712 16,3.5 L16,3 L18,3 C19.1045695,3 20,3.8954305 20,5 L20,21 C20,22.1045695 19.1045695,23 18,23 L6,23 C4.8954305,23 4,22.1045695 4,21 L4,5 C4,3.8954305 4.8954305,3 6,3 L8,3 Z" fill="#000000" opacity="0.3" />
+														<path d="M11,2 C11,1.44771525 11.4477153,1 12,1 C12.5522847,1 13,1.44771525 13,2 L14.5,2 C14.7761424,2 15,2.22385763 15,2.5 L15,3.5 C15,3.77614237 14.7761424,4 14.5,4 L9.5,4 C9.22385763,4 9,3.77614237 9,3.5 L9,2.5 C9,2.22385763 9.22385763,2 9.5,2 L11,2 Z" fill="#000000" />
+														<path d="M15.1720648,9.32732213 L11.2038263,14.4324528 L9.06359331,12.5299805 C8.6712183,12.1804965 8.06974054,12.2151198 7.72026335,12.6074949 C7.37078616,13.0006471 7.40540953,13.6013478 7.79778454,13.9508318 L10.6849485,16.5228916 C10.8613167,16.6799982 11.0868247,16.7666667 11.320669,16.7666667 C11.3405535,16.7666667 11.3596564,16.7666667 11.3795409,16.7658992 C11.6345209,16.7513634 11.870415,16.6355082 12.037941,16.4423442 C12.0967248,16.3739092 12.145334,16.2985181 12.1839411,16.2192968 L16.6242711,10.3811473 C16.9436419,9.98416027 16.8681394,9.40348051 16.4557636,9.09477051 C16.0433878,8.78606051 15.4665356,8.85974427 15.1720648,9.32732213 Z" fill="#000000" />
+													</g>
+												</svg>
+												<!--end::Svg Icon-->
+											</span>
+											<span class="menu-text">Autoevaluaciones</span>
+										</a>
+									</li>
+									<li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
+										<a href="<?php echo base_url(); ?>admin/delivery_notes" class="menu-link">
+											<span class="svg-icon menu-icon">
+												<!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Clipboard-list.svg-->
+												<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+													<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+														<rect x="0" y="0" width="24" height="24" />
+														<path d="M8,3 L8,3.5 C8,4.32842712 8.67157288,5 9.5,5 L14.5,5 C15.3284271,5 16,4.32842712 16,3.5 L16,3 L18,3 C19.1045695,3 20,3.8954305 20,5 L20,21 C20,22.1045695 19.1045695,23 18,23 L6,23 C4.8954305,23 4,22.1045695 4,21 L4,5 C4,3.8954305 4.8954305,3 6,3 L8,3 Z" fill="#000000" opacity="0.3" />
+														<path d="M11,2 C11,1.44771525 11.4477153,1 12,1 C12.5522847,1 13,1.44771525 13,2 L14.5,2 C14.7761424,2 15,2.22385763 15,2.5 L15,3.5 C15,3.77614237 14.7761424,4 14.5,4 L9.5,4 C9.22385763,4 9,3.77614237 9,3.5 L9,2.5 C9,2.22385763 9.22385763,2 9.5,2 L11,2 Z" fill="#000000" />
+														<rect fill="#000000" opacity="0.3" x="10" y="9" width="7" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="7" y="9" width="2" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="7" y="13" width="2" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="10" y="13" width="7" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="7" y="17" width="2" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="10" y="17" width="7" height="2" rx="1" />
+													</g>
+												</svg>
+												<!--end::Svg Icon-->
+											</span>
+											<span class="menu-text">Entrega de Notas</span>
+										</a>
+									</li>
+									<li class="menu-item menu-item-submenu" data-menu-toggle="hover" aria-haspopup="true">
+										<a href="<?php echo base_url(); ?>admin/teacher_notes" class="menu-link">
+											<span class="svg-icon menu-icon">
+												<!--begin::Svg Icon | path:assets/media/svg/icons/Communication/Clipboard-list.svg-->
+												<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+													<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+														<rect x="0" y="0" width="24" height="24" />
+														<path d="M8,3 L8,3.5 C8,4.32842712 8.67157288,5 9.5,5 L14.5,5 C15.3284271,5 16,4.32842712 16,3.5 L16,3 L18,3 C19.1045695,3 20,3.8954305 20,5 L20,21 C20,22.1045695 19.1045695,23 18,23 L6,23 C4.8954305,23 4,22.1045695 4,21 L4,5 C4,3.8954305 4.8954305,3 6,3 L8,3 Z" fill="#000000" opacity="0.3" />
+														<path d="M11,2 C11,1.44771525 11.4477153,1 12,1 C12.5522847,1 13,1.44771525 13,2 L14.5,2 C14.7761424,2 15,2.22385763 15,2.5 L15,3.5 C15,3.77614237 14.7761424,4 14.5,4 L9.5,4 C9.22385763,4 9,3.77614237 9,3.5 L9,2.5 C9,2.22385763 9.22385763,2 9.5,2 L11,2 Z" fill="#000000" />
+														<rect fill="#000000" opacity="0.3" x="10" y="9" width="7" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="7" y="9" width="2" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="7" y="13" width="2" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="10" y="13" width="7" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="7" y="17" width="2" height="2" rx="1" />
+														<rect fill="#000000" opacity="0.3" x="10" y="17" width="7" height="2" rx="1" />
+													</g>
+												</svg>
+												<!--end::Svg Icon-->
+											</span>
+											<span class="menu-text">Centralizador de Notas</span>
+										</a>
+									</li>
 								</ul>
 							</div>
 						</li>

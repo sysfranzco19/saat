@@ -47,6 +47,42 @@
 
 
 
+                            <?php $esPrimariaCurso = isPrimaria36($paralelo['grade'] ?? ''); ?>
+                            <?php if ($esPrimariaCurso): ?>
+                                <?php
+                                // Primaria 3ro-6to: un solo llamado de asistencia por curso — se
+                                // replica automáticamente entre todas las materias que este mismo
+                                // maestro dicta aquí, así que no hace falta listarlas por separado.
+                                $misMaterias = array_values(array_filter($subjects, fn($s) => $s['section_id'] == $paralelo['section_id']));
+                                $anchorSubjectId = $misMaterias[0]['subject_id'] ?? null;
+                                ?>
+                                <?php if ($anchorSubjectId): ?>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Curso</th>
+                                            <th scope="col">Registros</th>
+                                            <th scope="col">Reportes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th scope="row"><?php echo esc($paralelo['nick_name']); ?></th>
+                                            <td>
+                                                <a href="<?php echo base_url(); ?>teacher/attendance/<?php echo $anchorSubjectId; ?>"
+                                                    class="btn btn-text-primary btn-hover-light-primary font-weight-bold mr-2">Tomar
+                                                    Asistencia</a>
+                                            </td>
+                                            <td>
+                                                <a href="<?php echo base_url(); ?>teacher/attendance_report/<?php echo $anchorSubjectId; ?>"
+                                                    class="btn btn-text-success btn-hover-light-success font-weight-bold mr-2"
+                                                    target="_blank">Ver Asistencias</a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <?php endif; ?>
+                            <?php else: ?>
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -105,6 +141,7 @@
                                     ?>
                                 </tbody>
                             </table>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

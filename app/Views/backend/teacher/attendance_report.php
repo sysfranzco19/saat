@@ -156,12 +156,13 @@
                                 foreach ($dias as $dia):
                                     $date_id = $dia['date_id'];
                                     $date = $dia['date_class'];
-                                    $subject_id = $dia['subject_id'];
+                                    $subject_id = $dia['subject_id'] ?? $subject_id;
                                     $newDate = date("d/m", strtotime($dia['date_class']));
                                     ?>
                                     <th class="text-center p-0 align-middle" style="min-width: 38px; width: 38px; border-bottom: 2px solid #ebedf3;">
                                         <div class="d-flex flex-column align-items-center justify-content-end py-1">
                                             <span class="font-weight-bolder font-size-sm mb-2 text-dark" style="writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 1px; height: 50px;"><?php echo $newDate; ?></span>
+                                            <?php if (empty($is_primaria36)): ?>
                                             <div class="d-flex flex-column align-items-center justify-content-center">
                                                 <button class="btn btn-icon btn-xs btn-light-warning mb-1" title="Editar Fecha"
                                                     style="height: 18px; width: 18px;"
@@ -174,6 +175,7 @@
                                                     <i class="flaticon2-trash" style="font-size: 0.6rem;"></i>
                                                 </button>
                                             </div>
+                                            <?php endif; ?>
                                         </div>
                                     </th>
                                     <?php
@@ -252,9 +254,16 @@
                                                 $statusText = 'P';
                                                 $statusTitle = 'Presente';
                                             } elseif ($asi['status'] == 2) {
-                                                $statusClass = 'btn-primary'; // Licencia
-                                                $statusText = 'L';
-                                                $statusTitle = 'Licencia';
+                                                if (!empty($is_primaria36) && (int)($asi['tipo_licencia'] ?? 0) === 2) {
+                                                    $statusClass = ''; // Licencia por horas
+                                                    $customStyle = 'background-color: #e65100; color: white; border-color: #e65100;';
+                                                    $statusText = 'L';
+                                                    $statusTitle = 'Licencia por horas';
+                                                } else {
+                                                    $statusClass = 'btn-primary'; // Licencia por día
+                                                    $statusText = 'L';
+                                                    $statusTitle = 'Licencia';
+                                                }
                                             } elseif ($asi['status'] == 3) {
                                                 $statusClass = 'btn-warning'; // Retraso
                                                 $statusText = 'R';
@@ -264,20 +273,30 @@
                                                 $statusText = 'V';
                                                 $statusTitle = 'Virtual';
                                             }
+                                            if (empty($is_primaria36)) {
+                                                $editUrl = "showAjaxModal('" . base_url() . "index.php/modal/popup/attendance_modal_edit/{$subject_id}/{$asi['assistance_subject_id']}/{$asi['status']}/{$section_id}/{$row['student']}');";
+                                            } else {
+                                                $editUrl = "showAjaxModal('" . base_url() . "index.php/modal/popup/prim_attendance_modal_edit/{$row['student_id']}/{$dia['date_class']}/{$asi['status']}/{$subject_id}/" . urlencode($row['student']) . "');";
+                                            }
                                             ?>
                                                 <div class="btn btn-icon btn-square <?php echo $statusClass; ?> btn-sm w-100"
                                                     style="cursor: pointer; height: 35px; font-weight: bold; font-size: 1.1em; <?php echo $customStyle; ?>"
                                                     title="<?php echo $statusTitle; ?>"
-                                                    onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/attendance_modal_edit/<?php echo $subject_id; ?>/<?php echo $asi['assistance_subject_id']; ?>/<?php echo $asi['status']; ?>/<?php echo $section_id; ?>/<?php echo $row['student']; ?>');">
+                                                    onclick="<?php echo $editUrl; ?>">
                                                     <?php echo $statusText; ?>
                                                 </div>
                                             <?php
                                         } else {
+                                            if (empty($is_primaria36)) {
+                                                $addUrl = "showAjaxModal('" . base_url() . "index.php/modal/popup/attendance_modal_add/{$subject_id}/{$dia['date_id']}/{$row['student_id']}/{$section_id}/" . urlencode($row['student']) . "');";
+                                            } else {
+                                                $addUrl = "showAjaxModal('" . base_url() . "index.php/modal/popup/prim_attendance_modal_add/{$row['student_id']}/{$dia['date_class']}/{$subject_id}/" . urlencode($row['student']) . "');";
+                                            }
                                             ?>
                                                 <div class="btn btn-icon btn-square btn-light btn-sm w-100 opacity-50"
-                                                    style="cursor: pointer; height: 35px; font-weight: bold; font-size: 1.1em; color: #a1a1aa;" 
+                                                    style="cursor: pointer; height: 35px; font-weight: bold; font-size: 1.1em; color: #a1a1aa;"
                                                     title="Registrar falta/asistencia"
-                                                    onclick="showAjaxModal('<?php echo base_url(); ?>index.php/modal/popup/attendance_modal_add/<?php echo $subject_id; ?>/<?php echo $dia['date_id']; ?>/<?php echo $row['student_id']; ?>/<?php echo $section_id; ?>/<?php echo urlencode($row['student']); ?>');">
+                                                    onclick="<?php echo $addUrl; ?>">
                                                     -
                                                 </div>
                                             <?php

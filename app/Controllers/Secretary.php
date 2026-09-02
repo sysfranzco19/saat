@@ -32,9 +32,16 @@ use App\Models\SuspensionsModel;
 use App\Models\PeriodoModel;
 use App\Models\SubjectModel;
 use App\Models\BoletaModel;
+use App\Models\PhaseModel;
+use App\Models\ReprobadosModel;
 
 //Libreria Plantillas
 use App\Libraries\Libreria_pdf;
+
+// Cartas de estudiantes reprobados (docx -> pdf)
+use PhpOffice\PhpWord\TemplateProcessor;
+use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
+use PhpOffice\PhpWord\Settings as PhpWordSettings;
 
 class Secretary extends BaseController
 {
@@ -1651,6 +1658,165 @@ class Secretary extends BaseController
         $this->response->setHeader('Content-Type', 'application/pdf');
 
     }
+
+    // ── Reporte PDF de Licencia — Primaria (prim_licencias / prim_licencias_dia / prim_licencias_periodo) ──
+    public function license_report_prim($licencia_id = "")
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        //Datos de Licencia
+        $PrimLicMod = new \App\Models\PrimLicenciaModel();
+        $respuesta = $PrimLicMod->getLicenciaPrim((int)$licencia_id);
+        if (empty($respuesta)) {
+            return $this->response->setStatusCode(404);
+        }
+        $lic = $respuesta[0];
+        require('fpdf184/fpdf.php');//to be done in your controller
+        // Set a filename
+        $filename = 'lic_' . $licencia_id . '.pdf';
+        $pdf = new \FPDF('P', 'mm', array(108, 139));
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', 'B', 12);
+        //$pdf->Cell(5);
+        $pdf->Cell(88, 10, utf8_decode('Autorización de Ingreso / Salida'), 0, 0, 'C');
+        $pdf->Ln(10);
+
+        $pdf->SetFillColor(232, 232, 232);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(25, 5, 'F. solicitud :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, $lic['fecha_solicitud'], 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        if ($lic['tipo_id'] == 1) {
+            $pdf->Cell(25, 5, 'Fecha Inicio :', 1, 0, 'R', 1);
+            $pdf->Cell(68, 5, $lic['fecha_inicio'] ?? '', 1, 0, 'L', 0);
+            $pdf->Ln(5);
+            $pdf->Cell(25, 5, 'Fecha Fin :', 1, 0, 'R', 1);
+            $pdf->Cell(68, 5, $lic['fecha_fin'] ?? '', 1, 0, 'L', 0);
+            $pdf->Ln(5);
+        } else {
+            $pdf->Cell(25, 5, 'Fecha :', 1, 0, 'R', 1);
+            $pdf->Cell(68, 5, $lic['fecha_periodo'] ?? '', 1, 0, 'L', 0);
+            $pdf->Ln(5);
+            $pdf->Cell(25, 5, 'Periodo(s) :', 1, 0, 'R', 1);
+            $pdf->Cell(68, 5, utf8_decode($lic['periodos_nombre'] ?? ''), 1, 0, 'L', 0);
+            $pdf->Ln(5);
+            if (!empty($lic['hora_salida'])) {
+                $pdf->Cell(25, 5, 'Hora Salida :', 1, 0, 'R', 1);
+                $pdf->Cell(68, 5, substr($lic['hora_salida'], 0, 5), 1, 0, 'L', 0);
+                $pdf->Ln(5);
+            }
+        }
+
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(25, 5, 'Alumno :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, utf8_decode($lic['student']), 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        $pdf->Cell(25, 5, 'Curso :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, $lic['completo'], 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        $pdf->Cell(25, 5, 'Medio Solicitado :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, utf8_decode($lic['medio']), 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        $pdf->Cell(25, 5, 'Solicitante :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, utf8_decode($lic['solicitante']), 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        if (!empty($lic['recoge_nombre'])) {
+            $pdf->Cell(25, 5, 'Recoge :', 1, 0, 'R', 1);
+            $pdf->Cell(68, 5, utf8_decode($lic['recoge_nombre']), 1, 0, 'L', 0);
+            $pdf->Ln(5);
+        }
+        $pdf->Cell(25, 10, 'Detalle :', 1, 0, 'R', 1);
+        $pdf->MultiCell(68, 5, utf8_decode($lic['motivo'] . ":\n" . $lic['detalle']), 1);
+        $pdf->Ln(25);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(35, 5, '----------------------------', 0, 0, 'C');
+        $pdf->Cell(10);
+        $pdf->Cell(35, 5, '----------------------------', 0, 0, 'C');
+        $pdf->Ln(5);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(35, 5, utf8_decode('Secretaria Dir. Técnica'), 0, 0, 'C');
+        $pdf->Cell(10);
+        $pdf->Cell(35, 5, utf8_decode('Dirección Técnica'), 0, 0, 'C');
+        $pdf->Ln(10);
+        $pdf->Output();
+        $this->response->setHeader('Content-Type', 'application/pdf');
+
+    }
+
+    // ── Reporte PDF de Cambio de Recojo — Primaria (tabla prim_cambio_recojo) ──
+    public function cambio_recojo_prim($licencia_id = "")
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        //Datos del Cambio de Recojo
+        $RecojoMod = new \App\Models\PrimCambioRecojoModel();
+        $respuesta = $RecojoMod->getCambioRecojo((int)$licencia_id);
+        if (empty($respuesta)) {
+            return $this->response->setStatusCode(404);
+        }
+        $rec = $respuesta[0];
+        require('fpdf184/fpdf.php');//to be done in your controller
+        // Set a filename
+        $filename = 'recojo_' . $licencia_id . '.pdf';
+        $pdf = new \FPDF('P', 'mm', array(108, 139));
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', 'B', 12);
+        $pdf->Cell(88, 10, utf8_decode('Autorización de Cambio de Recojo'), 0, 0, 'C');
+        $pdf->Ln(10);
+
+        $tipoTexto = [
+            1 => 'Recogerá otra persona',
+            2 => 'No usará transporte escolar',
+            3 => 'Otro',
+        ][(int)$rec['tipo']] ?? 'Otro';
+
+        $pdf->SetFillColor(232, 232, 232);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(25, 5, 'F. solicitud :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, $rec['fecha_solicitud'], 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        $pdf->Cell(25, 5, 'Fecha :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, $rec['fecha'] ?? '', 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        $pdf->Cell(25, 5, 'Alumno :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, $rec['student'], 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        $pdf->Cell(25, 5, 'Curso :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, utf8_decode($rec['completo'] ?? $rec['nick_name'] ?? ''), 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        $pdf->Cell(25, 5, 'Cambio :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, utf8_decode($tipoTexto), 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        $pdf->Cell(25, 5, 'Solicitante :', 1, 0, 'R', 1);
+        $pdf->Cell(68, 5, utf8_decode($rec['solicitante']) . ' (' . utf8_decode($rec['parentesco_solicitante'] ?? '') . ')', 1, 0, 'L', 0);
+        $pdf->Ln(5);
+        if ((int)$rec['tipo'] === 1) {
+            $pdf->Cell(25, 5, 'Recogerá :', 1, 0, 'R', 1);
+            $pdf->Cell(68, 5, utf8_decode($rec['persona_nombre'] ?? '') . ' (' . utf8_decode($rec['persona_parentesco'] ?? '') . ')', 1, 0, 'L', 0);
+            $pdf->Ln(5);
+        }
+        $pdf->Cell(25, 10, 'Detalle :', 1, 0, 'R', 1);
+        $pdf->MultiCell(68, 5, utf8_decode($rec['detalle'] ?? ''), 1);
+        $pdf->Ln(25);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(35, 5, '----------------------------', 0, 0, 'C');
+        $pdf->Cell(10);
+        $pdf->Cell(35, 5, '----------------------------', 0, 0, 'C');
+        $pdf->Ln(5);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(35, 5, utf8_decode('Secretaria Dir. Técnica'), 0, 0, 'C');
+        $pdf->Cell(10);
+        $pdf->Cell(35, 5, utf8_decode('Dirección Técnica'), 0, 0, 'C');
+        $pdf->Ln(10);
+        $pdf->Output();
+        $this->response->setHeader('Content-Type', 'application/pdf');
+
+    }
+
     public function license_send($licencia_id, $student_id)
     {
         $session = session();
@@ -3054,8 +3220,19 @@ class Secretary extends BaseController
 
         $Setting   = new SettingModel();
         $Section   = new SectionModel();
-        $page_data['cursos']       = $Section->sections_range(271, 343);
-        $page_data['phase_id']     = $Setting->get_phase_id();
+        $BoletaMod = new BoletaModel();
+        $cursos    = $Section->sections_range(271, 343);
+        $phase_id  = $Setting->get_phase_id();
+
+        $section_ids = array_column($cursos, 'section_id');
+        $conteo      = $BoletaMod->getConteoPorSeccion($section_ids, $phase_id);
+        foreach ($cursos as &$cur) {
+            $cur['cantidad'] = $conteo[$cur['section_id']] ?? 0;
+        }
+        unset($cur);
+
+        $page_data['cursos']       = $cursos;
+        $page_data['phase_id']     = $phase_id;
         $page_data['phase_name']   = $Setting->get_phase_name();
         $page_data['system_title'] = $Setting->get_system_title();
         $page_data['system_name']  = $Setting->get_system_name();
@@ -3168,6 +3345,2380 @@ class Secretary extends BaseController
             return $this->response->setJSON(['status' => 'ok']);
         }
         return $this->response->setJSON(['status' => 'error', 'message' => 'Boleta no encontrada.']);
+    }
+
+    // =========================================================================
+    // ASISTENCIA SECUNDARIA POR CURSO Y FECHA
+    // =========================================================================
+
+    public function attendance_by_course()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return redirect()->to(base_url());
+
+        $Setting = new SettingModel();
+        $Section = new SectionModel();
+
+        $page_data['cursos']       = $Section->sections_range(271, 343);
+        $page_data['phase_id']     = $Setting->get_phase_id();
+        $page_data['phase_name']   = $Setting->get_phase_name();
+        $page_data['system_title'] = $Setting->get_system_title();
+        $page_data['system_name']  = $Setting->get_system_name();
+        $page_data['page_title']   = 'Asistencia Secundaria por Curso y Fecha';
+        $page_data['page_name']    = 'attendance_by_course';
+        return view('backend/index', $page_data);
+    }
+
+    public function attendance_by_course_data()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+
+        $section_id = (int) ($this->request->getGet('section_id') ?? 0);
+        $fecha      = trim((string) $this->request->getGet('fecha'));
+
+        if ($section_id < 271 || $section_id > 343) {
+            return $this->response->setJSON(['status' => false, 'message' => 'Seleccione un curso de Secundaria.']);
+        }
+        if ($fecha === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+            return $this->response->setJSON(['status' => false, 'message' => 'Seleccione una fecha válida.']);
+        }
+
+        $AssisMod = new AssistanceModel();
+        $data     = $AssisMod->getAsistenciaCursoFecha($section_id, $fecha);
+
+        return $this->response->setJSON(['status' => true, 'data' => $data]);
+    }
+
+    // =========================================================================
+    // ESTUDIANTES REPROBADOS (Cartas)
+    // =========================================================================
+
+    /**
+     * Trimestres habilitados para consultar reprobados: el trimestre actual
+     * (activo) y todos los anteriores. Nunca trimestres futuros.
+     */
+    public function reprobados_phases()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+
+        $Setting  = new SettingModel();
+        $PhaseMod = new PhaseModel();
+
+        $phase_actual = (int) $Setting->get_phase_id();
+        $todas        = $PhaseMod->listar_phases();
+        $permitidas   = array_values(array_filter($todas, function ($p) use ($phase_actual) {
+            return (int) $p['phase_id'] <= $phase_actual;
+        }));
+
+        return $this->response->setJSON([
+            'status'       => true,
+            'phase_actual' => $phase_actual,
+            'phases'       => $permitidas,
+        ]);
+    }
+
+    public function reprobados_get_data()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+
+        $phase_id = (int) ($this->request->getGet('phase_id') ?? 0);
+
+        $error = $this->_reprobadosValidarPhase($phase_id);
+        if ($error) {
+            return $this->response->setJSON(['status' => false, 'message' => $error]);
+        }
+
+        $ReprobadosMod = new ReprobadosModel();
+        $alumnos       = $ReprobadosMod->getReprobadosAgrupados($phase_id);
+
+        foreach ($alumnos as &$al) {
+            $al['carta_generada'] = file_exists($this->_cartaReprobadoPath($al['student_id']));
+        }
+        unset($al);
+
+        return $this->response->setJSON([
+            'status' => true,
+            'data'   => $alumnos,
+        ]);
+    }
+
+    public function reprobados_generar_carta()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+
+        $student_id = (int) $this->request->getPost('student_id');
+        $phase_id   = (int) $this->request->getPost('phase_id');
+
+        $error = $this->_reprobadosValidarPhase($phase_id);
+        if ($error) {
+            return $this->response->setJSON(['status' => false, 'message' => $error]);
+        }
+
+        $ReprobadosMod = new ReprobadosModel();
+        $alumnos       = $ReprobadosMod->getReprobadosAgrupados($phase_id);
+        $alumno        = null;
+        foreach ($alumnos as $al) {
+            if ((int) $al['student_id'] === $student_id) {
+                $alumno = $al;
+                break;
+            }
+        }
+
+        if (!$alumno) {
+            return $this->response->setJSON(['status' => false, 'message' => 'El estudiante no figura como reprobado en ese trimestre.']);
+        }
+
+        try {
+            $this->_generarCartaReprobadoPdf($alumno);
+        } catch (\Throwable $e) {
+            log_message('error', 'reprobados_generar_carta: ' . $e->getMessage());
+            return $this->response->setJSON(['status' => false, 'message' => 'No se pudo generar la carta: ' . $e->getMessage()]);
+        }
+
+        return $this->response->setJSON([
+            'status' => true,
+            'url'    => base_url('uploads/cartas_reprobados/' . $student_id . '.pdf') . '?v=' . time(),
+        ]);
+    }
+
+    public function reprobados_enviar_carta()
+    {
+        $session = session();
+        if ($session->get('login_type') != 'secretary')
+            return $this->response->setStatusCode(403);
+
+        $phase_id    = (int) $this->request->getPost('phase_id');
+        $student_ids = $this->request->getPost('student_ids'); // array
+        $test_email  = trim((string) $this->request->getPost('test_email'));
+
+        $error = $this->_reprobadosValidarPhase($phase_id);
+        if ($error) {
+            return $this->response->setJSON(['status' => false, 'message' => $error]);
+        }
+
+        if (empty($student_ids) || !is_array($student_ids)) {
+            return $this->response->setJSON(['status' => false, 'message' => 'Seleccione al menos un estudiante.']);
+        }
+
+        $ReprobadosMod = new ReprobadosModel();
+        $alumnos       = $ReprobadosMod->getReprobadosAgrupados($phase_id);
+        $porId         = [];
+        foreach ($alumnos as $al) {
+            $porId[(int) $al['student_id']] = $al;
+        }
+
+        $resultados = [];
+        foreach ($student_ids as $sid) {
+            $sid = (int) $sid;
+            $alumno = $porId[$sid] ?? null;
+
+            if (!$alumno) {
+                $resultados[] = ['student_id' => $sid, 'ok' => false, 'message' => 'No figura como reprobado en el trimestre.'];
+                continue;
+            }
+
+            $pdfPath = $this->_cartaReprobadoPath($sid);
+            if (!file_exists($pdfPath)) {
+                // Generamos la carta automáticamente si aún no existe.
+                try {
+                    $this->_generarCartaReprobadoPdf($alumno);
+                } catch (\Throwable $e) {
+                    $resultados[] = ['student_id' => $sid, 'ok' => false, 'message' => 'No se pudo generar la carta.'];
+                    continue;
+                }
+            }
+
+            $destinatarios = [];
+            if ($test_email !== '') {
+                $destinatarios[] = $test_email;
+            } else {
+                foreach ([$alumno['email1'], $alumno['email2']] as $em) {
+                    $em = trim((string) $em);
+                    if ($em !== '') $destinatarios[] = $em;
+                }
+            }
+
+            if (empty($destinatarios)) {
+                $resultados[] = ['student_id' => $sid, 'ok' => false, 'message' => 'La familia no tiene un email registrado.'];
+                continue;
+            }
+
+            $asunto = 'Comunicado de Notas — ' . $alumno['student'];
+            $cuerpo = $this->_reprobadosEmailBody($alumno, $test_email !== '');
+            $nombreArchivo = 'Carta_' . preg_replace('/[^A-Za-z0-9_]+/', '_', $alumno['student']) . '.pdf';
+
+            $enviado = true;
+            foreach (array_unique($destinatarios) as $destino) {
+                $enviado = $this->_enviarMailConAdjunto($destino, $asunto, $cuerpo, $pdfPath, $nombreArchivo) && $enviado;
+            }
+
+            $resultados[] = [
+                'student_id' => $sid,
+                'ok'         => $enviado,
+                'message'    => $enviado ? ('Enviado a ' . implode(', ', array_unique($destinatarios))) : 'Error al enviar el correo.',
+            ];
+        }
+
+        return $this->response->setJSON(['status' => true, 'resultados' => $resultados]);
+    }
+
+    /**
+     * El trimestre pedido debe existir y no ser posterior al trimestre activo.
+     * Devuelve un mensaje de error, o cadena vacía si es válido.
+     */
+    private function _reprobadosValidarPhase($phase_id)
+    {
+        if ($phase_id <= 0) return 'Seleccione un trimestre.';
+
+        $Setting = new SettingModel();
+        $phase_actual = (int) $Setting->get_phase_id();
+        if ($phase_id > $phase_actual) {
+            return 'Solo se pueden consultar reprobados del trimestre actual o trimestres anteriores.';
+        }
+        return '';
+    }
+
+    private function _cartaReprobadoPath($student_id): string
+    {
+        return FCPATH . 'uploads/cartas_reprobados/' . ((int) $student_id) . '.pdf';
+    }
+
+    /**
+     * Combina las materias/notas reprobadas de un estudiante en los dos
+     * placeholders del template ({{materia}}: {{nota}}), que en el .docx
+     * es una única línea de texto.
+     */
+    private function _formatMateriaNota(array $materias): array
+    {
+        if (empty($materias)) return ['', ''];
+
+        $n = count($materias);
+        if ($n === 1) {
+            return [$materias[0]['materia'], round($materias[0]['nota'])];
+        }
+
+        $pares = [];
+        for ($i = 0; $i < $n - 1; $i++) {
+            $pares[] = $materias[$i]['materia'] . ': ' . round($materias[$i]['nota']);
+        }
+        $materiaStr = implode('; ', $pares) . '; ' . $materias[$n - 1]['materia'];
+        $notaStr    = round($materias[$n - 1]['nota']);
+
+        return [$materiaStr, $notaStr];
+    }
+
+    /**
+     * Rellena public/templates/carta.docx con los datos del estudiante y
+     * genera el PDF final en public/uploads/cartas_reprobados/{student_id}.pdf
+     */
+    private function _generarCartaReprobadoPdf(array $alumno): string
+    {
+        $templatePath = FCPATH . 'templates/carta.docx';
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException('No se encontró la plantilla carta.docx.');
+        }
+
+        $outDir = FCPATH . 'uploads/cartas_reprobados/';
+        if (!is_dir($outDir)) {
+            mkdir($outDir, 0775, true);
+        }
+
+        [$materiaStr, $notaStr] = $this->_formatMateriaNota($alumno['materias']);
+
+        PhpWordSettings::setOutputEscapingEnabled(true);
+
+        $tp = new TemplateProcessor($templatePath);
+        $tp->setMacroOpeningChars('{{');
+        $tp->setMacroClosingChars('}}');
+        $tp->setValue('lastname', (string) $alumno['lastname']);
+        $tp->setValue('lastname2', (string) $alumno['lastname2']);
+        $tp->setValue('student', (string) $alumno['student']);
+        $tp->setValue('curso', (string) $alumno['curso']);
+        $tp->setValue('materia', (string) $materiaStr);
+        $tp->setValue('nota', (string) $notaStr);
+
+        $tmpDocx = $outDir . $alumno['student_id'] . '_tmp_' . time() . '.docx';
+        $tp->saveAs($tmpDocx);
+
+        PhpWordSettings::setPdfRendererPath(VENDORPATH . 'dompdf/dompdf');
+        PhpWordSettings::setPdfRendererName('DomPDF');
+
+        $phpWord = PhpWordIOFactory::load($tmpDocx);
+        $writer  = PhpWordIOFactory::createWriter($phpWord, 'PDF');
+
+        $outPath = $outDir . $alumno['student_id'] . '.pdf';
+        $writer->save($outPath);
+
+        @unlink($tmpDocx);
+
+        return $outPath;
+    }
+
+    private function _reprobadosEmailBody(array $alumno, bool $esPrueba = false): string
+    {
+        $EmailMod = new EmailModel();
+        $msg = $EmailMod->header();
+        if ($esPrueba) {
+            $msg .= '<p style="margin:0;font-weight:bold;color:#f1416c;">⚠ Este es un envío de PRUEBA.</p>';
+        }
+        $msg .= '<p style="margin:0;">Estimados Padres de familia:</p><br />';
+        $msg .= '<p style="margin:0;">Adjuntamos la carta con el detalle de las notas del trimestre correspondientes a su hijo/a:</p><br />';
+        $msg .= '<p style="margin:0;">Estudiante: ' . esc($alumno['student']) . '</p>';
+        $msg .= '<p style="margin:0;">Curso: ' . esc($alumno['curso']) . '</p>';
+        $msg .= '<p style="margin:0;">Agradecemos su atención.</p>';
+        $msg .= $EmailMod->footer();
+        $msg = str_replace('@title@', 'Comunicado de Notas', $msg);
+        return $msg;
+    }
+
+    /**
+     * Envía un correo con un PDF adjunto usando mail() nativo (multipart/mixed
+     * armado a mano, ya que mail() no soporta adjuntos de forma directa).
+     * Solo funciona en el servidor de producción (mail() no está configurado
+     * en ambientes locales).
+     */
+    private function _enviarMailConAdjunto(string $to, string $subject, string $htmlBody, string $attachmentPath, string $attachmentName): bool
+    {
+        if (!file_exists($attachmentPath)) return false;
+
+        $boundary    = md5(uniqid((string) microtime(true), true));
+        $fileContent = chunk_split(base64_encode(file_get_contents($attachmentPath)));
+
+        $headers  = "From: Saat Tiquipaya <saat@tiquipaya.edu.bo>\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n";
+
+        $body  = "--{$boundary}\r\n";
+        $body .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $body .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
+        $body .= $htmlBody . "\r\n\r\n";
+
+        $body .= "--{$boundary}\r\n";
+        $body .= "Content-Type: application/pdf; name=\"{$attachmentName}\"\r\n";
+        $body .= "Content-Transfer-Encoding: base64\r\n";
+        $body .= "Content-Disposition: attachment; filename=\"{$attachmentName}\"\r\n\r\n";
+        $body .= $fileContent . "\r\n";
+        $body .= "--{$boundary}--";
+
+        return @mail($to, $subject, $body, $headers);
+    }
+
+    // =========================================================================
+    // MÓDULOS ASISTENCIA PRIMARIA 3ro–6to
+    // =========================================================================
+
+    private function _primSecretaryData(): array
+    {
+        $session      = session();
+        $esManager    = $session->get('login_type') === 'manager';
+        $secretary_id = $session->get('secretary_id');
+        $Setting      = new SettingModel();
+
+        if ($esManager) {
+            // Dirección Técnica Primaria (manager con level=1): rango fijo, no
+            // depende de secretary_id porque esta sesión no tiene ninguno.
+            $sec_ini = 231;
+            $sec_fin = 263;
+        } else {
+            // Datos del secretario
+            $SecMod = new SecretaryModel();
+            $sec    = $SecMod->get_secretary(['secretary_id' => $secretary_id]);
+            $sec    = !empty($sec) ? $sec[0] : [];
+
+            // Rango de secciones primaria 3-6 para este secretario
+            $sec_ini = max((int)($sec['section_ini'] ?? 231), 231);
+            $sec_fin = min((int)($sec['section_fin'] ?? 263), 263);
+        }
+
+        // Secciones primaria
+        $db       = \Config\Database::connect('asistencia');
+        $sections = $db->query(
+            "SELECT section_id, nick_name, completo FROM section
+             WHERE section_id BETWEEN ? AND ? ORDER BY section_id",
+            [$sec_ini, $sec_fin]
+        )->getResultArray();
+
+        // Alumnos agrupados por sección
+        $students_raw = $esManager
+            ? (new StudentModel())->student_manager($session->get('manager_id'))
+            : (new StudentModel())->student_secretary($secretary_id);
+        $grouped = [];
+        foreach ($students_raw as $s) {
+            if ($s['section_id'] < 231 || $s['section_id'] > 263) continue;
+            $sid = $s['section_id'];
+            if (!isset($grouped[$sid])) $grouped[$sid] = [];
+            $grouped[$sid][] = [
+                'student_id' => $s['student_id'],
+                'name'       => trim($s['lastname'] . ' ' . $s['lastname2'] . ' ' . $s['name']),
+            ];
+        }
+
+        // Fase activa
+        $phase_id   = $Setting->get_phase_id();
+        $phase_name = $Setting->get_phase_name();
+        $phaseRow   = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$phase_id])
+            ->getRowArray();
+
+        // Cupo de todos los alumnos primaria (resumen por sección)
+        $cupos_map = [];
+        if ($phaseRow) {
+            $CupoMod = new \App\Models\PrimCupoModel();
+            foreach ($sections as $sec_row) {
+                $filas = $CupoMod->resumenSeccion(
+                    (int)$sec_row['section_id'],
+                    $phaseRow['inicio'],
+                    $phaseRow['fin']
+                );
+                foreach ($filas as $f) {
+                    $cupos_map[$f['student_id']] = $f;
+                }
+            }
+        }
+
+        return [
+            'secretary_id' => $secretary_id,
+            'sections'     => $sections,
+            'grouped'      => $grouped,
+            'cupos_map'    => $cupos_map,
+            'phase_id'     => $phase_id,
+            'phase_name'   => $phase_name,
+            'phase_ini'    => $phaseRow['inicio'] ?? null,
+            'phase_fin'    => $phaseRow['fin']    ?? null,
+            'system_title' => $Setting->get_system_title(),
+            'system_name'  => $Setting->get_system_name(),
+            'login_type'   => 'secretary',
+            'account_type' => 'secretary',
+        ];
+    }
+
+    /**
+     * Fragmento SQL reutilizable: verdadero cuando la fecha `pa.date` de la fila
+     * externa (alias `pa`) NO está cubierta por ninguna licencia de día vigente
+     * (una licencia rechazada o eliminada, enviado=2/3, no cuenta como cobertura).
+     */
+    private function _sinLicenciaSubquery(): string
+    {
+        return "NOT EXISTS (
+                    SELECT 1 FROM prim_licencias l
+                    INNER JOIN prim_licencias_dia ld ON ld.licencias_id = l.licencias_id
+                    WHERE l.student_id = pa.student_id
+                      AND l.enviado NOT IN (2, 3)
+                      AND pa.date BETWEEN ld.fecha_inicio AND ld.fecha_fin
+                )";
+    }
+
+    /**
+     * Personal autorizado a Asistencia Primaria: secretaría, o Dirección Técnica
+     * (cuenta manager con level=1 — mismo nivel que ya activa el menú "Dirección
+     * Técnica" en manager/_header.php).
+     */
+    private function _esPersonalPrimaria(): bool
+    {
+        $session = session();
+        $tipo = $session->get('login_type');
+        if ($tipo === 'secretary') return true;
+        if ($tipo === 'manager' && (int) $session->get('level') === 1) return true;
+        return false;
+    }
+
+    // ── Panel General ────────────────────────────────────────────────────────
+
+    public function prim_dashboard()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $data  = $this->_primSecretaryData();
+        $db    = \Config\Database::connect('asistencia');
+        $today = date('Y-m-d');
+
+        // 1. Pendientes de aprobar (licencias por día, separadas por duración)
+        $pendRow = $db->query(
+            "SELECT
+                SUM(CASE WHEN l.tipo_id = 1 AND ld.cantidad_dias <= 3 THEN 1 ELSE 0 END) AS dia_corta,
+                SUM(CASE WHEN l.tipo_id = 1 AND ld.cantidad_dias > 3  THEN 1 ELSE 0 END) AS dia_larga,
+                SUM(CASE WHEN l.tipo_id = 2 THEN 1 ELSE 0 END) AS periodo
+             FROM prim_licencias l
+             INNER JOIN t_student s ON s.student_id = l.student_id
+             LEFT JOIN prim_licencias_dia ld ON ld.licencias_id = l.licencias_id
+             WHERE s.section_id BETWEEN 231 AND 263 AND l.enviado = 0"
+        )->getRowArray();
+        $data['pend_dia_corta'] = (int)($pendRow['dia_corta'] ?? 0);
+        $data['pend_dia_larga'] = (int)($pendRow['dia_larga'] ?? 0);
+        $data['pend_periodo']   = (int)($pendRow['periodo']   ?? 0);
+
+        // 2. Alumnos en alerta / límite de cupo (reutiliza cupos_map ya calculado)
+        $cnt_alerta = 0; $cnt_limite = 0;
+        foreach ($data['cupos_map'] as $c) {
+            if (!empty($c['limite9']))     $cnt_limite++;
+            elseif (!empty($c['alerta6'])) $cnt_alerta++;
+        }
+        $data['cnt_alerta'] = $cnt_alerta;
+        $data['cnt_limite'] = $cnt_limite;
+
+        // 3. Asistencia de hoy
+        $asisHoy = $db->query(
+            "SELECT
+                SUM(CASE WHEN pa.status=1 THEN 1 ELSE 0 END) AS presentes,
+                SUM(CASE WHEN pa.status=0 THEN 1 ELSE 0 END) AS ausentes,
+                SUM(CASE WHEN pa.status=2 THEN 1 ELSE 0 END) AS con_licencia,
+                SUM(CASE WHEN pa.status=3 THEN 1 ELSE 0 END) AS retrasos,
+                COUNT(*) AS registrados
+             FROM prim_assistance pa
+             INNER JOIN t_student s ON s.student_id = pa.student_id
+             WHERE s.section_id BETWEEN 231 AND 263 AND pa.date = ?",
+            [$today]
+        )->getRowArray();
+        $data['asis_hoy'] = $asisHoy ?: ['presentes'=>0,'ausentes'=>0,'con_licencia'=>0,'retrasos'=>0,'registrados'=>0];
+
+        $data['total_alumnos'] = (int)($db->query(
+            "SELECT COUNT(*) AS n FROM t_student WHERE section_id BETWEEN 231 AND 263 AND matricula > 0 AND activo = 1"
+        )->getRow()->n ?? 0);
+
+        // 3b. Asistencia de hoy por curso (¿el maestro ya pasó lista completa?)
+        $seccionesRows = $db->query(
+            "SELECT s.section_id, sec.nick_name,
+                    COUNT(DISTINCT s.student_id) AS total_alumnos,
+                    COUNT(DISTINCT pa.student_id) AS registrados
+             FROM t_student s
+             INNER JOIN section sec ON sec.section_id = s.section_id
+             LEFT JOIN prim_assistance pa ON pa.student_id = s.student_id AND pa.date = ?
+             WHERE s.section_id BETWEEN 231 AND 263 AND s.matricula > 0 AND s.activo = 1
+             GROUP BY s.section_id, sec.nick_name
+             ORDER BY s.section_id",
+            [$today]
+        )->getResultArray();
+
+        $cursos_pendientes = [];
+        $cursos_completos  = 0;
+        foreach ($seccionesRows as $sr) {
+            $completo = ((int)$sr['total_alumnos'] > 0 && (int)$sr['registrados'] >= (int)$sr['total_alumnos']);
+            if ($completo) {
+                $cursos_completos++;
+            } else {
+                $cursos_pendientes[] = $sr;
+            }
+        }
+        $data['cursos_total']       = count($seccionesRows);
+        $data['cursos_completos']   = $cursos_completos;
+        $data['cursos_pendientes']  = $cursos_pendientes;
+
+        // 4. Ausencias sin justificar (trimestre activo)
+        $data['sin_justificar'] = 0;
+        if ($data['phase_ini'] && $data['phase_fin']) {
+            $data['sin_justificar'] = (int)($db->query(
+                "SELECT COUNT(DISTINCT pa.student_id) AS n
+                 FROM prim_assistance pa
+                 INNER JOIN t_student s ON s.student_id = pa.student_id
+                 WHERE s.section_id BETWEEN 231 AND 263
+                   AND pa.status = 0
+                   AND pa.date BETWEEN ? AND ?
+                   AND " . $this->_sinLicenciaSubquery(),
+                [$data['phase_ini'], $data['phase_fin']]
+            )->getRow()->n ?? 0);
+        }
+
+        // 5. Cambios de recojo aprobados para hoy (separado de los pendientes)
+        //    Reutiliza el mismo query que respalda la tabla de secretary/prim_cambio_recojo,
+        //    filtrado al día de hoy y a los ya aprobados.
+        $RecojoMod = new \App\Models\PrimCambioRecojoModel();
+        $recojoHoy = $RecojoMod->listarData($today, $today, 'approved', '');
+        $data['recojo_hoy']       = $recojoHoy;
+        $data['recojo_hoy_count'] = count($recojoHoy);
+
+        // 5b. Cambios de recojo pendientes de aprobar (cualquier fecha)
+        $data['recojo_pend_count'] = count($RecojoMod->listarData('', '', 'pending', ''));
+
+        $data['page_name']  = 'prim_dashboard';
+        $data['page_title'] = 'Panel General — Primaria';
+        return view('backend/index', $data);
+    }
+
+    // ── Asistencia del Día ───────────────────────────────────────────────────
+
+    public function prim_asistencia()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $data = $this->_primSecretaryData();
+        $data['page_name']  = 'prim_asistencia';
+        $data['page_title'] = 'Asistencia del Día — Primaria';
+        return view('backend/index', $data);
+    }
+
+    public function prim_asistencia_data()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $date = $this->request->getPost('date');
+        if (!$date) return $this->response->setJSON([]);
+
+        $db = \Config\Database::connect('asistencia');
+
+        // Asistencia diaria de primaria 3-6 para la fecha
+        $att_rows = $db->query(
+            "SELECT pa.student_id, pa.status, pa.observation,
+                    pa.registered_by_nombre, pa.registered_by_rol, pa.registered_by_fecha
+             FROM prim_assistance pa
+             INNER JOIN t_student s ON s.student_id = pa.student_id
+             WHERE s.section_id BETWEEN 231 AND 263 AND pa.date = ?",
+            [$date]
+        )->getResultArray();
+        $att_map = array_column($att_rows, null, 'student_id');
+
+        // Licencias por día (ausencia completa)
+        $lic_dia = $db->query(
+            "SELECT l.student_id, mo.motivo, l.es_excepcion
+             FROM prim_licencias l
+             INNER JOIN prim_licencias_dia ld ON ld.licencias_id = l.licencias_id
+             INNER JOIN t_student s ON s.student_id = l.student_id
+             INNER JOIN t_motivos mo ON mo.motivo_id = l.motivo_id
+             WHERE s.section_id BETWEEN 231 AND 263
+               AND ld.fecha_inicio <= ? AND ld.fecha_fin >= ?",
+            [$date, $date]
+        )->getResultArray();
+        $lic_dia_map = array_column($lic_dia, null, 'student_id');
+
+        // Salidas anticipadas del día
+        $lic_sal = $db->query(
+            "SELECT DISTINCT l.student_id, l.hora_salida, mo.motivo, l.es_excepcion
+             FROM prim_licencias l
+             INNER JOIN prim_licencias_periodo lp ON lp.licencias_id = l.licencias_id
+             INNER JOIN t_student s ON s.student_id = l.student_id
+             INNER JOIN t_motivos mo ON mo.motivo_id = l.motivo_id
+             WHERE s.section_id BETWEEN 231 AND 263 AND lp.fecha = ?",
+            [$date]
+        )->getResultArray();
+        $lic_sal_map = array_column($lic_sal, null, 'student_id');
+
+        return $this->response->setJSON([
+            'attendance' => $att_map,
+            'lic_dia'    => $lic_dia_map,
+            'lic_sal'    => $lic_sal_map,
+        ]);
+    }
+
+    /**
+     * Valida y guarda (o corrige) el registro diario de asistencia de un alumno.
+     * Devuelve false si el alumno no es de primaria 3-6, si el status no es válido,
+     * o si el día ya está cubierto por una licencia de día aprobada (en ese caso el
+     * estado es automático y no se puede pisar a mano — hay que modificar la
+     * licencia en Gestión de Licencias).
+     */
+    private function _guardarAsistenciaAlumno($db, int $student_id, string $date, int $status, ?string $obs, string $nombre, string $rol, ?int $registeredBy): bool
+    {
+        return (new \App\Models\PrimAssistancesubjectModel())
+            ->guardarAsistenciaDiaria($student_id, $date, $status, $obs, $nombre, $rol, $registeredBy);
+    }
+
+    /**
+     * Permite a secretaría/dirección registrar o corregir en un solo paso la
+     * asistencia diaria (Presente/Ausente/Retraso) de varios alumnos de primaria,
+     * en respaldo de lo que registra el profesor.
+     */
+    public function prim_asistencia_save_bulk()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $date = $this->request->getPost('date');
+        $rows = $this->request->getPost('rows');
+        if (!$date || empty($rows) || !is_array($rows)) {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Datos inválidos.']);
+        }
+
+        $db     = \Config\Database::connect('asistencia');
+        $nombre = $session->get('name');
+        $rol    = $session->get('login_type') === 'manager' ? 'Dirección Técnica' : 'Secretaría';
+        $regBy  = $session->get('secretary_id') ?: $session->get('manager_id');
+
+        $saved    = 0;
+        $omitidos = 0;
+
+        foreach ($rows as $student_id => $row) {
+            $status = (int)($row['status'] ?? -1);
+            $obs    = trim($row['observation'] ?? '') ?: null;
+
+            $ok = $this->_guardarAsistenciaAlumno($db, (int)$student_id, $date, $status, $obs, $nombre, $rol, $regBy);
+            $ok ? $saved++ : $omitidos++;
+        }
+
+        if ($saved > 0) {
+            $Setting  = new SettingModel();
+            $phase_id = $Setting->get_phase_id();
+            $phaseRow = \Config\Database::connect('tiquipaya')
+                ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$phase_id])
+                ->getRowArray();
+            if ($phaseRow) {
+                $CupoMod = new \App\Models\PrimCupoModel();
+                foreach (array_keys($rows) as $sid) {
+                    $CupoMod->verificarYGenerarAlertas((int)$sid, $phase_id, $phaseRow['inicio'], $phaseRow['fin']);
+                }
+            }
+        }
+
+        return $this->response->setJSON([
+            'ok'       => true,
+            'saved'    => $saved,
+            'omitidos' => $omitidos,
+        ]);
+    }
+
+    /**
+     * Cupo consumido en el rango de fechas, por alumno, para todas las secciones
+     * de primaria 3ro-6to. Reutilizado por el resumen del trimestre y la grilla del mes.
+     */
+    private function _cupoMapRango($db, string $fecha_ini, string $fecha_fin): array
+    {
+        $CupoMod  = new \App\Models\PrimCupoModel();
+        $cupo_map = [];
+        $seccionesRango = $db->query(
+            "SELECT DISTINCT section_id FROM t_student
+             WHERE section_id BETWEEN 231 AND 263 AND matricula > 0 AND activo = 1"
+        )->getResultArray();
+        foreach ($seccionesRango as $s) {
+            $resumenSeccion = $CupoMod->resumenSeccion((int)$s['section_id'], $fecha_ini, $fecha_fin);
+            foreach ($resumenSeccion as $r) {
+                $cupo_map[$r['student_id']] = round((float)$r['total'], 1);
+            }
+        }
+        return $cupo_map;
+    }
+
+    public function prim_asistencia_resumen()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $fecha_ini = $this->request->getPost('fecha_ini');
+        $fecha_fin = $this->request->getPost('fecha_fin');
+        if (!$fecha_ini || !$fecha_fin) return $this->response->setJSON([]);
+
+        $db = \Config\Database::connect('asistencia');
+
+        // Conteos de asistencia por estudiante en el rango
+        $rows = $db->query(
+            "SELECT pa.student_id,
+                    SUM(CASE WHEN pa.status = 1 THEN 1 ELSE 0 END) AS dias_presente,
+                    SUM(CASE WHEN pa.status = 0 THEN 1 ELSE 0 END) AS dias_ausente,
+                    SUM(CASE WHEN pa.status = 2 THEN 1 ELSE 0 END) AS dias_licencia,
+                    SUM(CASE WHEN pa.status = 3 THEN 1 ELSE 0 END) AS dias_retraso,
+                    COUNT(*) AS dias_registrados
+             FROM prim_assistance pa
+             INNER JOIN t_student s ON s.student_id = pa.student_id
+             WHERE s.section_id BETWEEN 231 AND 263
+               AND pa.date BETWEEN ? AND ?
+             GROUP BY pa.student_id",
+            [$fecha_ini, $fecha_fin]
+        )->getResultArray();
+        $asis_map = array_column($rows, null, 'student_id');
+
+        return $this->response->setJSON([
+            'asistencia' => $asis_map,
+            'cupo'       => $this->_cupoMapRango($db, $fecha_ini, $fecha_fin),
+        ]);
+    }
+
+    /**
+     * Grilla de asistencia por fecha (una columna por día) para la vista "Mes".
+     * Devuelve el estado diario de cada alumno además del cupo consumido en el rango.
+     */
+    public function prim_asistencia_mes_data()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $fecha_ini = $this->request->getPost('fecha_ini');
+        $fecha_fin = $this->request->getPost('fecha_fin');
+        if (!$fecha_ini || !$fecha_fin) return $this->response->setJSON([]);
+
+        $db = \Config\Database::connect('asistencia');
+
+        $rows = $db->query(
+            "SELECT pa.student_id, pa.date, pa.status
+             FROM prim_assistance pa
+             INNER JOIN t_student s ON s.student_id = pa.student_id
+             WHERE s.section_id BETWEEN 231 AND 263
+               AND pa.date BETWEEN ? AND ?",
+            [$fecha_ini, $fecha_fin]
+        )->getResultArray();
+
+        $dias_map = [];
+        foreach ($rows as $r) {
+            $dias_map[$r['student_id']][$r['date']] = (int)$r['status'];
+        }
+
+        return $this->response->setJSON([
+            'dias' => $dias_map,
+            'cupo' => $this->_cupoMapRango($db, $fecha_ini, $fecha_fin),
+        ]);
+    }
+
+    // ── Gestión de Licencias ─────────────────────────────────────────────────
+
+    public function prim_licencias()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $data = $this->_primSecretaryData();
+
+        $students_flat = [];
+        foreach ($data['grouped'] as $sid => $alumnos) {
+            foreach ($alumnos as $a) {
+                $sectionLabel = '';
+                foreach ($data['sections'] as $sec) {
+                    if ($sec['section_id'] == $sid) { $sectionLabel = $sec['nick_name']; break; }
+                }
+                $students_flat[] = array_merge($a, ['section_id' => $sid, 'nick_name' => $sectionLabel]);
+            }
+        }
+
+        $data['students_flat'] = $students_flat;
+        $data['motivos']       = (new MotivoModel())->listarMotivos();
+        $data['medios']        = (new MedioModel())->listarMedios();
+        $data['parentescos']   = (new ParentescoModel())->listarParentescos();
+        $data['page_name']  = 'prim_licencias';
+        $data['page_title'] = 'Gestión de Licencias — Primaria';
+        return view('backend/index', $data);
+    }
+
+    public function prim_licencias_periodo_add()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $data = $this->_primSecretaryData();
+
+        $students_flat = [];
+        foreach ($data['grouped'] as $sid => $alumnos) {
+            foreach ($alumnos as $a) {
+                $sectionLabel = '';
+                foreach ($data['sections'] as $sec) {
+                    if ($sec['section_id'] == $sid) { $sectionLabel = $sec['nick_name']; break; }
+                }
+                $students_flat[] = array_merge($a, ['section_id' => $sid, 'nick_name' => $sectionLabel]);
+            }
+        }
+
+        $data['students_flat'] = $students_flat;
+        $data['motivos']       = (new MotivoModel())->listarMotivos();
+        $data['medios']        = (new MedioModel())->listarMedios();
+        $data['parentescos']   = (new ParentescoModel())->listarParentescos();
+        $data['page_name']  = 'prim_licencias_periodo_add';
+        $data['page_title'] = 'Nueva Licencia por Período — Primaria';
+        return view('backend/index', $data);
+    }
+
+    public function prim_licencias_data()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $search    = $this->request->getPost('search') ?? '';
+        $estado    = $this->request->getPost('estado') ?? 'all';
+        $Setting   = new SettingModel();
+        $phaseRowL = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$Setting->get_phase_id()])
+            ->getRowArray();
+        $ph_ini = $phaseRowL['inicio'] ?? date('Y-m-01');
+        $ph_fin = $phaseRowL['fin']    ?? date('Y-m-d');
+        $fecha_ini = $this->request->getPost('fecha_ini') ?: $ph_ini;
+        $fecha_fin = $this->request->getPost('fecha_fin') ?: $ph_fin;
+
+        // Clamp al trimestre activo
+        if ($fecha_ini < $ph_ini) $fecha_ini = $ph_ini;
+        if ($fecha_fin > $ph_fin) $fecha_fin = $ph_fin;
+
+        $db  = \Config\Database::connect('asistencia');
+        $where = "WHERE s.section_id BETWEEN 231 AND 263";
+
+        if ($fecha_ini && $fecha_fin) {
+            $where .= " AND DATE(l.fecha_solicitud) BETWEEN " .
+                $db->escape($fecha_ini) . " AND " . $db->escape($fecha_fin);
+        }
+        if ($estado === 'pending')  $where .= " AND l.enviado = 0";
+        if ($estado === 'approved') $where .= " AND l.enviado = 1";
+        if ($estado === 'rejected') $where .= " AND l.enviado = 2";
+        if ($estado === 'deleted')  $where .= " AND l.enviado = 3";
+        if (!empty($search)) {
+            $s = $db->escapeString($search);
+            $where .= " AND (CONCAT(s.lastname,' ',s.lastname2,' ',s.name) LIKE '%$s%'
+                        OR sec.nick_name LIKE '%$s%' OR mo.motivo LIKE '%$s%')";
+        }
+
+        $sql = "SELECT l.licencias_id, l.student_id, l.tipo_id, l.fecha_solicitud,
+                    l.enviado, l.es_excepcion, l.fraccion_cupo, l.hora_salida,
+                    l.doc_pendiente, l.comprobante_medico, l.carta_solicitud,
+                    l.recoge_nombre, pr.parentesco AS recoge_parentesco, l.se_reincorpora,
+                    l.obs_secretaria, l.aprobado_por_nombre, l.aprobado_por_rol,
+                    tl.tipo, mo.motivo, l.detalle,
+                    CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
+                    sec.nick_name,
+                    COALESCE(DATE_FORMAT(ld.fecha_inicio,'%d-%m-%Y'), DATE_FORMAT(MIN(lp.fecha),'%d-%m-%Y')) AS inicio,
+                    COALESCE(DATE_FORMAT(ld.fecha_fin,'%d-%m-%Y'), '') AS fin,
+                    ld.cantidad_dias,
+                    GROUP_CONCAT(DISTINCT per.periodo ORDER BY per.hora_inicio SEPARATOR ', ') AS periodos_nombre
+                FROM prim_licencias l
+                INNER JOIN t_student s       ON s.student_id = l.student_id
+                INNER JOIN section sec        ON sec.section_id = s.section_id
+                INNER JOIN t_tipo_licencia tl ON tl.tipo_id = l.tipo_id
+                INNER JOIN t_motivos mo       ON mo.motivo_id = l.motivo_id
+                LEFT JOIN prim_licencias_dia ld    ON ld.licencias_id = l.licencias_id
+                LEFT JOIN prim_licencias_periodo lp ON lp.licencias_id = l.licencias_id
+                LEFT JOIN periodo per          ON per.periodo_id = lp.periodo_id
+                LEFT JOIN t_parentesco pr     ON pr.parentesco_id = l.recoge_parentesco_id
+                $where
+                GROUP BY l.licencias_id, l.student_id, l.tipo_id, l.fecha_solicitud,
+                    l.enviado, l.es_excepcion, l.fraccion_cupo, l.hora_salida,
+                    l.doc_pendiente, l.comprobante_medico, l.carta_solicitud,
+                    l.recoge_nombre, pr.parentesco, l.se_reincorpora, l.obs_secretaria,
+                    l.aprobado_por_nombre, l.aprobado_por_rol,
+                    tl.tipo, mo.motivo, l.detalle,
+                    s.lastname, s.lastname2, s.name, sec.nick_name,
+                    ld.fecha_inicio, ld.fecha_fin, ld.cantidad_dias
+                ORDER BY l.fecha_solicitud DESC
+                LIMIT 500";
+
+        $rows = $db->query($sql)->getResultArray();
+        return $this->response->setJSON($rows);
+    }
+
+    public function prim_licencias_auth()
+    {
+        $session    = session();
+        $emailSecre = $session->get('email');
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $licencia_id    = (int)$this->request->getPost('licencias_id');
+        $student_id     = (int)$this->request->getPost('student_id');
+        $obs_secretaria = trim($this->request->getPost('obs_secretaria') ?? '');
+        $es_excepcion   = $this->request->getPost('es_excepcion');
+
+        $PrimLicMod = new \App\Models\PrimLicenciaModel();
+        $licencia   = $PrimLicMod->getLicenciaPrim($licencia_id);
+
+        if (empty($licencia)) {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Licencia no encontrada']);
+        }
+        $lic = $licencia[0];
+
+        // Emails de familia y sección
+        $FamilyMod     = new FamilyModel();
+        $SectionMod    = new SectionModel();
+        $family        = $FamilyMod->get_family_emails($lic['student_id']);
+        $emailsSection = $SectionMod->section_emails($lic['section_id']);
+
+        $email1         = $family[0]['email1']              ?? '';
+        $email2         = $family[0]['email2']              ?? '';
+        $emailConsejero = $emailsSection[0]['emailDocente'] ?? '';
+
+        $inicio = $lic['tipo_id'] == 2 ? ($lic['fecha_periodo'] ?? '') : ($lic['fecha_inicio'] ?? '');
+        $fin    = $lic['tipo_id'] == 2 ? ($lic['periodos_nombre'] ?? '') : ($lic['fecha_fin'] ?? '');
+
+        $EmailMod = new EmailModel();
+        $mensaje  = $EmailMod->license_auth_email(
+            $lic['student'], $lic['tipo_id'], $inicio, $fin,
+            $lic['detalle'], $lic['motivo'], $lic['solicitante'], $lic['fecha_solicitud']
+        );
+
+        // Inyectar nota de secretaria en el email si la escribió
+        if ($obs_secretaria !== '') {
+            $nota = '<div style="margin:15px 0;padding:12px 16px;background:#f0fff4;border-left:4px solid #50cd89;border-radius:4px;">'
+                  . '<strong>Nota de Secretaría:</strong> ' . htmlspecialchars($obs_secretaria)
+                  . '</div>';
+            $mensaje = str_replace('</body>', $nota . '</body>', $mensaje);
+        }
+
+        $subject = 'Licencia aprobada: ' . $lic['motivo'] . ' — U.E. Tiquipaya';
+        $to      = trim($email1 . ($email2 ? ', ' . $email2 : ''), ', ');
+        $to     .= ($emailConsejero ? ', ' . $emailConsejero : '')
+                 . ', ' . $emailSecre . ', saat@tiquipaya.edu.bo';
+
+        $headers   = [];
+        $headers[] = 'MIME-Version: 1.0';
+        $headers[] = 'Content-type: text/html; charset=utf-8';
+        $headers[] = 'From: Secretaria <' . $emailSecre . '>';
+        $mailSent  = @mail($to, $subject, $mensaje, implode("\r\n", $headers));
+
+        $PrimLicMod->updateEnviado($licencia_id, 1);
+        $datosAprobacion = [
+            'aprobado_por_nombre' => $session->get('name'),
+            'aprobado_por_rol'    => $session->get('login_type') === 'manager' ? 'Dirección Técnica' : 'Secretaría',
+        ];
+        if ($obs_secretaria !== '') $datosAprobacion['obs_secretaria'] = $obs_secretaria;
+        if ($es_excepcion !== null) {
+            $esExcepcionInt = (int)$es_excepcion ? 1 : 0;
+            $datosAprobacion['es_excepcion']  = $esExcepcionInt;
+            // Recalcular fraccion_cupo según la decisión de secretaría: si deja de ser
+            // excepción, vuelve a consumir cupo (días completos para tipo día; para
+            // período se recalcula la duración real de los períodos marcados, igual
+            // que al crear la licencia — no se asume ½ día a ciegas).
+            if ($esExcepcionInt) {
+                $datosAprobacion['fraccion_cupo'] = 0;
+            } elseif ($lic['tipo_id'] == 1) {
+                $datosAprobacion['fraccion_cupo'] = (float)($lic['cantidad_dias'] ?? 1);
+            } else {
+                // Cada período cuenta como 1 hora: más de 2 períodos = 1 día completo.
+                $cantPeriodos = (int) (\Config\Database::connect('asistencia')
+                    ->table('prim_licencias_periodo')
+                    ->where('licencias_id', $licencia_id)
+                    ->countAllResults());
+                $datosAprobacion['fraccion_cupo'] = ($cantPeriodos > 2) ? 1.0 : 0.5;
+            }
+        }
+        \Config\Database::connect('asistencia')
+            ->table('prim_licencias')
+            ->where('licencias_id', $licencia_id)
+            ->update($datosAprobacion);
+
+        // Sincronizar prim_assistance: marcar días cubiertos como "Licencia" (status=2),
+        // sin importar si el maestro ya lo había registrado como Ausente o Presente/Retraso
+        // (el día completo queda excusado). Si no había ningún registro ese día, no hay
+        // nada que corregir todavía; se marcará solo cuando el maestro pase lista.
+        if ($lic['tipo_id'] == 1 && !empty($lic['fecha_inicio']) && !empty($lic['fecha_fin'])) {
+            $dbAsis = \Config\Database::connect('asistencia');
+            $dayPtr = new \DateTime($lic['fecha_inicio']);
+            $dayEnd = new \DateTime($lic['fecha_fin']);
+            $dayEnd->modify('+1 day');
+            while ($dayPtr < $dayEnd) {
+                $dbAsis->table('prim_assistance')
+                    ->where('student_id', $lic['student_id'])
+                    ->where('date', $dayPtr->format('Y-m-d'))
+                    ->where('status !=', 2)
+                    ->update(['status' => 2]);
+                $dayPtr->modify('+1 day');
+            }
+        }
+
+        return $this->response->setJSON([
+            'ok'      => true,
+            'enviado' => $mailSent,
+            'msg'     => $mailSent ? '' : 'Aprobada, pero el correo no pudo enviarse.',
+        ]);
+    }
+
+    public function prim_licencias_noauth()
+    {
+        $session    = session();
+        $emailSecre = $session->get('email');
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $licencia_id    = (int)$this->request->getPost('licencias_id');
+        $student_id     = (int)$this->request->getPost('student_id');
+        $obs_secretaria = trim($this->request->getPost('obs_secretaria') ?? '');
+
+        $PrimLicMod = new \App\Models\PrimLicenciaModel();
+        $licencia   = $PrimLicMod->getLicenciaPrim($licencia_id);
+
+        if (empty($licencia)) {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Licencia no encontrada']);
+        }
+        $lic = $licencia[0];
+
+        $FamilyMod     = new FamilyModel();
+        $SectionMod    = new SectionModel();
+        $family        = $FamilyMod->get_family_emails($lic['student_id']);
+        $emailsSection = $SectionMod->section_emails($lic['section_id']);
+
+        $email1         = $family[0]['email1']              ?? '';
+        $email2         = $family[0]['email2']              ?? '';
+        $emailConsejero = $emailsSection[0]['emailDocente'] ?? '';
+
+        $inicio = $lic['tipo_id'] == 2 ? ($lic['fecha_periodo'] ?? '') : ($lic['fecha_inicio'] ?? '');
+        $fin    = $lic['tipo_id'] == 2 ? ($lic['periodos_nombre'] ?? '') : ($lic['fecha_fin'] ?? '');
+
+        $EmailMod = new EmailModel();
+        $mensaje  = $EmailMod->license_noauth_email(
+            $lic['student'], $lic['tipo_id'], $inicio, $fin,
+            $lic['detalle'], $lic['motivo'], $lic['solicitante'], $lic['fecha_solicitud']
+        );
+
+        // Inyectar motivo de rechazo si lo escribió
+        if ($obs_secretaria !== '') {
+            $nota = '<div style="margin:15px 0;padding:12px 16px;background:#fff0f2;border-left:4px solid #f1416c;border-radius:4px;">'
+                  . '<strong>Motivo del rechazo:</strong> ' . htmlspecialchars($obs_secretaria)
+                  . '</div>';
+            $mensaje = str_replace('</body>', $nota . '</body>', $mensaje);
+        }
+
+        $subject = 'Licencia no aprobada: ' . $lic['motivo'] . ' — U.E. Tiquipaya';
+        $to      = trim($email1 . ($email2 ? ', ' . $email2 : ''), ', ');
+        $to     .= ($emailConsejero ? ', ' . $emailConsejero : '')
+                 . ', ' . $emailSecre . ', saat@tiquipaya.edu.bo';
+
+        $headers   = [];
+        $headers[] = 'MIME-Version: 1.0';
+        $headers[] = 'Content-type: text/html; charset=utf-8';
+        $headers[] = 'From: Secretaria <' . $emailSecre . '>';
+        $mailSent  = @mail($to, $subject, $mensaje, implode("\r\n", $headers));
+
+        $PrimLicMod->updateEnviado($licencia_id, 2);
+        $datosRechazo = [
+            'aprobado_por_nombre' => $session->get('name'),
+            'aprobado_por_rol'    => $session->get('login_type') === 'manager' ? 'Dirección Técnica' : 'Secretaría',
+        ];
+        if ($obs_secretaria !== '') $datosRechazo['obs_secretaria'] = $obs_secretaria;
+        \Config\Database::connect('asistencia')
+            ->table('prim_licencias')
+            ->where('licencias_id', $licencia_id)
+            ->update($datosRechazo);
+
+        // Revertir prim_assistance: si la licencia ya estaba aprobada y marcó días
+        // como "Licencia" (status=2), al rechazarla vuelven a quedar como "Ausente" (status=0)
+        if ($lic['tipo_id'] == 1 && !empty($lic['fecha_inicio']) && !empty($lic['fecha_fin'])) {
+            $dbAsis = \Config\Database::connect('asistencia');
+            $dayPtr = new \DateTime($lic['fecha_inicio']);
+            $dayEnd = new \DateTime($lic['fecha_fin']);
+            $dayEnd->modify('+1 day');
+            while ($dayPtr < $dayEnd) {
+                $dbAsis->table('prim_assistance')
+                    ->where('student_id', $lic['student_id'])
+                    ->where('date', $dayPtr->format('Y-m-d'))
+                    ->where('status', 2)
+                    ->update(['status' => 0]);
+                $dayPtr->modify('+1 day');
+            }
+        }
+
+        return $this->response->setJSON([
+            'ok'      => true,
+            'enviado' => $mailSent,
+            'msg'     => $mailSent ? '' : 'Rechazada, pero el correo no pudo enviarse.',
+        ]);
+    }
+
+    public function prim_licencias_waive_doc()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $licencia_id = (int)$this->request->getPost('licencias_id');
+        if (!$licencia_id)
+            return $this->response->setJSON(['ok' => false, 'msg' => 'ID inválido']);
+
+        \Config\Database::connect('asistencia')
+            ->table('prim_licencias')
+            ->where('licencias_id', $licencia_id)
+            ->update(['doc_pendiente' => 0]);
+
+        return $this->response->setJSON(['ok' => true]);
+    }
+
+    /**
+     * Elimina (soft-delete, enviado=3) una licencia de primaria, en cualquier estado.
+     * Si estaba aprobada y había marcado días como "Licencia" en prim_assistance,
+     * revierte esos días a "Ausente" — igual que al rechazar una ya aprobada.
+     */
+    public function prim_licencias_delete()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $licencia_id = (int)$this->request->getPost('licencias_id');
+        $obs         = trim($this->request->getPost('obs_secretaria') ?? '');
+        if (!$licencia_id) return $this->response->setJSON(['ok' => false, 'msg' => 'ID inválido']);
+
+        $PrimLicMod = new \App\Models\PrimLicenciaModel();
+        $licencia   = $PrimLicMod->getLicenciaPrim($licencia_id);
+        if (empty($licencia)) return $this->response->setJSON(['ok' => false, 'msg' => 'Licencia no encontrada']);
+        $lic = $licencia[0];
+
+        if ($lic['enviado'] == 1 && $lic['tipo_id'] == 1 && !empty($lic['fecha_inicio']) && !empty($lic['fecha_fin'])) {
+            $dbAsis = \Config\Database::connect('asistencia');
+            $dayPtr = new \DateTime($lic['fecha_inicio']);
+            $dayEnd = new \DateTime($lic['fecha_fin']);
+            $dayEnd->modify('+1 day');
+            while ($dayPtr < $dayEnd) {
+                $dbAsis->table('prim_assistance')
+                    ->where('student_id', $lic['student_id'])
+                    ->where('date', $dayPtr->format('Y-m-d'))
+                    ->where('status', 2)
+                    ->update(['status' => 0]);
+                $dayPtr->modify('+1 day');
+            }
+        }
+
+        // Queda registrado quién y cuándo eliminó, para que secretaría pueda auditar
+        // qué pasó con la solicitud (visible en la pestaña "Eliminadas").
+        $datosEliminacion = [
+            'enviado'             => 3,
+            'aprobado_por_nombre' => $session->get('name'),
+            'aprobado_por_rol'    => $session->get('login_type') === 'manager' ? 'Dirección Técnica' : 'Secretaría',
+        ];
+        if ($obs !== '') $datosEliminacion['obs_secretaria'] = $obs;
+        \Config\Database::connect('asistencia')
+            ->table('prim_licencias')
+            ->where('licencias_id', $licencia_id)
+            ->update($datosEliminacion);
+
+        return $this->response->setJSON(['ok' => true]);
+    }
+
+    // ── Nueva Licencia Primaria (Días) ───────────────────────────────────────
+
+    public function prim_licencias_create()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $student_id    = (int)$this->request->getPost('student_id');
+        $motivo_id     = (int)$this->request->getPost('motivo');
+        $medio_id      = (int)$this->request->getPost('medio');
+        $parentesco_id = (int)$this->request->getPost('parentesco');
+        $solicitante   = trim($this->request->getPost('solicitante') ?? '');
+        $detalle       = trim($this->request->getPost('detalle') ?? '');
+        $fecha_inicio  = $this->request->getPost('fecha_inicio');
+        $fecha_fin     = $this->request->getPost('fecha_fin');
+        $cantidad      = (int)($this->request->getPost('cantidad') ?? 1);
+        $es_excepcion  = (int)($this->request->getPost('es_excepcion') ?? 0);
+        $fechaStr      = $this->request->getPost('fechaSolicita');
+        $fecha_solicitud = date('Y-m-d H:i:s', strtotime(str_replace('T', ' ', $fechaStr) . ':00'));
+
+        $fraccion_cupo = $es_excepcion ? 0 : $cantidad;
+
+        // Cupo trimestral: si el alumno ya está en el límite de 9 días, no se
+        // permite registrar más licencias salvo que se marque como excepción.
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $phaseRow = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$phase_id])
+            ->getRowArray();
+        if (!$es_excepcion && $phaseRow) {
+            $cupoActual = (new \App\Models\PrimCupoModel())->calcularCupo(
+                $student_id, $phaseRow['inicio'], $phaseRow['fin']
+            );
+            if ($cupoActual['limite9']) {
+                return $this->response->setJSON([
+                    'ok'  => false,
+                    'msg' => '⚠️ Este alumno ya alcanzó el límite de 9 días de licencia para este trimestre y no podrá solicitar más licencias durante el resto del trimestre. Las actividades no serán reprogramadas. Para continuar, marca esta solicitud como Excepción.',
+                ]);
+            }
+        }
+
+        $db = \Config\Database::connect('asistencia');
+        $db->transBegin();
+
+        $db->table('prim_licencias')->insert([
+            'student_id'     => $student_id,
+            'tipo_id'        => 1,
+            'motivo_id'      => $motivo_id,
+            'medio_id'       => $medio_id,
+            'parentesco_id'  => $parentesco_id,
+            'solicitante'    => $solicitante,
+            'detalle'        => $detalle,
+            'enviado'        => 0,
+            'es_excepcion'   => $es_excepcion,
+            'fraccion_cupo'  => $fraccion_cupo,
+            'fecha_solicitud'=> $fecha_solicitud,
+        ]);
+        $licencias_id = $db->insertID();
+
+        if ($licencias_id) {
+            $db->table('prim_licencias_dia')->insert([
+                'licencias_id'  => $licencias_id,
+                'fecha_inicio'  => date('Y-m-d', strtotime($fecha_inicio)),
+                'fecha_fin'     => date('Y-m-d', strtotime($fecha_fin)),
+                'cantidad_dias' => $cantidad,
+            ]);
+        }
+
+        if ($db->transStatus() === false) {
+            $db->transRollback();
+            $licencias_id = 0;
+        } else {
+            $db->transCommit();
+        }
+
+        if ($licencias_id) {
+            // Verificar alertas de cupo
+            if ($phaseRow && !$es_excepcion) {
+                (new \App\Models\PrimCupoModel())->verificarYGenerarAlertas(
+                    $student_id, $phase_id, $phaseRow['inicio'], $phaseRow['fin']
+                );
+            }
+
+            return $this->response->setJSON(['ok' => true]);
+        }
+
+        return $this->response->setJSON(['ok' => false, 'msg' => 'Error al registrar la licencia.']);
+    }
+
+    // ── Nueva Licencia por Período Primaria ─────────────────────────────────
+
+    public function prim_licencias_periodo_create()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $student_id    = (int)$this->request->getPost('student_id');
+        $motivo_id     = (int)$this->request->getPost('motivo');
+        $medio_id      = (int)$this->request->getPost('medio');
+        $parentesco_id = (int)$this->request->getPost('parentesco');
+        $solicitante   = trim($this->request->getPost('solicitante') ?? '');
+        $detalle       = trim($this->request->getPost('detalle') ?? '');
+        $fecha         = $this->request->getPost('fecha');
+        $hora_salida   = $this->request->getPost('hora_salida') ?: null;
+        $periodos      = $this->request->getPost('periodos') ?? [];
+        if (!is_array($periodos)) {
+            $periodos = ($periodos === null || $periodos === '') ? [] : [$periodos];
+        }
+        $es_excepcion  = (int)($this->request->getPost('es_excepcion') ?? 0);
+        $fechaStr      = $this->request->getPost('fechaSolicita');
+        $fecha_solicitud = date('Y-m-d H:i:s', strtotime(str_replace('T', ' ', $fechaStr) . ':00'));
+        $recoge_nombre        = trim($this->request->getPost('recoge_nombre') ?? '');
+        $recoge_parentesco_id = (int)($this->request->getPost('recoge_parentesco_id') ?? 0) ?: null;
+        $se_reincorpora       = $this->request->getPost('se_reincorpora') ? 1 : 0;
+
+        if (empty($periodos)) {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Debe seleccionar al menos un período.']);
+        }
+
+        // Calcular fraccion_cupo contando cada período como 1 hora: más de 2
+        // períodos marcados (>2 horas) = 1 día completo de cupo, si no, ½ día.
+        $fraccion_cupo = (count($periodos) > 2) ? 1.0 : 0.5;
+        if ($es_excepcion) $fraccion_cupo = 0;
+
+        // Cupo trimestral: si el alumno ya está en el límite de 9 días, no se
+        // permite registrar más licencias salvo que se marque como excepción.
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $phaseRow = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$phase_id])
+            ->getRowArray();
+        if (!$es_excepcion && $phaseRow) {
+            $cupoActual = (new \App\Models\PrimCupoModel())->calcularCupo(
+                $student_id, $phaseRow['inicio'], $phaseRow['fin']
+            );
+            if ($cupoActual['limite9']) {
+                return $this->response->setJSON([
+                    'ok'  => false,
+                    'msg' => '⚠️ Este alumno ya alcanzó el límite de 9 días de licencia para este trimestre y no podrá solicitar más licencias durante el resto del trimestre. Las actividades no serán reprogramadas. Para continuar, marca esta solicitud como Excepción.',
+                ]);
+            }
+        }
+
+        $db = \Config\Database::connect('asistencia');
+        $db->transBegin();
+
+        $db->table('prim_licencias')->insert([
+            'student_id'            => $student_id,
+            'tipo_id'                => 2,
+            'motivo_id'              => $motivo_id,
+            'medio_id'               => $medio_id,
+            'parentesco_id'          => $parentesco_id,
+            'solicitante'            => $solicitante,
+            'detalle'                => $detalle,
+            'hora_salida'            => $hora_salida,
+            'enviado'                => 0,
+            'es_excepcion'           => $es_excepcion,
+            'fraccion_cupo'          => $fraccion_cupo,
+            'fecha_solicitud'        => $fecha_solicitud,
+            'recoge_nombre'          => $recoge_nombre,
+            'recoge_parentesco_id'   => $recoge_parentesco_id,
+            'se_reincorpora'         => $se_reincorpora,
+        ]);
+        $licencias_id = $db->insertID();
+
+        if ($licencias_id) {
+            foreach ($periodos as $periodo_id) {
+                $db->table('prim_licencias_periodo')->insert([
+                    'licencias_id' => $licencias_id,
+                    'periodo_id'   => (int)$periodo_id,
+                    'fecha'        => date('Y-m-d', strtotime($fecha)),
+                ]);
+            }
+        }
+
+        if ($db->transStatus() === false) {
+            $db->transRollback();
+            $licencias_id = 0;
+        } else {
+            $db->transCommit();
+        }
+
+        if ($licencias_id) {
+            if ($phaseRow && !$es_excepcion) {
+                (new \App\Models\PrimCupoModel())->verificarYGenerarAlertas(
+                    $student_id, $phase_id, $phaseRow['inicio'], $phaseRow['fin']
+                );
+            }
+
+            return $this->response->setJSON(['ok' => true]);
+        }
+
+        return $this->response->setJSON(['ok' => false, 'msg' => 'Error al registrar la licencia por período.']);
+    }
+
+    // ── Cambio de Recojo Primaria ────────────────────────────────────────────
+
+    public function prim_cambio_recojo()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $data = $this->_primSecretaryData();
+
+        $students_flat = [];
+        foreach ($data['grouped'] as $sid => $alumnos) {
+            foreach ($alumnos as $a) {
+                $sectionLabel = '';
+                foreach ($data['sections'] as $sec) {
+                    if ($sec['section_id'] == $sid) { $sectionLabel = $sec['nick_name']; break; }
+                }
+                $students_flat[] = array_merge($a, ['section_id' => $sid, 'nick_name' => $sectionLabel]);
+            }
+        }
+
+        $data['students_flat'] = $students_flat;
+        $data['parentescos']   = (new ParentescoModel())->listarParentescos();
+        $data['page_name']  = 'prim_cambio_recojo';
+        $data['page_title'] = 'Cambio de Recojo — Primaria';
+        return view('backend/index', $data);
+    }
+
+    public function prim_cambio_recojo_data()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $search    = $this->request->getPost('search') ?? '';
+        $estado    = $this->request->getPost('estado') ?? 'pending';
+        $fecha_ini = $this->request->getPost('fecha_ini') ?: date('Y-m-d', strtotime('-30 days'));
+        $fecha_fin = $this->request->getPost('fecha_fin') ?: date('Y-m-d');
+
+        $rows = (new \App\Models\PrimCambioRecojoModel())->listarData($fecha_ini, $fecha_fin, $estado, $search);
+        return $this->response->setJSON($rows);
+    }
+
+    public function prim_cambio_recojo_auth()
+    {
+        $session    = session();
+        $emailSecre = $session->get('email');
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $id  = (int)$this->request->getPost('cambio_id');
+        $obs = trim($this->request->getPost('obs_secretaria') ?? '');
+        if (!$id) return $this->response->setJSON(['ok' => false, 'msg' => 'ID inválido']);
+
+        $RecojoMod = new \App\Models\PrimCambioRecojoModel();
+        $cambio    = $RecojoMod->getCambioRecojo($id);
+        if (empty($cambio)) return $this->response->setJSON(['ok' => false, 'msg' => 'Registro no encontrado']);
+        $c = $cambio[0];
+
+        $mailSent = $this->_enviarCorreoRecojo($c, $obs, true, $emailSecre);
+
+        $RecojoMod->actualizarEstado($id, 1, $obs !== '' ? $obs : null);
+        return $this->response->setJSON([
+            'ok'      => true,
+            'enviado' => $mailSent,
+            'msg'     => $mailSent ? '' : 'Aprobado, pero el correo no pudo enviarse.',
+        ]);
+    }
+
+    public function prim_cambio_recojo_noauth()
+    {
+        $session    = session();
+        $emailSecre = $session->get('email');
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $id  = (int)$this->request->getPost('cambio_id');
+        $obs = trim($this->request->getPost('obs_secretaria') ?? '');
+        if (!$id) return $this->response->setJSON(['ok' => false, 'msg' => 'ID inválido']);
+
+        $RecojoMod = new \App\Models\PrimCambioRecojoModel();
+        $cambio    = $RecojoMod->getCambioRecojo($id);
+        if (empty($cambio)) return $this->response->setJSON(['ok' => false, 'msg' => 'Registro no encontrado']);
+        $c = $cambio[0];
+
+        $mailSent = $this->_enviarCorreoRecojo($c, $obs, false, $emailSecre);
+
+        $RecojoMod->actualizarEstado($id, 2, $obs !== '' ? $obs : null);
+        return $this->response->setJSON([
+            'ok'      => true,
+            'enviado' => $mailSent,
+            'msg'     => $mailSent ? '' : 'Rechazado, pero el correo no pudo enviarse.',
+        ]);
+    }
+
+    /**
+     * Envía el correo de aprobación/rechazo de un aviso de cambio de recojo.
+     * Reutiliza el mismo patrón de destinatarios que las licencias (familia + consejero + secretaría).
+     */
+    private function _enviarCorreoRecojo(array $c, string $obs, bool $aprobado, string $emailSecre): bool
+    {
+        $FamilyMod     = new FamilyModel();
+        $SectionMod    = new SectionModel();
+        $family        = $FamilyMod->get_family_emails($c['student_id']);
+        $emailsSection = $SectionMod->section_emails($c['section_id']);
+
+        $email1         = $family[0]['email1']              ?? '';
+        $email2         = $family[0]['email2']              ?? '';
+        $emailConsejero = $emailsSection[0]['emailDocente'] ?? '';
+
+        $detalleTexto = $c['tipo'] == 1
+            ? 'Recogerá otra persona: ' . $c['persona_nombre'] . ($c['persona_parentesco'] ? ' (' . $c['persona_parentesco'] . ')' : '')
+            : ($c['tipo'] == 2 ? 'No usará transporte escolar' : ('Otro: ' . $c['detalle']));
+
+        $EmailMod = new EmailModel();
+        $mensaje  = $aprobado
+            ? $EmailMod->recojo_auth_email($c['student'], $detalleTexto, $c['solicitante'], $c['fecha'], $obs)
+            : $EmailMod->recojo_noauth_email($c['student'], $detalleTexto, $c['solicitante'], $c['fecha'], $obs);
+
+        $subject = $aprobado
+            ? 'Cambio de Recojo aprobado — U.E. Tiquipaya'
+            : 'Cambio de Recojo no aprobado — U.E. Tiquipaya';
+        $to  = trim($email1 . ($email2 ? ', ' . $email2 : ''), ', ');
+        $to .= ($emailConsejero ? ', ' . $emailConsejero : '') . ', ' . $emailSecre . ', saat@tiquipaya.edu.bo';
+
+        $headers   = [];
+        $headers[] = 'MIME-Version: 1.0';
+        $headers[] = 'Content-type: text/html; charset=utf-8';
+        $headers[] = 'From: Secretaria <' . $emailSecre . '>';
+        return @mail($to, $subject, $mensaje, implode("\r\n", $headers));
+    }
+
+    public function prim_cambio_recojo_create()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $student_id             = (int)$this->request->getPost('student_id');
+        $tipo                   = (int)$this->request->getPost('tipo');
+        $solicitante            = trim($this->request->getPost('solicitante') ?? '');
+        $parentesco_id          = (int)$this->request->getPost('parentesco');
+        $persona_nombre         = trim($this->request->getPost('persona_nombre') ?? '');
+        $persona_parentesco_id  = (int)($this->request->getPost('persona_parentesco_id') ?? 0);
+        $persona_parentesco_otro= trim($this->request->getPost('persona_parentesco_otro') ?? '');
+        $detalle                = trim($this->request->getPost('detalle') ?? '');
+
+        if (!$student_id || !in_array($tipo, [1, 2, 3], true) || $solicitante === '' || !$parentesco_id) {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Complete todos los campos requeridos.']);
+        }
+        if ($tipo === 1 && ($persona_nombre === '' || (!$persona_parentesco_id && $persona_parentesco_otro === ''))) {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Indique el nombre y parentesco de la persona que recogerá al estudiante.']);
+        }
+        if ($tipo === 3 && $detalle === '') {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Describa el motivo del cambio.']);
+        }
+
+        (new \App\Models\PrimCambioRecojoModel())->crear([
+            'student_id'             => $student_id,
+            'fecha'                  => date('Y-m-d'),
+            'tipo'                   => $tipo,
+            'solicitante'            => $solicitante,
+            'parentesco_id'          => $parentesco_id,
+            'persona_nombre'         => $tipo === 1 ? $persona_nombre : null,
+            'persona_parentesco_id'  => ($tipo === 1 && $persona_parentesco_id) ? $persona_parentesco_id : null,
+            'persona_parentesco_otro'=> ($tipo === 1 && !$persona_parentesco_id && $persona_parentesco_otro !== '') ? $persona_parentesco_otro : null,
+            'detalle'                => $detalle !== '' ? $detalle : null,
+            'enviado'                => 1,
+            'obs_secretaria'         => 'Registrado por secretaría vía llamada telefónica.',
+            'fecha_solicitud'        => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->response->setJSON(['ok' => true]);
+    }
+
+    public function prim_cupo_estudiante()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $student_id = (int)$this->request->getPost('student_id');
+        if (!$student_id)
+            return $this->response->setJSON(['error' => 'Sin student_id']);
+
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $phaseRow = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$phase_id])
+            ->getRowArray();
+
+        if (!$phaseRow)
+            return $this->response->setJSON(['error' => 'Sin fase activa']);
+
+        $cupo = (new \App\Models\PrimCupoModel())->calcularCupo(
+            $student_id, $phaseRow['inicio'], $phaseRow['fin']
+        );
+        return $this->response->setJSON($cupo);
+    }
+
+    // ── Retrasos Primaria ────────────────────────────────────────────────────
+
+    public function prim_retrasos_create()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $student_id   = (int)$this->request->getPost('student_id');
+        $section_id   = (int)$this->request->getPost('section_id');
+        $fecha        = $this->request->getPost('fecha');
+        $hora_entrada = $this->request->getPost('hora_entrada') ?: null;
+        $motivo       = trim($this->request->getPost('motivo') ?? 'Sin información');
+        $detalle      = trim($this->request->getPost('detalle') ?? '');
+
+        if (!$student_id || !$fecha) {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Datos incompletos.']);
+        }
+
+        $phase_id = (new SettingModel())->get_phase_id();
+
+        $db = \Config\Database::connect('asistencia');
+        $db->table('prim_retrasos')->insert([
+            'student_id'   => $student_id,
+            'section_id'   => $section_id,
+            'fecha'        => $fecha,
+            'hora_entrada' => $hora_entrada,
+            'motivo'       => $motivo,
+            'detalle'      => $detalle,
+            'phase_id'     => $phase_id,
+            'created_by'   => $session->get('secretary_id') ?: $session->get('manager_id'),
+            'created_at'   => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->response->setJSON(['ok' => true]);
+    }
+
+    public function prim_retrasos_data()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $db = \Config\Database::connect('asistencia');
+
+        $fecha_ini = $this->request->getPost('fecha_ini') ?: date('Y-m-d');
+        $fecha_fin = $this->request->getPost('fecha_fin') ?: date('Y-m-d');
+        $search    = $this->request->getPost('search') ?? '';
+
+        $where  = "WHERE r.fecha BETWEEN ? AND ?";
+        $params = [$fecha_ini, $fecha_fin];
+        if (!empty($search)) {
+            $s = $db->escapeString($search);
+            $where .= " AND (CONCAT(st.lastname,' ',st.lastname2,' ',st.name) LIKE '%$s%'
+                        OR s.nick_name LIKE '%$s%' OR r.motivo LIKE '%$s%')";
+        }
+
+        $rows = $db->query(
+            "SELECT r.fecha, r.hora_entrada, r.motivo, r.detalle,
+                    s.nick_name AS curso,
+                    CONCAT(st.lastname,' ',st.lastname2,' ',st.name) AS alumno
+             FROM prim_retrasos r
+             INNER JOIN section s    ON s.section_id  = r.section_id
+             INNER JOIN t_student st ON st.student_id = r.student_id
+             $where
+             ORDER BY r.fecha DESC, r.hora_entrada",
+            $params
+        )->getResultArray();
+
+        return $this->response->setJSON($rows);
+    }
+
+    public function prim_retrasos()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $data = $this->_primSecretaryData();
+
+        $students_flat = [];
+        foreach ($data['grouped'] as $sid => $alumnos) {
+            foreach ($alumnos as $a) {
+                $sectionLabel = '';
+                foreach ($data['sections'] as $sec) {
+                    if ($sec['section_id'] == $sid) { $sectionLabel = $sec['nick_name']; break; }
+                }
+                $students_flat[] = array_merge($a, ['section_id' => $sid, 'nick_name' => $sectionLabel]);
+            }
+        }
+        $data['students_flat'] = $students_flat;
+
+        $db  = \Config\Database::connect('asistencia');
+
+        $data['retrasos_trimestre'] = $db->query(
+            "SELECT st.student_id,
+                    CONCAT(st.lastname,' ',st.lastname2,' ',st.name) AS alumno,
+                    s.nick_name AS curso,
+                    COUNT(*) AS total_retrasos,
+                    MIN(r.fecha) AS primera_fecha,
+                    MAX(r.fecha) AS ultima_fecha
+             FROM prim_retrasos r
+             INNER JOIN section s    ON s.section_id  = r.section_id
+             INNER JOIN t_student st ON st.student_id = r.student_id
+             WHERE r.phase_id = ?
+             GROUP BY r.student_id, st.lastname, st.lastname2, st.name, s.nick_name
+             ORDER BY total_retrasos DESC, alumno",
+            [$data['phase_id']]
+        )->getResultArray();
+
+        $data['page_name']  = 'prim_retrasos';
+        $data['page_title'] = 'Retrasos — Primaria';
+        return view('backend/index', $data);
+    }
+
+    public function prim_retraso_count()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        $student_id = (int)$this->request->getPost('student_id');
+        if (!$student_id)
+            return $this->response->setJSON(['count' => 0]);
+
+        $phase_id = (new SettingModel())->get_phase_id();
+        $db       = \Config\Database::connect('asistencia');
+        $row      = $db->query(
+            "SELECT COUNT(*) AS n FROM prim_retrasos WHERE student_id = ? AND phase_id = ?",
+            [$student_id, $phase_id]
+        )->getRowArray();
+
+        return $this->response->setJSON(['count' => (int)($row['n'] ?? 0)]);
+    }
+
+    // ── Ausencias sin Licencia ───────────────────────────────────────────────
+
+    public function prim_ausencias()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $data = $this->_primSecretaryData();
+        $data['page_name']  = 'prim_ausencias';
+        $data['page_title'] = 'Ausencias sin Licencia — Primaria';
+        return view('backend/index', $data);
+    }
+
+    public function prim_ausencias_data()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return $this->response->setStatusCode(403);
+
+        // Usar fechas del trimestre activo como fallback
+        $Setting  = new SettingModel();
+        $phaseRow = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$Setting->get_phase_id()])
+            ->getRowArray();
+        $phase_ini_default = $phaseRow['inicio'] ?? date('Y-m-01');
+        $phase_fin_default = $phaseRow['fin']    ?? date('Y-m-d');
+
+        $fecha_ini = $this->request->getPost('fecha_ini') ?: $phase_ini_default;
+        $fecha_fin = $this->request->getPost('fecha_fin') ?: $phase_fin_default;
+
+        // Clamp: no permitir fechas fuera del trimestre activo
+        if ($fecha_ini < $phase_ini_default) $fecha_ini = $phase_ini_default;
+        if ($fecha_fin > $phase_fin_default) $fecha_fin = $phase_fin_default;
+        $search = $this->request->getPost('search') ?? '';
+        $todos  = $this->request->getPost('todos') == '1';
+
+        $db = \Config\Database::connect('asistencia');
+
+        $where_search = '';
+        if (!empty($search)) {
+            $s = $db->escapeString($search);
+            $where_search = " AND (CONCAT(s.lastname,' ',s.lastname2,' ',s.name) LIKE '%$s%'
+                              OR sec.nick_name LIKE '%$s%')";
+        }
+
+        if ($todos) {
+            // Vista "Todos los alumnos": roster completo con su cupo del trimestre,
+            // sin filtrar por ausencias/rango de fechas.
+            $sql = "SELECT
+                        s.student_id,
+                        CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
+                        sec.nick_name, sec.section_id,
+                        NULL AS fechas, 0 AS total_ausencias
+                    FROM t_student s
+                    INNER JOIN section sec ON sec.section_id = s.section_id
+                    WHERE sec.section_id BETWEEN 231 AND 263
+                      AND s.matricula > 0 AND s.activo = 1
+                      $where_search
+                    ORDER BY sec.section_id, s.lastname, s.lastname2, s.name";
+            $rows = $db->query($sql)->getResultArray();
+        } else {
+            // Ausencias sin licencia por alumno en el rango de fechas
+            $sql = "SELECT
+                        s.student_id,
+                        CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
+                        sec.nick_name, sec.section_id,
+                        GROUP_CONCAT(pa.date ORDER BY pa.date ASC SEPARATOR ',') AS fechas,
+                        COUNT(pa.date) AS total_ausencias
+                    FROM prim_assistance pa
+                    INNER JOIN t_student s   ON s.student_id = pa.student_id
+                    INNER JOIN section sec   ON sec.section_id = s.section_id
+                    WHERE pa.status = 0
+                      AND pa.date BETWEEN ? AND ?
+                      AND sec.section_id BETWEEN 231 AND 263
+                      AND " . $this->_sinLicenciaSubquery() . "
+                      $where_search
+                    GROUP BY s.student_id, s.lastname, s.lastname2, s.name, sec.nick_name, sec.section_id
+                    ORDER BY total_ausencias DESC, sec.section_id, s.lastname";
+            $rows = $db->query($sql, [$fecha_ini, $fecha_fin])->getResultArray();
+        }
+
+        // Agregar cupo del trimestre activo a cada alumno (una consulta por sección,
+        // reutilizando PrimCupoModel::resumenSeccion en vez de calcularCupo fila por fila)
+        $Setting  = new SettingModel();
+        $phase_id = $Setting->get_phase_id();
+        $phaseRow = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin FROM phase WHERE phase_id = ?", [$phase_id])
+            ->getRowArray();
+
+        if ($phaseRow && $rows) {
+            $CupoMod  = new \App\Models\PrimCupoModel();
+            $cupo_map = [];
+            foreach (array_unique(array_column($rows, 'section_id')) as $sid) {
+                $filas = $CupoMod->resumenSeccion((int)$sid, $phaseRow['inicio'], $phaseRow['fin']);
+                foreach ($filas as $f) {
+                    $cupo_map[$f['student_id']] = $f;
+                }
+            }
+            foreach ($rows as &$row) {
+                $c = $cupo_map[$row['student_id']] ?? null;
+                $row['cupo_total']    = $c['total']         ?? 0;
+                $row['cupo_restante'] = $c['cupo_restante'] ?? 9;
+                $row['alerta6']       = $c['alerta6']       ?? false;
+                $row['limite9']       = $c['limite9']       ?? false;
+            }
+            unset($row);
+        }
+
+        return $this->response->setJSON($rows);
+    }
+
+    /**
+     * Exporta a un .xlsx real las ausencias sin licencia (o el roster completo con
+     * cupo, si viene todos=1), respetando los mismos filtros que la vista en pantalla.
+     */
+    public function prim_ausencias_xlsx()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $Setting  = new SettingModel();
+        $phaseRow = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin, name FROM phase WHERE phase_id = ?", [$Setting->get_phase_id()])
+            ->getRowArray();
+        $phase_ini_default = $phaseRow['inicio'] ?? date('Y-m-01');
+        $phase_fin_default = $phaseRow['fin']    ?? date('Y-m-d');
+
+        $fecha_ini = $this->request->getGet('fecha_ini') ?: $phase_ini_default;
+        $fecha_fin = $this->request->getGet('fecha_fin') ?: $phase_fin_default;
+        if ($fecha_ini < $phase_ini_default) $fecha_ini = $phase_ini_default;
+        if ($fecha_fin > $phase_fin_default) $fecha_fin = $phase_fin_default;
+        $search = $this->request->getGet('search') ?? '';
+        $todos  = $this->request->getGet('todos') == '1';
+
+        $db = \Config\Database::connect('asistencia');
+
+        $where_search = '';
+        if (!empty($search)) {
+            $s = $db->escapeString($search);
+            $where_search = " AND (CONCAT(s.lastname,' ',s.lastname2,' ',s.name) LIKE '%$s%'
+                              OR sec.nick_name LIKE '%$s%')";
+        }
+
+        if ($todos) {
+            $sql = "SELECT
+                        s.student_id,
+                        CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
+                        sec.nick_name, sec.section_id,
+                        NULL AS fechas, 0 AS total_ausencias
+                    FROM t_student s
+                    INNER JOIN section sec ON sec.section_id = s.section_id
+                    WHERE sec.section_id BETWEEN 231 AND 263
+                      AND s.matricula > 0 AND s.activo = 1
+                      $where_search
+                    ORDER BY sec.section_id, s.lastname, s.lastname2, s.name";
+            $rows = $db->query($sql)->getResultArray();
+        } else {
+            $sql = "SELECT
+                        s.student_id,
+                        CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS student,
+                        sec.nick_name, sec.section_id,
+                        GROUP_CONCAT(pa.date ORDER BY pa.date ASC SEPARATOR ',') AS fechas,
+                        COUNT(pa.date) AS total_ausencias
+                    FROM prim_assistance pa
+                    INNER JOIN t_student s   ON s.student_id = pa.student_id
+                    INNER JOIN section sec   ON sec.section_id = s.section_id
+                    WHERE pa.status = 0
+                      AND pa.date BETWEEN ? AND ?
+                      AND sec.section_id BETWEEN 231 AND 263
+                      AND " . $this->_sinLicenciaSubquery() . "
+                      $where_search
+                    GROUP BY s.student_id, s.lastname, s.lastname2, s.name, sec.nick_name, sec.section_id
+                    ORDER BY total_ausencias DESC, sec.section_id, s.lastname";
+            $rows = $db->query($sql, [$fecha_ini, $fecha_fin])->getResultArray();
+        }
+
+        // Cupo del trimestre activo para cada alumno
+        $cupo_map = [];
+        if ($rows) {
+            $CupoMod = new \App\Models\PrimCupoModel();
+            foreach (array_unique(array_column($rows, 'section_id')) as $sid) {
+                foreach ($CupoMod->resumenSeccion((int)$sid, $phase_ini_default, $phase_fin_default) as $f) {
+                    $cupo_map[$f['student_id']] = $f;
+                }
+            }
+        }
+
+        $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sh = $ss->getActiveSheet();
+        $sh->setTitle('Ausencias sin licencia');
+
+        $sh->fromArray(['#', 'Alumno', 'Curso', 'Días sin licencia', 'Fechas ausentes', 'Cupo trimestral (rango)'], null, 'A1');
+        $sh->getStyle('A1:F1')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sh->getStyle('A1:F1')->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('1A73E8');
+
+        $r = 2;
+        foreach ($rows as $i => $row) {
+            $cupoTotal = $cupo_map[$row['student_id']]['total'] ?? 0;
+            $fechas = $row['fechas']
+                ? implode(', ', array_map(fn($f) => date('d-m-Y', strtotime($f)), explode(',', $row['fechas'])))
+                : '—';
+            $sh->fromArray([
+                $i + 1,
+                $row['student'],
+                $row['nick_name'],
+                (int)$row['total_ausencias'],
+                $fechas,
+                number_format((float)$cupoTotal, 1) . '/9',
+            ], null, "A{$r}");
+            $r++;
+        }
+
+        foreach (range('A', 'F') as $col) {
+            $sh->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Ausencias_sin_licencia_' . date('Y-m-d_His') . '.xlsx';
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($ss, 'Xlsx');
+        $writer->save($fileName);
+        return $this->response->download($fileName, null);
+    }
+
+    // ── Reportes ─────────────────────────────────────────────────────────────
+
+    public function prim_reportes()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $data = $this->_primSecretaryData();
+        $data['page_name']  = 'prim_reportes';
+        $data['page_title'] = 'Reportes — Primaria';
+        return view('backend/index', $data);
+    }
+
+    public function prim_reportes_xlsx()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $tipo      = $this->request->getPost('tipo');
+        $Setting   = new SettingModel();
+        $phase_id  = $Setting->get_phase_id();
+        $phaseRow  = \Config\Database::connect('tiquipaya')
+            ->query("SELECT inicio, fin, name FROM phase WHERE phase_id = ?", [$phase_id])
+            ->getRowArray();
+        $ph_ini   = $phaseRow['inicio'] ?? date('Y-m-01');
+        $ph_fin   = $phaseRow['fin']    ?? date('Y-m-d');
+        $ph_name  = $phaseRow['name']   ?? '';
+
+        $f_ini = $this->request->getPost('fecha_ini') ?: $ph_ini;
+        $f_fin = $this->request->getPost('fecha_fin') ?: $ph_fin;
+        if ($f_ini < $ph_ini) $f_ini = $ph_ini;
+        if ($f_fin > $ph_fin) $f_fin = $ph_fin;
+
+        $db     = \Config\Database::connect('asistencia');
+        $titulo = '';
+        $html   = '';
+        $estados_lic = [0 => 'Pendiente', 1 => 'Aprobada', 2 => 'Rechazada', 3 => 'Eliminada'];
+
+        $ss  = new Spreadsheet();
+        $sh  = $ss->getActiveSheet();
+
+        // Estilo de encabezado
+        $hdrFont = ['bold' => true, 'color' => ['rgb' => 'FFFFFF']];
+        $hdrFill = ['fillType' => 'solid', 'color' => ['rgb' => '1BC5BD']];
+        $hdr = ['font' => $hdrFont, 'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '1A73E8']]];
+
+        switch ($tipo) {
+
+            case 'asistencia_alumno':
+                $student_id = (int)$this->request->getPost('student_id');
+                $stu = $db->query(
+                    "SELECT CONCAT(lastname,' ',lastname2,' ',name) AS nombre, section_id FROM t_student WHERE student_id=?",
+                    [$student_id]
+                )->getRowArray();
+                $sec = $db->query("SELECT nick_name FROM section WHERE section_id=?",
+                    [$stu['section_id'] ?? 0])->getRowArray();
+                $rows = $db->query(
+                    "SELECT date, status, arrival_time, observation
+                     FROM prim_assistance WHERE student_id=? AND date BETWEEN ? AND ?
+                     ORDER BY date",
+                    [$student_id, $f_ini, $f_fin]
+                )->getResultArray();
+                $estados = [0=>'Ausente',1=>'Presente',2=>'Licencia',3=>'Retraso'];
+                $titulo  = 'Asistencia — ' . ($stu['nombre'] ?? '') . ' (' . ($sec['nick_name'] ?? '') . ')';
+                $sub     = "Período: " . date('d-m-Y', strtotime($f_ini)) . " → " . date('d-m-Y', strtotime($f_fin));
+                $html  = "<table><thead><tr><th>#</th><th>Fecha</th><th>Estado</th><th>Llegada</th><th>Observación</th></tr></thead><tbody>";
+                foreach ($rows as $i => $row) {
+                    $cls = $row['status'] == 0 ? 'ausente' : ($row['status'] == 2 ? 'licencia' : '');
+                    $html .= "<tr class='$cls'><td>" . ($i+1) . "</td><td>" . date('d-m-Y', strtotime($row['date'])) .
+                             "</td><td>" . ($estados[$row['status']] ?? '') . "</td><td>" .
+                             substr($row['arrival_time'] ?? '', 0, 5) . "</td><td>" .
+                             htmlspecialchars($row['observation'] ?? '') . "</td></tr>";
+                }
+                $html .= "</tbody></table>";
+                break;
+
+            case 'licencias':
+                $estado_post = $this->request->getPost('estado') ?? 'all';
+                $where = "WHERE s.section_id BETWEEN 231 AND 263
+                           AND DATE(l.fecha_solicitud) BETWEEN '$f_ini' AND '$f_fin'";
+                if ($estado_post === 'pending')  $where .= " AND l.enviado=0";
+                if ($estado_post === 'approved') $where .= " AND l.enviado=1";
+                if ($estado_post === 'rejected') $where .= " AND l.enviado=2";
+                $rows = $db->query("
+                    SELECT CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS alumno,
+                        sec.nick_name, tl.tipo, mo.motivo, l.detalle, l.es_excepcion,
+                        l.fraccion_cupo, l.fecha_solicitud, l.enviado,
+                        COALESCE(DATE_FORMAT(ld.fecha_inicio,'%d-%m-%Y'),'') AS inicio,
+                        COALESCE(DATE_FORMAT(ld.fecha_fin,'%d-%m-%Y'),'') AS fin,
+                        ld.cantidad_dias
+                    FROM prim_licencias l
+                    INNER JOIN t_student s       ON s.student_id=l.student_id
+                    INNER JOIN section sec        ON sec.section_id=s.section_id
+                    INNER JOIN t_tipo_licencia tl ON tl.tipo_id=l.tipo_id
+                    INNER JOIN t_motivos mo       ON mo.motivo_id=l.motivo_id
+                    LEFT JOIN prim_licencias_dia ld ON ld.licencias_id=l.licencias_id
+                    $where GROUP BY l.licencias_id ORDER BY l.fecha_solicitud DESC
+                ")->getResultArray();
+                $titulo = 'Licencias — Primaria 3ro–6to';
+                $sub    = date('d-m-Y', strtotime($f_ini)) . " → " . date('d-m-Y', strtotime($f_fin));
+                $html  = "<table><thead><tr><th>#</th><th>Alumno</th><th>Curso</th><th>Tipo</th><th>Motivo</th><th>Período</th><th>Cupo</th><th>Estado</th><th>Fecha solicitud</th></tr></thead><tbody>";
+                foreach ($rows as $i => $row) {
+                    $periodo = $row['inicio'] . ($row['fin'] && $row['fin'] !== $row['inicio'] ? " → " . $row['fin'] : '');
+                    $cupo    = $row['es_excepcion'] ? 'Excepción' : number_format((float)$row['fraccion_cupo'], 1) . ' día(s)';
+                    $est_cls = $row['enviado'] == 1 ? 'aprobada' : ($row['enviado'] == 2 ? 'rechazada' : '');
+                    $html   .= "<tr class='$est_cls'><td>" . ($i+1) . "</td><td>" . htmlspecialchars($row['alumno']) .
+                               "</td><td>" . $row['nick_name'] . "</td><td>" . $row['tipo'] . "</td><td>" .
+                               htmlspecialchars($row['motivo']) . ($row['es_excepcion'] ? ' ⭐' : '') . "</td><td>" .
+                               $periodo . "</td><td>" . $cupo . "</td><td>" . ($estados_lic[$row['enviado']] ?? '') .
+                               "</td><td>" . date('d-m-Y H:i', strtotime($row['fecha_solicitud'])) . "</td></tr>";
+                }
+                $html .= "</tbody></table>";
+                break;
+
+            case 'ausencias':
+                $rows = $db->query("
+                    SELECT CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS alumno, sec.nick_name,
+                        GROUP_CONCAT(DATE_FORMAT(pa.date,'%d-%m-%Y') ORDER BY pa.date SEPARATOR ', ') AS fechas,
+                        COUNT(pa.date) AS total
+                    FROM prim_assistance pa
+                    INNER JOIN t_student s ON s.student_id=pa.student_id
+                    INNER JOIN section sec ON sec.section_id=s.section_id
+                    WHERE pa.status=0 AND pa.date BETWEEN ? AND ?
+                      AND sec.section_id BETWEEN 231 AND 263
+                      AND NOT EXISTS (
+                          SELECT 1 FROM prim_licencias l
+                          INNER JOIN prim_licencias_dia ld ON ld.licencias_id=l.licencias_id
+                          WHERE l.student_id=pa.student_id
+                            AND pa.date BETWEEN ld.fecha_inicio AND ld.fecha_fin
+                      )
+                    GROUP BY pa.student_id ORDER BY total DESC, sec.section_id, s.lastname
+                ", [$f_ini, $f_fin])->getResultArray();
+                $titulo = 'Ausencias sin Licencia — Primaria 3ro–6to';
+                $sub    = date('d-m-Y', strtotime($f_ini)) . " → " . date('d-m-Y', strtotime($f_fin));
+                $html  = "<table><thead><tr><th>#</th><th>Alumno</th><th>Curso</th><th>Días</th><th>Fechas ausentes</th></tr></thead><tbody>";
+                foreach ($rows as $i => $row) {
+                    $cls   = $row['total'] >= 9 ? 'ausente' : ($row['total'] >= 6 ? 'alerta' : '');
+                    $html .= "<tr class='$cls'><td>" . ($i+1) . "</td><td>" . htmlspecialchars($row['alumno']) .
+                             "</td><td>" . $row['nick_name'] . "</td><td><strong>" . $row['total'] . "</strong></td><td>" .
+                             $row['fechas'] . "</td></tr>";
+                }
+                $html .= "</tbody></table>";
+                break;
+
+            case 'cupo':
+            default:
+                $CupoMod = new \App\Models\PrimCupoModel();
+                $secRows = $db->query(
+                    "SELECT section_id, nick_name FROM section WHERE section_id BETWEEN 231 AND 263 ORDER BY section_id"
+                )->getResultArray();
+                $titulo = 'Cupo Trimestral — Primaria 3ro–6to';
+                $sub    = "$ph_name: " . date('d-m-Y', strtotime($ph_ini)) . " → " . date('d-m-Y', strtotime($ph_fin));
+                $html  = "<table><thead><tr><th>#</th><th>Alumno</th><th>Curso</th><th>Ausencias</th><th>Licencias</th><th>Salidas</th><th>Total</th><th>Restante</th><th>Estado</th></tr></thead><tbody>";
+                $n = 1;
+                foreach ($secRows as $sec) {
+                    foreach ($CupoMod->resumenSeccion((int)$sec['section_id'], $ph_ini, $ph_fin) as $al) {
+                        $total  = (float)$al['total'];
+                        $estado = $total >= 9 ? 'LÍMITE' : ($total >= 6 ? 'ALERTA' : 'OK');
+                        $cls    = $total >= 9 ? 'ausente' : ($total >= 6 ? 'alerta' : '');
+                        $html  .= "<tr class='$cls'><td>$n</td><td>" . htmlspecialchars($al['student']) .
+                                  "</td><td>" . $sec['nick_name'] . "</td><td>" . $al['ausencias_puras'] .
+                                  "</td><td>" . $al['dias_licencia'] . "</td><td>" . $al['salidas_anticipadas'] .
+                                  "</td><td><strong>" . number_format($total, 1) . "/9</strong></td><td>" .
+                                  number_format(max(0, 9-$total), 1) . "</td><td>$estado</td></tr>";
+                        $n++;
+                    }
+                }
+                $html .= "</tbody></table>";
+                break;
+        }
+
+        // Retornar HTML imprimible con auto-print
+        return $this->response->setBody($this->_reporteHtml($titulo, $sub ?? '', $html, $ph_name));
+    }
+
+    // ── Reporte Bus Escolar — Primaria (licencias día/período + ausencias + cambios de recojo de una fecha) ──
+    public function prim_reporte_bus_xlsx()
+    {
+        $session = session();
+        if (!$this->_esPersonalPrimaria())
+            return redirect()->to(base_url());
+
+        $fecha = $this->request->getPost('fecha') ?: date('Y-m-d');
+        $db    = \Config\Database::connect('asistencia');
+        $estados_lic = [0 => 'Pendiente', 1 => 'Aprobada', 2 => 'Rechazada', 3 => 'Eliminada'];
+        $tipos_recojo = [1 => 'Otra persona', 2 => 'Sin transporte', 3 => 'Otro'];
+
+        // 1) Licencias por Día que cubren la fecha
+        $licDia = $db->query("
+            SELECT CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS alumno, sec.nick_name,
+                mo.motivo, l.detalle, l.solicitante, par.parentesco, me.medio,
+                l.enviado, l.es_excepcion,
+                DATE_FORMAT(ld.fecha_inicio,'%d-%m-%Y') AS f_inicio,
+                DATE_FORMAT(ld.fecha_fin,'%d-%m-%Y') AS f_fin
+            FROM prim_licencias l
+            INNER JOIN prim_licencias_dia ld ON ld.licencias_id = l.licencias_id
+            INNER JOIN t_student s ON s.student_id = l.student_id
+            INNER JOIN section sec ON sec.section_id = s.section_id
+            LEFT JOIN t_motivos mo    ON mo.motivo_id = l.motivo_id
+            LEFT JOIN t_parentesco par ON par.parentesco_id = l.parentesco_id
+            LEFT JOIN t_medios me     ON me.medio_id = l.medio_id
+            WHERE ? BETWEEN ld.fecha_inicio AND ld.fecha_fin
+              AND sec.section_id BETWEEN 231 AND 263
+            ORDER BY sec.section_id, s.lastname
+        ", [$fecha])->getResultArray();
+
+        // 2) Licencias por Período registradas para la fecha
+        $licPeriodo = $db->query("
+            SELECT CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS alumno, sec.nick_name,
+                mo.motivo, l.detalle, l.solicitante, par.parentesco, me.medio,
+                l.enviado, l.es_excepcion, l.hora_salida, l.recoge_nombre,
+                GROUP_CONCAT(p.periodo ORDER BY lp.id SEPARATOR ', ') AS periodos
+            FROM prim_licencias l
+            INNER JOIN prim_licencias_periodo lp ON lp.licencias_id = l.licencias_id
+            INNER JOIN t_student s ON s.student_id = l.student_id
+            INNER JOIN section sec ON sec.section_id = s.section_id
+            LEFT JOIN t_motivos mo    ON mo.motivo_id = l.motivo_id
+            LEFT JOIN t_parentesco par ON par.parentesco_id = l.parentesco_id
+            LEFT JOIN t_medios me     ON me.medio_id = l.medio_id
+            LEFT JOIN periodo p       ON p.periodo_id = lp.periodo_id
+            WHERE lp.fecha = ?
+              AND sec.section_id BETWEEN 231 AND 263
+            GROUP BY l.licencias_id
+            ORDER BY sec.section_id, s.lastname
+        ", [$fecha])->getResultArray();
+
+        // 3) Ausencias sin licencia de la fecha (tabla prim_assistance, status=0)
+        $ausencias = $db->query("
+            SELECT CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS alumno, sec.nick_name
+            FROM prim_assistance pa
+            INNER JOIN t_student s ON s.student_id = pa.student_id
+            INNER JOIN section sec ON sec.section_id = s.section_id
+            WHERE pa.status = 0 AND pa.date = ?
+              AND sec.section_id BETWEEN 231 AND 263
+              AND " . $this->_sinLicenciaSubquery() . "
+            ORDER BY sec.section_id, s.lastname
+        ", [$fecha])->getResultArray();
+
+        // 4) Cambios de recojo de la fecha
+        $cambios = $db->query("
+            SELECT CONCAT(s.lastname,' ',s.lastname2,' ',s.name) AS alumno, sec.nick_name,
+                c.tipo, c.solicitante, p.parentesco AS parentesco_solicitante,
+                c.persona_nombre, COALESCE(pp.parentesco, c.persona_parentesco_otro) AS persona_parentesco,
+                c.detalle, c.enviado
+            FROM prim_cambio_recojo c
+            INNER JOIN t_student s ON s.student_id = c.student_id
+            INNER JOIN section sec ON sec.section_id = s.section_id
+            LEFT JOIN t_parentesco p  ON p.parentesco_id  = c.parentesco_id
+            LEFT JOIN t_parentesco pp ON pp.parentesco_id = c.persona_parentesco_id
+            WHERE c.fecha = ?
+              AND sec.section_id BETWEEN 231 AND 263
+            ORDER BY sec.section_id, s.lastname
+        ", [$fecha])->getResultArray();
+
+        $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+
+        $hdrStyle = function ($sh, string $range) {
+            $sh->getStyle($range)->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+            $sh->getStyle($range)->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setRGB('1A73E8');
+        };
+        $autosize = function ($sh, string $lastCol) {
+            foreach (range('A', $lastCol) as $col) {
+                $sh->getColumnDimension($col)->setAutoSize(true);
+            }
+        };
+
+        // Hoja 1: Licencias (Día + Período)
+        $sh1 = $ss->getActiveSheet();
+        $sh1->setTitle('Licencias');
+        $sh1->fromArray(['#', 'Alumno', 'Curso', 'Tipo', 'Motivo', 'Detalle', 'Período / Rango', 'Hora Salida',
+            'Recoge', 'Solicitante', 'Parentesco', 'Medio', 'Estado'], null, 'A1');
+        $hdrStyle($sh1, 'A1:M1');
+        $r = 2;
+        foreach ($licDia as $row) {
+            $rango = $row['f_inicio'] . ($row['f_fin'] && $row['f_fin'] !== $row['f_inicio'] ? ' → ' . $row['f_fin'] : '');
+            $sh1->fromArray([
+                $r - 1, $row['alumno'], $row['nick_name'], 'Día(s)', $row['motivo'], $row['detalle'],
+                $rango, '', '', $row['solicitante'], $row['parentesco'], $row['medio'],
+                ($estados_lic[$row['enviado']] ?? '') . ($row['es_excepcion'] ? ' ⭐' : ''),
+            ], null, "A{$r}");
+            $r++;
+        }
+        foreach ($licPeriodo as $row) {
+            $sh1->fromArray([
+                $r - 1, $row['alumno'], $row['nick_name'], 'Período', $row['motivo'], $row['detalle'],
+                $row['periodos'], substr($row['hora_salida'] ?? '', 0, 5), $row['recoge_nombre'],
+                $row['solicitante'], $row['parentesco'], $row['medio'],
+                ($estados_lic[$row['enviado']] ?? '') . ($row['es_excepcion'] ? ' ⭐' : ''),
+            ], null, "A{$r}");
+            $r++;
+        }
+        $autosize($sh1, 'M');
+
+        // Hoja 2: Ausencias sin licencia
+        $sh2 = $ss->createSheet();
+        $sh2->setTitle('Ausencias');
+        $sh2->fromArray(['#', 'Alumno', 'Curso'], null, 'A1');
+        $hdrStyle($sh2, 'A1:C1');
+        $r = 2;
+        foreach ($ausencias as $row) {
+            $sh2->fromArray([$r - 1, $row['alumno'], $row['nick_name']], null, "A{$r}");
+            $r++;
+        }
+        $autosize($sh2, 'C');
+
+        // Hoja 3: Cambios de Recojo
+        $sh3 = $ss->createSheet();
+        $sh3->setTitle('Cambio de Recojo');
+        $sh3->fromArray(['#', 'Alumno', 'Curso', 'Cambio', 'Solicitante', 'Parentesco Solicitante',
+            'Persona que recoge', 'Parentesco', 'Detalle', 'Estado'], null, 'A1');
+        $hdrStyle($sh3, 'A1:J1');
+        $r = 2;
+        foreach ($cambios as $row) {
+            $sh3->fromArray([
+                $r - 1, $row['alumno'], $row['nick_name'], $tipos_recojo[(int)$row['tipo']] ?? 'Otro',
+                $row['solicitante'], $row['parentesco_solicitante'], $row['persona_nombre'],
+                $row['persona_parentesco'], $row['detalle'],
+                $row['enviado'] == 1 ? 'Aprobado' : ($row['enviado'] == 2 ? 'Rechazado' : 'Pendiente'),
+            ], null, "A{$r}");
+            $r++;
+        }
+        $autosize($sh3, 'J');
+
+        $ss->setActiveSheetIndex(0);
+
+        $fileName = 'Reporte_Bus_' . date('Y-m-d', strtotime($fecha)) . '.xlsx';
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($ss, 'Xlsx');
+        $writer->save($fileName);
+        return $this->response->download($fileName, null);
+    }
+
+    private function _reporteHtml(string $titulo, string $subtitulo, string $tabla, string $trimestre): string
+    {
+        return <<<HTML
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>{$titulo}</title>
+<style>
+  body   { font-family: Arial, sans-serif; font-size: 11px; margin: 20px; color: #222; }
+  h2     { margin: 0 0 2px; font-size: 14px; }
+  .sub   { color: #666; font-size: 11px; margin-bottom: 12px; }
+  .logo  { font-weight: bold; font-size: 13px; color: #1a73e8; }
+  table  { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th     { background: #1a73e8; color: #fff; padding: 6px 8px; text-align: left; font-size: 10px; }
+  td     { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr.ausente td { background: #fff0f2 !important; }
+  tr.alerta  td { background: #fffde7 !important; }
+  tr.licencia td { background: #e8f4ff !important; }
+  tr.aprobada td { background: #e8fff3 !important; }
+  tr.rechazada td { background: #fff0f2 !important; }
+  .pie   { margin-top: 16px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 8px; }
+  @media print {
+    .no-print { display: none; }
+    body { margin: 10px; }
+  }
+</style>
+</head><body>
+<div class="no-print" style="margin-bottom:12px;">
+  <button onclick="window.print()" style="background:#1a73e8;color:#fff;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;">
+    🖨️ Imprimir / Guardar PDF
+  </button>
+  <button onclick="window.close()" style="background:#eee;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-left:8px;">
+    Cerrar
+  </button>
+</div>
+<div class="logo">U.E. Tiquipaya — Sistema SAAT</div>
+<h2>{$titulo}</h2>
+<div class="sub">{$subtitulo} &nbsp;·&nbsp; {$trimestre} &nbsp;·&nbsp; Generado: {$this->_now()}</div>
+{$tabla}
+<div class="pie">Sistema SAAT · U.E. Tiquipaya · Reporte generado automáticamente</div>
+</body></html>
+HTML;
+    }
+
+    private function _now(): string
+    {
+        return date('d-m-Y H:i');
     }
 }
 

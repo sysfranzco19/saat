@@ -182,22 +182,57 @@ class Student extends BaseController
         $page_data['page_title'] = 'Protocolo de Bioseguridad';
         return view('backend/index', $page_data);
     }
-    /*****************************REPORTE DE EVALUACIONES*********************************/
+/*****************************REPORTE DE EVALUACIONES*********************************/
     function evaluation_report()
     {
         $session = session();
+        $student_id = $session->get('student_id');
         if ($session->get('login_type') != 'student')
             return redirect()->to(base_url());
+        //Configuraciones
         $Setting = new SettingModel();
         $page_data['login_type'] = $session->get('login_type');
         $page_data['phase_id'] = $Setting->get_phase_id();
         $page_data['phase_name'] = $Setting->get_phase_name();
         $page_data['system_title'] = $Setting->get_system_title();
         $page_data['system_name'] = $Setting->get_system_name();
+        //HIJOS
+        $StudentMod = new StudentModel();
+        $students = $StudentMod->datosStudent($student_id);
+        $page_data['student'] = $students[0]->nombre;
+        $page_data['completo'] = $students[0]->completo;
 
-        $page_data['page_name'] = 'error_5';
-        $page_data['page_title'] = 'Pagina en Contruccion';
-        return view('backend/index', $page_data);
+
+        //MORA
+        $data_mora = ["mora_id" => $student_id];
+        $mo = new MoraModel();
+        $mora = $mo->get_mora($data_mora);
+        if (count($mora) == 1) {
+            //BLOQUEAMOS PAGINA A MOROSOS
+            $page_data['page_name'] = 'error_6';
+            $page_data['page_title'] = 'Reporte de Evaluaciones';
+            return view('backend/index', $page_data);
+        } else {
+            //Enviamos todas las Materias
+            $Subject = new SubjectModel();
+            $subjects = $Subject->subjects_student($students[0]->section_id, $students[0]->sex);
+            $page_data['subjects'] = $subjects;
+            //Detalles
+            $CsamarksdetailsMod = new CsamarksdetailsModel();
+            $csamarksdetails = $CsamarksdetailsMod->csamarks_details_dim_curso($page_data['phase_id'], "saber", $students[0]->section_id);
+            $page_data['details_saber'] = $csamarksdetails;
+            $csamarksdetails = $CsamarksdetailsMod->csamarks_details_dim_curso($page_data['phase_id'], "hacer", $students[0]->section_id);
+            $page_data['details_hacer'] = $csamarksdetails;
+            //Enviamos las Notas
+            $CsamarksMod = new CsamarksModel();
+            $csamarks = $CsamarksMod->csamarks_student($student_id, $page_data['phase_id']);
+            $page_data['csamarks'] = $csamarks;
+
+            //VISTA REPOR CARD
+            $page_data['page_name'] = 'report_card';
+            $page_data['page_title'] = 'Reporte de Evaluaciones';
+            return view('backend/index', $page_data);
+        }
     }
     /********************************AUTOEVALUACION ****************/
     function self_appraisal()
@@ -288,12 +323,13 @@ class Student extends BaseController
         return view('backend/index', $page_data);
     }
     /*****************************BOLETIN DE NOTAS*********************************/
-    function report_card()
+    function report_card($student_id = '')
     {
         $session = session();
-        $student_id = $session->get('student_id');
         if ($session->get('login_type') != 'student')
             return redirect()->to(base_url());
+        if ($student_id === '')
+            $student_id = $session->get('student_id');
         //Configuraciones
         $Setting = new SettingModel();
         $page_data['login_type'] = $session->get('login_type');
@@ -301,43 +337,50 @@ class Student extends BaseController
         $page_data['phase_name'] = $Setting->get_phase_name();
         $page_data['system_title'] = $Setting->get_system_title();
         $page_data['system_name'] = $Setting->get_system_name();
-        //HIJOS
+        //DATOS DEL ESTUDIANTE
         $StudentMod = new StudentModel();
         $students = $StudentMod->datosStudent($student_id);
-        $page_data['student'] = $students[0]->nombre;
-        $page_data['completo'] = $students[0]->completo;
-
-
-        //MORA
-        $data_mora = ["mora_id" => $student_id];
+        $student_nombre = $students[0]->nombre;
+        $student_completo = $students[0]->completo;
+        //MORA — bloqueamos si el estudiante es deudor
         $mo = new MoraModel();
-        $mora = $mo->get_mora($data_mora);
+        $mora = $mo->get_mora(["mora_id" => $student_id]);
         if (count($mora) == 1) {
             //BLOQUEAMOS PAGINA A MOROSOS
-            $page_data['page_name'] = 'error_6';
-            $page_data['page_title'] = 'Reporte de Evaluaciones';
-            return view('backend/index', $page_data);
-        } else {
-            //Enviamos todas las Materias
-            $Subject = new SubjectModel();
-            $subjects = $Subject->subjects_student($students[0]->section_id, $students[0]->sex);
-            $page_data['subjects'] = $subjects;
-            //Detalles
-            $CsamarksdetailsMod = new CsamarksdetailsModel();
-            $csamarksdetails = $CsamarksdetailsMod->csamarks_details_dim_curso($page_data['phase_id'], "saber", $students[0]->section_id);
-            $page_data['details_saber'] = $csamarksdetails;
-            $csamarksdetails = $CsamarksdetailsMod->csamarks_details_dim_curso($page_data['phase_id'], "hacer", $students[0]->section_id);
-            $page_data['details_hacer'] = $csamarksdetails;
-            //Enviamos las Notas
-            $CsamarksMod = new CsamarksModel();
-            $csamarks = $CsamarksMod->csamarks_student($student_id, $page_data['phase_id']);
-            $page_data['csamarks'] = $csamarks;
-
-            //VISTA REPOR CARD
-            $page_data['page_name'] = 'report_card';
-            $page_data['page_title'] = 'Reporte de Evaluaciones';
+            $page_data['student_id'] = $student_id;
+            $page_data['student'] = $student_nombre;
+            $page_data['completo'] = $student_completo;
+            $page_data['account_type'] = 'student';
+            $page_data['page_name']    = 'error_6';
+            $page_data['page_title']   = 'Boletines de Notas';
             return view('backend/index', $page_data);
         }
+
+        // Construir info de PDF para el estudiante
+
+        $sid  = $student_id;
+        $pdfs = [];
+        for ($t = 1; $t <= 3; $t++) {
+            $archivo = 'RepT' . $t . strval(60900045 + $sid) . '.pdf';
+            $pdfs[$t] = [
+                'archivo' => $archivo,
+                'exists'  => file_exists(FCPATH . 'uploads/t1/' . $archivo),
+                'url'     => base_url('uploads/t1/' . $archivo),
+            ];
+        }
+        $students_pdf[] = [
+            'student_id' => $sid,
+            'student'    => $student_nombre,
+            'completo'   => $student_completo,
+            'pdfs'       => $pdfs,
+        ];
+
+        $page_data['students_pdf'] = $students_pdf;
+        //VISTA
+        $page_data['account_type'] = 'student';
+        $page_data['page_name'] = 'reportcards';
+        $page_data['page_title'] = 'Boletines de Notas';
+        return view('backend/index', $page_data);
     }
     function infractions()
     {

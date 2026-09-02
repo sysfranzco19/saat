@@ -230,6 +230,44 @@ t4.link
         $subject = $this->db->query($sql);
         return $subject->getResultArray();
     }
+    function notes_teacher_all()
+    {
+        $sql = "SELECT t.teacher_id, t.name, COUNT(m.subject_id) as cantidad FROM subject m
+                    INNER JOIN section c ON(m.section_id=c.section_id)
+                    RIGHT JOIN teacher t ON(m.teacher_id=t.teacher_id)
+                    WHERE m.locked=0 AND c.section_id>=211
+                    GROUP BY t.teacher_id, t.name;";
+        $subject = $this->db->query($sql);
+        return $subject->getResultArray();
+    }
+    function notes_subject_all()
+    {
+        $sql = "SELECT t.teacher_id, t.name as docente, m.name, c.nick_name FROM subject m
+                    INNER JOIN section c ON(m.section_id=c.section_id)
+                    INNER JOIN teacher t ON(m.teacher_id=t.teacher_id)
+                    WHERE m.locked=0 AND c.section_id>=211;";
+        $subject = $this->db->query($sql);
+        return $subject->getResultArray();
+    }
+    public function subjects_admin($buscar = '', $locked = null)
+    {
+        $sql = "SELECT m.subject_id, m.name AS materia, m.locked, m.official_id,
+                t.teacher_id, t.name AS docente,
+                c.section_id, c.completo
+                FROM subject m
+                INNER JOIN section c ON (m.section_id = c.section_id)
+                INNER JOIN teacher t ON (m.teacher_id = t.teacher_id)
+                WHERE 1=1";
+        if ($buscar !== '') {
+            $buscar_esc = $this->db->escapeLikeString($buscar);
+            $sql .= " AND (t.name LIKE '%{$buscar_esc}%' ESCAPE '!' OR m.name LIKE '%{$buscar_esc}%' ESCAPE '!' OR c.completo LIKE '%{$buscar_esc}%' ESCAPE '!')";
+        }
+        if ($locked !== null) {
+            $sql .= " AND m.locked = " . (int) $locked;
+        }
+        $sql .= " ORDER BY t.name, c.section_id, m.name";
+        return $this->db->query($sql)->getResultArray();
+    }
         public function subjects_especialidad()
     {
         $sql = "SELECT s.subject_id, s.name as materia, t.name as docente, s.sheet_id 

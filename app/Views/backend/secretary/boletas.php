@@ -12,6 +12,7 @@
                     <thead class="thead-light">
                         <tr>
                             <th>Curso</th>
+                            <th>Cantidad</th>
                             <th>Acción</th>
                         </tr>
                     </thead>
@@ -19,6 +20,11 @@
                         <?php foreach ($cursos as $cur): ?>
                         <tr>
                             <td class="font-weight-bold"><?= $cur['completo'] ?></td>
+                            <td>
+                                <span class="badge badge-<?= ($cur['cantidad'] ?? 0) > 0 ? 'warning' : 'secondary' ?> font-size-sm">
+                                    <?= $cur['cantidad'] ?? 0 ?>
+                                </span>
+                            </td>
                             <td>
                                 <a href="<?= base_url('secretary/boletas_seccion/' . $cur['section_id']) ?>"
                                    class="btn btn-warning btn-sm font-weight-bold">

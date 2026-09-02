@@ -78,7 +78,8 @@ $routes->get('admin/list_students', 'Admin::list_students');
 $routes->get('admin/student_notes/(:any)', 'Admin::student_notes/$1');
 $routes->get('admin/student_notes_get/(:num)', 'Admin::student_notes_get/$1');
 $routes->post('admin/student_notes_update', 'Admin::student_notes_update');
-$routes->get('admin/update_notes/(:any)', 'Admin::update_notes/$1');
+$routes->get('admin/update_notes/(:num)', 'Admin::update_notes/$1');
+$routes->get('admin/update_notes/(:num)/(:num)', 'Admin::update_notes/$1/$2');
 $routes->get('admin/recover_self_esp/(:any)', 'Admin::recover_self_esp/$1');
 $routes->get('admin/centralizer_notes_esp/(:any)', 'Admin::centralizer_notes_esp/$1');
 
@@ -93,6 +94,28 @@ $routes->get('admin/periodo_get/(:num)', 'Admin::periodo_get/$1');
 $routes->post('admin/periodo_create', 'Admin::periodo_create');
 $routes->post('admin/periodo_update', 'Admin::periodo_update');
 $routes->post('admin/periodo_delete', 'Admin::periodo_delete');
+
+$routes->get('admin/phase', 'Admin::phase');
+$routes->get('admin/phase_get/(:num)', 'Admin::phase_get/$1');
+$routes->post('admin/phase_create', 'Admin::phase_create');
+$routes->post('admin/phase_update', 'Admin::phase_update');
+$routes->post('admin/phase_delete', 'Admin::phase_delete');
+
+$routes->get('admin/self_appraisal', 'Admin::self_appraisal');
+$routes->get('admin/self_appraisal/(:num)', 'Admin::self_appraisal/$1');
+$routes->get('admin/self_appraisal_get/(:num)', 'Admin::self_appraisal_get/$1');
+$routes->post('admin/self_appraisal_save', 'Admin::self_appraisal_save');
+$routes->post('admin/self_appraisal_delete', 'Admin::self_appraisal_delete');
+
+$routes->get('admin/students', 'Admin::students');
+$routes->get('admin/students_get/(:num)', 'Admin::students_get/$1');
+$routes->post('admin/students_create', 'Admin::students_create');
+$routes->post('admin/students_update', 'Admin::students_update');
+$routes->post('admin/students_delete', 'Admin::students_delete');
+
+$routes->get('admin/delivery_notes', 'Admin::delivery_notes');
+$routes->get('admin/deliver_notes/(:num)', 'Admin::deliver_notes/$1');
+$routes->get('admin/teacher_notes', 'Admin::teacher_notes');
 
 //***************************** MANAGER ************************/
 $routes->get('manager/dashboard', 'Manager::dashboard');
@@ -125,6 +148,9 @@ $routes->get('manager/incidencias/seccion/(:num)', 'Manager::incidencias_seccion
 $routes->get('manager/incidencias/search_students', 'Manager::incidencias_search_students');
 $routes->get('manager/incidencias/student/(:num)', 'Manager::incidencias_student/$1');
 $routes->get('manager/sections_dir', 'Manager::sections_dir');
+$routes->get('manager/alertas_cupo', 'Manager::alertas_cupo');
+$routes->post('manager/acta_save', 'Manager::acta_save');
+$routes->post('manager/acta_notificar/(:num)', 'Manager::acta_notificar/$1');
 
 $routes->get('manager/student_search/(:any)', 'Manager::student_search/$1');
 $routes->get('manager/family_search/(:any)', 'Manager::family_search/$1');
@@ -242,11 +268,17 @@ $routes->get('secretary/suspension_get_periods_section/(:num)', 'Secretary::susp
 $routes->post('secretary/suspension_create', 'Secretary::suspension_create');
 $routes->post('secretary/suspension_update', 'Secretary::suspension_update');
 $routes->post('secretary/suspension_delete', 'Secretary::suspension_delete');
+$routes->get('secretary/attendance_by_course', 'Secretary::attendance_by_course');
+$routes->get('secretary/attendance_by_course_data', 'Secretary::attendance_by_course_data');
 $routes->get('secretary/boletas', 'Secretary::boletas');
 $routes->get('secretary/boletas_seccion/(:num)', 'Secretary::boletas_seccion/$1');
 $routes->get('secretary/boletas_get_data', 'Secretary::boletas_get_data');
 $routes->post('secretary/boletas_guardar', 'Secretary::boletas_guardar');
 $routes->post('secretary/boletas_eliminar', 'Secretary::boletas_eliminar');
+$routes->get('secretary/reprobados_phases', 'Secretary::reprobados_phases');
+$routes->get('secretary/reprobados_get_data', 'Secretary::reprobados_get_data');
+$routes->post('secretary/reprobados_generar_carta', 'Secretary::reprobados_generar_carta');
+$routes->post('secretary/reprobados_enviar_carta', 'Secretary::reprobados_enviar_carta');
 $routes->get('secretary/licenses', 'Secretary::licenses');
 $routes->get('secretary/licenses_all', 'Secretary::licenses_all');
 $routes->get('secretary/licenses_all_data', 'Secretary::licenses_all_data');
@@ -265,6 +297,8 @@ $routes->post('secretary/licenses_report_teacher', 'Secretary::licenses_report_t
 $routes->post('secretary/licenses_update', 'Secretary::licenses_update');
 $routes->post('secretary/licencia_delete', 'Secretary::licencia_delete');
 $routes->get('secretary/license_report/(:num)', 'Secretary::license_report/$1');
+$routes->get('secretary/license_report_prim/(:num)', 'Secretary::license_report_prim/$1');
+$routes->get('secretary/cambio_recojo_prim/(:num)', 'Secretary::cambio_recojo_prim/$1');
 $routes->get('secretary/license_send/(:any)', 'Secretary::license_send/$1');
 $routes->get('secretary/licenses_reports', 'Secretary::licenses_reports');
 $routes->post('secretary/licenses_report_xlsx', 'Secretary::licenses_report_xlsx');
@@ -281,6 +315,72 @@ $routes->post('secretary/absence_update', 'Secretary::absence_update');
 $routes->post('secretary/absence_delete', 'Secretary::absence_delete');
 $routes->get('secretary/absence_report/(:num)', 'Secretary::absence_report/$1');
 $routes->get('secretary/absence_send/(:any)', 'Secretary::absence_send/$1');
+
+// ── Asistencia Primaria 3ro-6to ──────────────────────────────────────────────
+$routes->get('secretary/prim_dashboard',                'Secretary::prim_dashboard');
+$routes->get('secretary/prim_asistencia',               'Secretary::prim_asistencia');
+$routes->post('secretary/prim_asistencia_data',         'Secretary::prim_asistencia_data');
+$routes->post('secretary/prim_asistencia_save_bulk',    'Secretary::prim_asistencia_save_bulk');
+$routes->post('secretary/prim_asistencia_resumen',      'Secretary::prim_asistencia_resumen');
+$routes->post('secretary/prim_asistencia_mes_data',     'Secretary::prim_asistencia_mes_data');
+$routes->get('secretary/prim_licencias',                'Secretary::prim_licencias');
+$routes->post('secretary/prim_licencias_data',          'Secretary::prim_licencias_data');
+$routes->post('secretary/prim_licencias_auth',          'Secretary::prim_licencias_auth');
+$routes->post('secretary/prim_licencias_noauth',        'Secretary::prim_licencias_noauth');
+$routes->post('secretary/prim_licencias_waive_doc',     'Secretary::prim_licencias_waive_doc');
+$routes->post('secretary/prim_licencias_delete',        'Secretary::prim_licencias_delete');
+$routes->post('secretary/prim_licencias_create',        'Secretary::prim_licencias_create');
+$routes->get('secretary/prim_licencias_periodo_add', 'Secretary::prim_licencias_periodo_add');
+$routes->post('secretary/prim_licencias_periodo_create','Secretary::prim_licencias_periodo_create');
+$routes->post('secretary/prim_cupo_estudiante',         'Secretary::prim_cupo_estudiante');
+$routes->get('secretary/prim_ausencias',                'Secretary::prim_ausencias');
+$routes->post('secretary/prim_ausencias_data',          'Secretary::prim_ausencias_data');
+$routes->get('secretary/prim_ausencias_xlsx',           'Secretary::prim_ausencias_xlsx');
+$routes->get('secretary/prim_reportes',                 'Secretary::prim_reportes');
+$routes->post('secretary/prim_reportes_xlsx',           'Secretary::prim_reportes_xlsx');
+$routes->post('secretary/prim_reporte_bus_xlsx',        'Secretary::prim_reporte_bus_xlsx');
+$routes->post('secretary/prim_retrasos_create',         'Secretary::prim_retrasos_create');
+$routes->get('secretary/prim_retrasos',                 'Secretary::prim_retrasos');
+$routes->post('secretary/prim_retrasos_data',           'Secretary::prim_retrasos_data');
+$routes->post('secretary/prim_retraso_count',           'Secretary::prim_retraso_count');
+$routes->get('secretary/prim_cambio_recojo',             'Secretary::prim_cambio_recojo');
+$routes->post('secretary/prim_cambio_recojo_create',     'Secretary::prim_cambio_recojo_create');
+$routes->post('secretary/prim_cambio_recojo_data',       'Secretary::prim_cambio_recojo_data');
+$routes->post('secretary/prim_cambio_recojo_auth',       'Secretary::prim_cambio_recojo_auth');
+$routes->post('secretary/prim_cambio_recojo_noauth',     'Secretary::prim_cambio_recojo_noauth');
+
+// ── Asistencia Primaria 3ro-6to (Dirección Técnica / Manager) ───────────────
+$routes->get('manager/prim_dashboard',                'Manager::prim_dashboard');
+$routes->get('manager/prim_asistencia',               'Manager::prim_asistencia');
+$routes->post('manager/prim_asistencia_data',         'Manager::prim_asistencia_data');
+$routes->post('manager/prim_asistencia_save_bulk',    'Manager::prim_asistencia_save_bulk');
+$routes->post('manager/prim_asistencia_resumen',      'Manager::prim_asistencia_resumen');
+$routes->post('manager/prim_asistencia_mes_data',     'Manager::prim_asistencia_mes_data');
+$routes->get('manager/prim_licencias',                'Manager::prim_licencias');
+$routes->post('manager/prim_licencias_data',          'Manager::prim_licencias_data');
+$routes->post('manager/prim_licencias_auth',          'Manager::prim_licencias_auth');
+$routes->post('manager/prim_licencias_noauth',        'Manager::prim_licencias_noauth');
+$routes->post('manager/prim_licencias_waive_doc',     'Manager::prim_licencias_waive_doc');
+$routes->post('manager/prim_licencias_delete',        'Manager::prim_licencias_delete');
+$routes->post('manager/prim_licencias_create',        'Manager::prim_licencias_create');
+$routes->get('manager/prim_licencias_periodo_add', 'Manager::prim_licencias_periodo_add');
+$routes->post('manager/prim_licencias_periodo_create','Manager::prim_licencias_periodo_create');
+$routes->post('manager/prim_cupo_estudiante',         'Manager::prim_cupo_estudiante');
+$routes->get('manager/prim_ausencias',                'Manager::prim_ausencias');
+$routes->post('manager/prim_ausencias_data',          'Manager::prim_ausencias_data');
+$routes->get('manager/prim_ausencias_xlsx',           'Manager::prim_ausencias_xlsx');
+$routes->get('manager/prim_reportes',                 'Manager::prim_reportes');
+$routes->post('manager/prim_reportes_xlsx',           'Manager::prim_reportes_xlsx');
+$routes->post('manager/prim_retrasos_create',         'Manager::prim_retrasos_create');
+$routes->get('manager/prim_retrasos',                 'Manager::prim_retrasos');
+$routes->post('manager/prim_retrasos_data',           'Manager::prim_retrasos_data');
+$routes->post('manager/prim_retraso_count',           'Manager::prim_retraso_count');
+$routes->get('manager/prim_cambio_recojo',             'Manager::prim_cambio_recojo');
+$routes->post('manager/prim_cambio_recojo_create',     'Manager::prim_cambio_recojo_create');
+$routes->post('manager/prim_cambio_recojo_data',       'Manager::prim_cambio_recojo_data');
+$routes->post('manager/prim_cambio_recojo_auth',       'Manager::prim_cambio_recojo_auth');
+$routes->post('manager/prim_cambio_recojo_noauth',     'Manager::prim_cambio_recojo_noauth');
+// ─────────────────────────────────────────────────────────────────────────────
 
 $routes->get('secretary/delays/(:num)', 'Secretary::delays/$1');
 $routes->get('secretary/delay_get/(:num)', 'Secretary::delay_get/$1');
@@ -336,7 +436,12 @@ $routes->get('parents/licenses', 'Parents::licenses');
 $routes->post('parents/license_save', 'Parents::license_save');
 $routes->post('parents/license_save_dia', 'Parents::license_save_dia');
 $routes->post('parents/license_save_periodo', 'Parents::license_save_periodo');
+$routes->post('parents/prim_upload_comprobante', 'Parents::prim_upload_comprobante');
+$routes->post('parents/prim_licencia_delete', 'Parents::prim_licencia_delete');
 $routes->get('parents/interviews', 'Parents::interviews');
+$routes->get('parents/prim_licencias',           'Parents::prim_licencias');
+$routes->post('parents/prim_cupo_estudiante',    'Parents::prim_cupo_estudiante');
+$routes->post('parents/prim_cambio_recojo_create','Parents::prim_cambio_recojo_create');
 $routes->post('parents/profile_update', 'Parents::profile_update');
 $routes->post('parents/password_update', 'Parents::password_update');
 
@@ -407,6 +512,7 @@ $routes->get('teacher/incidence_register', 'Teacher::incidence_register');
 $routes->get('teacher/search_students_incidence', 'Teacher::search_students_incidence');
 $routes->post('teacher/resolve_date_id', 'Teacher::resolve_date_id');
 $routes->get('teacher/attendance_report/(:num)', 'Teacher::attendance_report/$1');
+$routes->post('teacher/prim_attendance_report_save', 'Teacher::prim_attendance_report_save');
 $routes->post('teacher/assistance_edit/(:num)', 'Teacher::assistance_edit/$1');
 $routes->post('teacher/attendance_date_edit/(:num)', 'Teacher::attendance_date_edit/$1');
 $routes->get('teacher/assists_excel/(:any)', 'Teacher::assists_excel/$1');
@@ -419,6 +525,10 @@ $routes->get('teacher/recover_score/(:any)', 'Teacher::recover_score/$1');
 $routes->get('teacher/deliver_notes/(:num)', 'Teacher::deliver_notes/$1');
 $routes->get('teacher/review_notes/(:num)', 'Teacher::review_notes/$1');
 $routes->post('teacher/consolidate_notes', 'Teacher::consolidate_notes');
+$routes->post('teacher/save_descargo', 'Teacher::save_descargo');
+$routes->get('teacher/descargo_pdf/(:num)', 'Teacher::descargo_pdf/$1');
+$routes->get('teacher/mis_descargos', 'Teacher::mis_descargos');
+$routes->get('teacher/descargos_zip', 'Teacher::descargos_zip');
 $routes->get('teacher/enable_sheet_phase/(:any)', 'Teacher::enable_sheet_phase/$1');
 $routes->get('teacher/infractions', 'Teacher::infractions');
 $routes->post('teacher/infraction_save', 'Teacher::infraction_save');
